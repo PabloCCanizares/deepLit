@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados de Scholar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Resultados de búsqueda en Scholar</h2>
+
+  <!-- Formulario de búsqueda -->
+  <form method="post" class="mb-4">
+    <div class="input-group">
+      <input type="text" class="form-control" name="article_title" placeholder="Ingrese el título del artículo" required>
+      <div class="input-group-append">
+        <button class="btn btn-primary" type="submit">Buscar</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Sección para Google Scholar -->
+  {% if data.get('scholarly') %}
+    {% set gs = data.get('scholarly') %}
+    <h3>Resultados de Google Scholar</h3>
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4 class="card-title">{{ gs.get('title', 'No disponible') }}</h4>
+      </div>
+      <div class="card-body">
+        <p><strong>Autores:</strong>
+          {% set authors = gs.get('authors', []) %}
+          {% if authors %}
+            {{ authors | join(', ') }}
+          {% else %}
+            No disponible
+          {% endif %}
+        </p>
+        <p><strong>Año:</strong> {{ gs.get('year', 'Desconocido') }}</p>
+        <p><strong>Revista/Conferencia:</strong> {{ gs.get('venue', 'Desconocido') }}</p>
+        <p><strong>Número de citas:</strong> {{ gs.get('num_citations', 'Desconocido') }}</p>
+        <p><strong>Resumen:</strong> {{ gs.get('abstract', 'No disponible') }}</p>
+        <p><strong>Enlace:</strong>
+          {% if gs.get('pub_url') and gs.get('pub_url') != "No disponible" %}
+            <a href="{{ gs.get('pub_url') }}" target="_blank">{{ gs.get('pub_url') }}</a>
+          {% else %}
+            No disponible
+          {% endif %}
+        </p>
+        <p><strong>PDF:</strong>
+          {% if gs.get('pdf_url') and gs.get('pdf_url') != "No disponible" %}
+            <a href="{{ gs.get('pdf_url') }}" target="_blank">Ver PDF</a>
+          {% else %}
+            No disponible
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% else %}
+    <p>No se encontraron resultados en Google Scholar.</p>
+  {% endif %}
+
+  <!-- Sección para Semantic Scholar -->
+  {% if data.get('semantic') %}
+    {% set ss = data.get('semantic') %}
+    <h3>Resultados de Semantic Scholar</h3>
+    <div class="card mb-4">
+      <div class="card-header">
+        <h4 class="card-title">{{ ss.get('title', 'Desconocido') }}</h4>
+      </div>
+      <div class="card-body">
+        <p><strong>Autores:</strong> {{ ss.get('authors', 'No disponible') }}</p>
+        <p><strong>Año:</strong> {{ ss.get('year', 'Desconocido') }}</p>
+        <p><strong>Revista/Conferencia:</strong> {{ ss.get('venue', 'Desconocido') }}</p>
+        <p><strong>Número de citas:</strong> {{ ss.get('num_citations', 'Desconocido') }}</p>
+        <p><strong>Resumen:</strong> {{ ss.get('abstract', 'No disponible') }}</p>
+        <p><strong>Enlace:</strong>
+          {% if ss.get('pub_url') and ss.get('pub_url') != "No disponible" %}
+            <a href="{{ ss.get('pub_url') }}" target="_blank">{{ ss.get('pub_url') }}</a>
+          {% else %}
+            No disponible
+          {% endif %}
+        </p>
+        <p><strong>PDF:</strong>
+          {% if ss.get('pdf_url') and ss.get('pdf_url') != "No disponible" %}
+            <a href="{{ ss.get('pdf_url') }}" target="_blank">Ver PDF</a>
+          {% else %}
+            No disponible
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% else %}
+    <p>No se encontraron resultados en Semantic Scholar.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Subir PDF - Gestor de Documentos{% endblock %}
+{% block content %}
+  <h1>Subir PDF</h1>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-warning">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <form action="{{ url_for('uploads.upload_pdf') }}" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="pdf">Selecciona el archivo PDF:</label>
+      <input type="file" name="pdf" id="pdf" class="form-control-file" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Subir y Procesar PDF</button>
+  </form>
+{% endblock %}

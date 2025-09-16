@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Gestor de Documentos{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h1 class="mb-4">Panel de Control</h1>
+  <div class="row">
+      <!-- Estadísticas generales -->
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body text-center">
+                  <h2>{{ total_documents }}</h2>
+                  <p class="card-text">Documentos Subidos</p>
+              </div>
+          </div>
+      </div>
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body text-center">
+                  <h2>{{ total_references }}</h2>
+                  <p class="card-text">Referencias Totales</p>
+              </div>
+          </div>
+      </div>
+      <div class="col-md-4">
+          <div class="card mb-4">
+              <div class="card-body text-center">
+                  <h2>{{ avg_references }}</h2>
+                  <p class="card-text">Referencias por Documento</p>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Diagrama de barras por año -->
+  <h3>Documentos por Año</h3>
+  <canvas id="yearChart" style="height:300px;"></canvas>
+
+  <!-- Ranking de Keywords -->
+  <h3 class="mt-4">Ranking de Keywords</h3>
+  <ul class="list-group mb-4">
+      {% for word, freq in sorted_keywords[:10] %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ word }}
+              <span class="badge badge-primary badge-pill">{{ freq }}</span>
+          </li>
+      {% endfor %}
+  </ul>
+
+  <!-- WordCloud de Keywords -->
+  <h3>WordCloud de Keywords</h3>
+  <div class="mb-4">
+      <img src="data:image/png;base64,{{ wordcloud_img }}" alt="Wordcloud de Keywords" class="img-fluid" style="width:100%;">
+  </div>
+
+  <!-- Últimos documentos subidos -->
+  <h3>Actividad Reciente</h3>
+  <ul class="list-group">
+      {% for doc in recent_docs %}
+          <li class="list-group-item">
+              <strong>{{ doc.title }}</strong><br>
+              Subido: {{ doc.upload_date }}
+          </li>
+      {% endfor %}
+  </ul>
+
+  <!-- Notificaciones -->
+  <div class="mt-4">
+      {% if notif_abstract > 0 or notif_keywords > 0 %}
+          <div class="alert alert-warning">
+              Se encontraron {{ notif_abstract }} documentos sin abstract y {{ notif_keywords }} sin keywords.
+          </div>
+      {% endif %}
+  </div>
+
+  <!-- Botones de acción -->
+  <div class="mt-4">
+      <a href="{{ url_for('uploads.upload_pdf_page') }}" class="btn btn-primary">Subir Nuevo PDF</a>
+      <a href="{{ url_for('documents.home') }}" class="btn btn-secondary">Ver Lista de Documentos</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <!-- Cargar Chart.js desde CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Cargar el archivo JS externo -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+  <!-- Insertar los datos JSON en elementos ocultos -->
+  <div id="chartLabels" style="display: none;">{{ chart_labels|tojson|safe }}</div>
+  <div id="chartValues" style="display: none;">{{ chart_values|tojson|safe }}</div>
+{% endblock %}

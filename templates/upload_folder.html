@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Subir Carpeta - Gestor de Documentos{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h1>Subir Carpeta de PDF</h1>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-warning">
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <form action="{{ url_for('uploads.upload_folder') }}" method="post" enctype="multipart/form-data">
+      <div class="form-group">
+          <label for="pdfs">Selecciona una carpeta (o múltiples archivos PDF):</label>
+          <!-- Permite seleccionar una carpeta en navegadores compatibles -->
+          <input type="file" name="pdfs" id="pdfs" class="form-control-file" webkitdirectory directory multiple required>
+      </div>
+      <button type="submit" class="btn btn-primary">Subir Carpeta</button>
+  </form>
+</div>
+{% endblock %}

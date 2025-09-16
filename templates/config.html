@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Configuración{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h2>Configuración de Documentos</h2>
+  <form method="post" action="{{ url_for('config_routes.config') }}">
+    <div class="form-group">
+      <label for="order_by_year">Ordenar por Año:</label>
+      <select name="order_by_year" id="order_by_year" class="form-control">
+        <option value="asc" {% if config.order_by_year == 'asc' %}selected{% endif %}>Ascendente</option>
+        <option value="desc" {% if config.order_by_year == 'desc' %}selected{% endif %}>Descendente</option>
+      </select>
+    </div>
+    <div class="form-group mt-3">
+      <label>Campos obligatorios:</label>
+      <div class="form-check">
+        {% for field in available_fields %}
+          <input class="form-check-input" type="checkbox" name="required_fields" id="field_{{ field }}" value="{{ field }}"
+            {% if field in config.required_fields %}checked{% endif %}>
+          <label class="form-check-label" for="field_{{ field }}">{{ field }}</label><br>
+        {% endfor %}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Guardar configuración</button>
+  </form>
+</div>
+{% endblock %}

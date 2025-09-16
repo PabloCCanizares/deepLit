@@ -1,0 +1,25 @@
+mi_app/
+├── app.py
+├── config.py
+├── extensions.py
+├── utils.py
+├── routes/
+│   ├── __init__.py
+│   ├── documents.py
+│   ├── config_routes.py
+│   └── scholar.py
+├── templates/
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── home.html
+│   ├── upload.html
+│   ├── result.html
+│   ├── config.html
+│   ├── scholar_results.html
+│   ├── result_excel.html
+│   ├── upload_folder.html
+│   └── upload_excel.html
+└── static/
+    ├── css/
+    └── js/
+
