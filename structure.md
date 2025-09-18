@@ -1,4 +1,4 @@
-mi_app/
+deepLit/
 ├── app.py
 ├── config.py
 ├── extensions.py
@@ -6,8 +6,10 @@ mi_app/
 ├── routes/
 │   ├── __init__.py
 │   ├── documents.py
+│   ├── completion_queue.py
 │   ├── config_routes.py
-│   └── scholar.py
+│   ├── scholar.py
+│   └── uploads.py
 ├── templates/
 │   ├── base.html
 │   ├── dashboard.html
@@ -63,7 +65,7 @@ Endpoint /scholar:
 Se utiliza una consulta predeterminada ("Testing the untestable") para ejecutar ambas búsquedas y, a continuación, se renderiza la plantilla scholar_results.html con los resultados obtenidos de ambas fuentes.
 
 ---------------------------
-El archivo routes/dashboard.py implementa la lógica del dashboard de la aplicación. Entre sus responsabilidades se encuentran:
+El archivo `routes/dashboard.py` implementa la lógica del dashboard de la aplicación. Entre sus responsabilidades se encuentran:
 
 Dashboard y estadísticas:
 Recupera todos los documentos de la base de datos para calcular estadísticas clave (total de documentos, total de citas y promedio de citas).
@@ -72,7 +74,7 @@ Además, calcula notificaciones para la ausencia de abstract o keywords y genera
 Finalmente, renderiza la plantilla dashboard.html con toda esta información.
 
 ---------------------------
-El archivo routes/uploads.py se encarga de gestionar la subida de archivos de forma separada. Entre sus responsabilidades se encuentran:
+El archivo `routes/uploads.py` se encarga de gestionar la subida de archivos de forma separada. Entre sus responsabilidades se encuentran:
 
 Carga y procesamiento de archivos:
 Subida individual de PDF: Proporciona una página para subir un PDF (/upload_pdf_page) y un endpoint (/upload_pdf) que valida el archivo, lo guarda temporalmente, extrae metadatos (título, abstract, keywords, etc.) mediante funciones especializadas, inserta el documento en la base de datos y elimina el archivo temporal, renderizando el resultado.
@@ -80,4 +82,11 @@ Carga masiva de PDFs: La ruta (/upload_folder) permite subir varios archivos PDF
 Subida de Excel: El endpoint (/upload_excel) permite cargar un archivo Excel, valida que contenga las columnas requeridas, procesa cada fila para insertar los documentos en la base de datos y elimina el archivo temporal, mostrando los resultados en una plantilla específica.
 
 ---------------------------
-Archivo queue:
+El archivo `routes/completion queue` representa una cola de completado de campos:
+Gestiona una cola de “completado de datos” para documentos con campos faltantes. Detecta qué documentos están incompletos según la configuración, los encola, lanza un worker en un hilo que consulta OpenAlex para encontrar el mejor “match” por similitud de título y actualiza el documento principal con los metadatos recuperados (solo si estaban vacíos), además de ofrecer vistas/JSON para monitorizar el proceso.
+Responsabilidades principales
+-Detección de incompletos: usando configuration.required_fields, identifica documentos con campos faltantes.
+Gestión de cola: alta individual o múltiple, consulta del estado y listado de pendientes/encolados.
+--Ejecución asíncrona: arranque/parada de un hilo daemon que procesa la cola en segundo plano.
+Integración con OpenAlex: búsqueda por título, selección del mejor resultado por similitud (difflib) y actualización de campos en el documento.
+Vistas de control: contador agregado (/queue), estado detallado (/queue/status) y vista intermedia de “matches” aplicados (/queue/intermediate).

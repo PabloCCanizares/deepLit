@@ -1,13 +1,16 @@
-Resumen de lo que debería incluir DeepLit:
-
-Embeddings con modelos Transformer (BERT, SBERT, etc.)
-Clustering semántico y temático avanzado.
-Topic modeling dinámico y automático.
-Summarization basado en Transformers.
-Clasificación automática usando fine-tuning de modelos profundos.
-Recomendaciones inteligentes.
-Análisis automático y dinámico del estado del arte.
-
-
-Nos quedamos diseñando la cola:
-- Se añaden elementos y dicen que ya estan en la cola etc, falla bastante
+Visualización:
+* Plataforma web que permita explorar diferentes artículos y explorar el estado del arte. 
+ 
+Extracción:
+* Inclusión de APIs OpenAlex, Semantic scholar (Crossref, arXiv, Unpaywall, scopus) etc, para obtener información de articulos.
+* Análisis de artículos para extraer: abstract, #paginas, keywords, y contenido del artículo en texto plano.
+* Cargar múltiples carpetas de archivos y procesar.
+* Técnicas snowballing (backward/fordward).
+ 
+IA + LLMs
+* Clustering de info: document embeddings para búsqueda semántica y clasificar artículos por keywords, abstract y contenido.
+* Generador de resúmenes utilizando ChatGPT + prompt. 
+* Extracción de características comunes de los artículos: ejemplo, Research questions.
+* Transformers (BERT, SciBERT, BioBERT, Longformer, DeBERTa) para clasificar abstracts/papers como relevantes o no relevantes según tus RQs.
+* Fine-tuning supervisado con tus propias decisiones (incluye/excluye), al estilo de ASReview DL, pero mejorado con embeddings contextualizados. PD: Echar un ojo a: https://asreview.nl
+* Asistente virtual con ChatGPT y langchain. 
