@@ -52,7 +52,7 @@
       <div class="doc-info">
         <input type="checkbox" class="select-doc" name="select_doc" value="{{ doc._id }}">
         <div class="doc-year">{{ doc.Year }}</div>
-        <div class="doc-title">{{ doc.Title }}</div>
+        <div class="doc-title">{{ doc.title }}</div>
       </div>
       <div class="doc-icons">
         <a href="{{ url_for('documents.result', id=doc._id) }}" title="Ver Detalles">

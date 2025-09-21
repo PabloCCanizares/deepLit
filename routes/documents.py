@@ -67,7 +67,7 @@ def result(id):
                 result = render_template('result.html', document=doc)
             else:
                 flash("Documento no encontrado")
-        except InvalidId:
+        except InvalidId: #FIXME IndexError ? 
             flash("Documento no encontrado")
     if result is None:
         result = redirect(url_for('documents.home'))

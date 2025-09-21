@@ -2,6 +2,16 @@
 {% block title %}Configuración{% endblock %}
 {% block content %}
 <div class="container my-4">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% for message in messages %}
+          {{ message }}<br>
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+  {% endwith %}
   <h2>Configuración de Documentos</h2>
   <form method="post" action="{{ url_for('config_routes.config') }}">
     <div class="form-group">
