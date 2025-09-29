@@ -1,63 +1,462 @@
 {% extends "base.html" %}
-{% block title %}Subir PDF - Gestor de Documentos{% endblock %}
+{% block title %}Subir archivos{% endblock %}
 {% block content %}
-<div class="container my-4">
-  <h1>Subir PDF</h1>
+<div class="upload-page">
+  <div class="upload-card">
+    <!-- Close X button inside the card -->
+    <button type="button" class="upload-close" aria-label="Cerrar">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <div class="upload-tabs" role="tablist" aria-label="Tipo de subida">
+      <div id="tab-indicator" class="upload-tab-indicator" aria-hidden="true"></div>
+      <button class="upload-tab active" data-type="pdf" role="tab" aria-selected="true">PDF</button>
+      <button class="upload-tab" data-type="excel" role="tab" aria-selected="false">Excel</button>
+      <button class="upload-tab" data-type="folder" role="tab" aria-selected="false">Carpeta</button>
+    </div>
+  <form id="upload-form" action="{{ url_for('upload.upload_pdf') }}" method="post" enctype="multipart/form-data">
+      <input id="upload-input" type="file" name="pdf" hidden accept=".pdf,application/pdf">
+      <div id="drop-zone" class="drop-zone" tabindex="0">
+        <i class="fa-solid fa-cloud-arrow-up drop-icon" aria-hidden="true"></i>
+        <p class="drop-title">Arrastra y suelta aquí</p>
+        <p id="drop-hint" class="drop-hint">Solo PDF (.pdf)</p>
+        <button type="button" class="btn btn-light" id="select-files-btn">Seleccionar del dispositivo</button>
+      </div>
+      <div id="selected-files" class="selected-files" aria-live="polite"></div>
+      <div class="upload-actions">
+            <div class="upload-summary" aria-live="polite"></div>
+            <button type="submit" class="btn-upload hidden" aria-label="Subir">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+  
   {% with messages = get_flashed_messages() %}
     {% if messages %}
-      <div class="alert alert-warning">
+      <div class="alert alert-warning mt-3" style="max-width:min(720px,92vw);margin:0 auto;">
         {% for message in messages %}
           <p>{{ message }}</p>
         {% endfor %}
       </div>
     {% endif %}
   {% endwith %}
-  <form action="{{ url_for('uploads.upload_pdf') }}" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-      <label for="pdf">Selecciona el archivo PDF:</label>
-      <input type="file" name="pdf" id="pdf" class="form-control-file" required>
-    </div>
-    <div class="form-group">
-      <label for="autores">Autores:</label>
-      <input type="text" name="autores" id="autores" class="form-control" placeholder="Ej: Juan Pérez, Ana López">
-    </div>
-    <div class="form-group">
-      <label for="anio">Año:</label>
-      <input type="text" name="anio" id="anio" class="form-control" placeholder="Ej: 2022">
-    </div>
-    <div class="form-group">
-      <label for="categoria">Categoría:</label>
-      <input type="text" name="categoria" id="categoria" class="form-control" placeholder="Ej: Investigación, Educación">
-    </div>
-    <div class="form-group">
-      <label for="tipo">Tipo:</label>
-      <input type="text" name="tipo" id="tipo" class="form-control" placeholder="Ej: Artículo, Tesis">
-    </div>
-    <div class="form-group">
-      <label for="acronimo">Acrónimo:</label>
-      <input type="text" name="acronimo" id="acronimo" class="form-control" placeholder="Ej: ABC">
-    </div>
-    <div class="form-group">
-      <label for="paginas">Páginas:</label>
-      <input type="text" name="paginas" id="paginas" class="form-control" placeholder="Ej: 12">
-    </div>
-    <div class="form-group">
-      <label for="obs">Observaciones:</label>
-      <input type="text" name="obs" id="obs" class="form-control" placeholder="Ej: Notas sobre el documento">
-    </div>
-    <div class="form-group">
-      <label for="resumen">Resumen:</label>
-      <textarea name="resumen" id="resumen" class="form-control" rows="3" placeholder="Resumen del documento"></textarea>
-    </div>
-    <div class="form-group">
-      <label for="enlace">Enlace:</label>
-      <input type="text" name="enlace" id="enlace" class="form-control" placeholder="Ej: http://ejemplo.com">
-    </div>
-    <div class="form-group">
-      <label for="cita">Cita:</label>
-      <textarea name="cita" id="cita" class="form-control" rows="2" placeholder="Cita bibliográfica"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Subir y Procesar PDF</button>
-  </form>
 </div>
+<!-- Fullscreen overlay to blur/dim everything except the centered upload card and the close FAB -->
+<div id="upload-overlay" class="upload-overlay" aria-hidden="true"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Refuerzo: cerrar sidebar al cargar la página de subida
+document.addEventListener('DOMContentLoaded', function() {
+  // Mark body contextually for styling
+  try { document.body.setAttribute('data-upload-page','true'); } catch(_) {}
+
+  // Compute and persist a single, explicit return URL to avoid skipping too far back
+  const DASHBOARD_URL = "{{ url_for('dashboard.dashboard') }}";
+  const RETURN_KEY = 'upload:return';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const qpReturn = params.get('return');
+    let computedReturn = null;
+    if (qpReturn) {
+      // Prefer an explicit return URL from query param if same-origin
+      const u = new URL(qpReturn, window.location.origin);
+      if (u.origin === window.location.origin && u.href !== window.location.href) computedReturn = u.href;
+    }
+    if (!computedReturn && document.referrer) {
+      const ref = new URL(document.referrer, window.location.origin);
+      if (ref.origin === window.location.origin && ref.href !== window.location.href) {
+        computedReturn = ref.href;
+      }
+    }
+    sessionStorage.setItem(RETURN_KEY, computedReturn || DASHBOARD_URL);
+  } catch(_) {}
+
+  // Helper to return to the stored screen
+  let closing = false;
+  function goBack(){
+    if (closing) return; // guard to avoid multiple navigations
+    closing = true;
+    try { if (typeof suppressFor === 'function') suppressFor(1200); } catch(_) {}
+    const target = sessionStorage.getItem(RETURN_KEY) || DASHBOARD_URL;
+    // Clear the key to avoid stale returns if user returns again later
+    try { sessionStorage.removeItem(RETURN_KEY); } catch(_) {}
+    window.location.assign(target);
+  }
+
+  const sidebar = document.getElementById('sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar && sidebarBackdrop) {
+    sidebar.classList.remove('open');
+    sidebar.setAttribute('aria-hidden','true');
+    sidebarBackdrop.hidden = true;
+  }
+  // Overlay click should return to dashboard (base screen)
+  const overlay = document.getElementById('upload-overlay');
+  if (overlay) {
+    // If a backdrop image was captured from the previous page, use it
+    try {
+      const bg = sessionStorage.getItem('upload:backdrop');
+      if (bg) {
+  overlay.style.setProperty('--upload-backdrop', `url(${bg})`);
+        // Align the captured image with previous scroll position
+        const sx = parseInt(sessionStorage.getItem('upload:scrollX')||'0', 10) || 0;
+        const sy = parseInt(sessionStorage.getItem('upload:scrollY')||'0', 10) || 0;
+  overlay.style.setProperty('--upload-backdrop-pos', `-${sx}px -${sy}px`);
+        // Also try to restore scroll so the card appears over same content
+  window.scrollTo(sx, sy);
+        // Clear the stored backdrop so it doesn't leak into future navigations
+        sessionStorage.removeItem('upload:backdrop');
+        sessionStorage.removeItem('upload:scrollX');
+        sessionStorage.removeItem('upload:scrollY');
+      }
+    } catch (_) {}
+    overlay.addEventListener('click', function(e){
+      e.preventDefault();
+      goBack();
+    });
+  }
+  // Close X inside the card behaves like clicking outside
+  const closeBtn = document.querySelector('.upload-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      goBack();
+    });
+  }
+  // Any click outside the upload card should also return to dashboard
+  const card = document.querySelector('.upload-card');
+  const fab = document.getElementById('fab-container');
+  document.addEventListener('click', function(e){
+    if (!card) return;
+    const target = e.target;
+    // If clicking inside the card, do nothing
+    if (card.contains(target)) return;
+    // If clicking the FAB or its children, do nothing (it already navigates or closes)
+    if (fab && fab.contains(target)) return;
+    // Otherwise, navigate back
+    e.preventDefault();
+    goBack();
+  }, true);
+
+  // ESC key to close and go back
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){
+      e.preventDefault();
+      goBack();
+    }
+  });
+});
+(function(){
+  const tabs = document.querySelectorAll('.upload-tab');
+  const tabsContainer = document.querySelector('.upload-tabs');
+  const tabIndicator = document.getElementById('tab-indicator');
+  const form = document.getElementById('upload-form');
+  const input = document.getElementById('upload-input');
+  const dropZone = document.getElementById('drop-zone');
+  const selectedBox = document.getElementById('selected-files');
+  const selectBtn = document.getElementById('select-files-btn');
+  const dropHint = document.getElementById('drop-hint');
+  const submitBtn = document.querySelector('.btn-upload');
+  const summary = document.querySelector('.upload-summary');
+
+  const ENDPOINTS = {
+    pdf: "{{ url_for('upload.upload_pdf') }}",
+    excel: "{{ url_for('upload.upload_excel') }}",
+    folder: "{{ url_for('upload.upload_folder') }}"
+  };
+  const ACCEPT = {
+    pdf: '.pdf,application/pdf',
+    excel: '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel',
+    folder: '' // en modo carpeta, el accept no aplica; se usa folder picker
+  };
+  const NAME = { pdf: 'pdf', excel: 'excel', folder: 'pdfs' };
+
+  // State
+  let type = 'pdf';
+
+  function setType(newType){
+    type = newType;
+    // tabs UI
+    tabs.forEach(t=>{
+      const active = t.getAttribute('data-type')===type;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    updateIndicator();
+    // form attrs
+    form.action = ENDPOINTS[type];
+    input.accept = ACCEPT[type];
+    input.setAttribute('name', NAME[type]);
+    input.removeAttribute('multiple');
+    input.removeAttribute('webkitdirectory');
+    input.removeAttribute('directory');
+    if (type === 'folder'){
+      // Forzar folder picker de una sola carpeta (no múltiples)
+      input.setAttribute('webkitdirectory','');
+      input.setAttribute('directory','');
+    }
+    // hint
+    dropHint.textContent = type==='pdf'
+      ? 'Solo PDF (.pdf)'
+      : (type==='excel' ? 'Solo Excel (.xlsx, .xls)' : 'Selecciona una carpeta (no archivos sueltos)');
+    // reset list
+    input.value='';
+    renderFiles();
+    updateSubmitVisibility();
+    if (selectedBox) selectedBox.style.display = (type==='folder') ? 'block' : 'none';
+  }
+
+  // Drag & drop
+
+    // Improve reliability of indicator positioning
+    // Update on load and when fonts are ready
+    window.addEventListener('load', updateIndicator);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(()=>{ updateIndicator(); });
+    }
+    // Update on container resize
+    if (window.ResizeObserver && tabsContainer) {
+      const ro = new ResizeObserver(()=> updateIndicator());
+      ro.observe(tabsContainer);
+    }
+    // Orientation or viewport changes
+    window.addEventListener('orientationchange', updateIndicator);
+  ;['dragenter','dragover'].forEach(evt=>dropZone.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.add('dragover'); }));
+  ;['dragleave','drop'].forEach(evt=>dropZone.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.remove('dragover'); }));
+  dropZone.addEventListener('drop', e=>{
+    const files = e.dataTransfer?.files;
+    if (!files || !files.length) return;
+    if (type==='folder'){
+      // Bloquear sueltos: en modo carpeta solo permitimos seleccionar desde el folder picker
+      showInlineError();
+      return;
+    }
+    if (!validateFiles(files)){
+      showInlineError();
+      return;
+    }
+    input.files = files;
+    renderFiles();
+    updateSubmitVisibility();
+  });
+
+  input.addEventListener('change', ()=>{
+    if (type==='folder'){
+      const all = Array.from(input.files||[]);
+      const pdfs = all.filter(f=>/\.pdf$/i.test(f.name) || f.type==='application/pdf');
+      const excels = all.filter(f=>/\.(xlsx|xls)$/i.test(f.name) || f.type==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || f.type==='application/vnd.ms-excel');
+      const hasPdf = pdfs.length>0;
+      const hasExcel = excels.length>0;
+      // If both types exist, prefer PDFs (backend upload_folder soporta PDFs ahora mismo)
+      if (hasPdf && hasExcel){
+        const dt = new DataTransfer();
+        pdfs.forEach(f=> dt.items.add(f));
+        input.files = dt.files;
+        // Ensure form points to folder endpoint and input name matches expected
+        form.action = ENDPOINTS.folder;
+        input.setAttribute('name', NAME.folder);
+      } else if (hasPdf){
+        const dt = new DataTransfer();
+        pdfs.forEach(f=> dt.items.add(f));
+        input.files = dt.files;
+        form.action = ENDPOINTS.folder;
+        input.setAttribute('name', NAME.folder);
+      } else if (hasExcel){
+        // Switch to excel upload: include all excel files (backend accepts multiple 'excel' fields)
+        const dt = new DataTransfer();
+        excels.forEach(f=> dt.items.add(f));
+        input.files = dt.files;
+        form.action = ENDPOINTS.excel;
+        input.setAttribute('name', NAME.excel);
+      } else {
+        // No valid files
+        showInlineError();
+        input.value='';
+      }
+    } else {
+      if (!validateFiles(input.files)){
+        showInlineError();
+        input.value='';
+      }
+    }
+    renderFiles();
+    updateSubmitVisibility();
+  });
+
+  selectBtn.addEventListener('click', ()=> input.click());
+  dropZone.addEventListener('click', (e)=>{ if (e.target!==selectBtn) input.click(); });
+
+  function renderFiles(){
+    if (!selectedBox) return;
+    selectedBox.innerHTML = '';
+    const files = input.files;
+    // Bottom-left summary should show first filename for all modes when there are files
+    if (summary) {
+      if (files && files.length) {
+        const first = files[0];
+        summary.textContent = first ? first.name : '';
+        summary.classList.add('visible');
+      } else {
+        summary.textContent = '';
+        summary.classList.remove('visible');
+      }
+    }
+
+    // Only show file list box in folder mode (and when there are files)
+    if (!files || !files.length || type !== 'folder') {
+      selectedBox.style.display = 'none';
+      return;
+    }
+    const maxDisplay = 10;
+    const ul = document.createElement('ul');
+    ul.style.paddingLeft = '18px';
+    const names = Array.from(files).map(f=> f.name);
+    names.slice(0, maxDisplay).forEach(n => {
+      const li = document.createElement('li');
+      li.textContent = n;
+      ul.appendChild(li);
+    });
+    if (names.length > maxDisplay){
+      const more = document.createElement('li');
+      more.textContent = `+${names.length - maxDisplay} más`;
+      ul.appendChild(more);
+    }
+    selectedBox.appendChild(ul);
+    selectedBox.style.display = 'block';
+  }
+
+  function showInlineError(){
+    // Do not change the hint text; just mark red and shake
+    dropHint.classList.add('hint-error');
+    dropZone.classList.add('shake');
+    setTimeout(()=>{
+      dropHint.classList.remove('hint-error');
+      dropZone.classList.remove('shake');
+    }, 1400);
+    updateSubmitVisibility();
+  }
+
+  function validateFiles(fileList){
+    if (!fileList || !fileList.length) return false;
+    const isPdf = f=>/\.pdf$/i.test(f.name) || f.type==='application/pdf';
+    const isExcel = f=>/\.(xlsx|xls)$/i.test(f.name) ||
+      f.type==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      f.type==='application/vnd.ms-excel';
+    if (type==='pdf'){
+      return fileList.length===1 && isPdf(fileList[0]);
+    }
+    if (type==='excel'){
+      return fileList.length===1 && isExcel(fileList[0]);
+    }
+    // folder: válido si hay al menos un PDF o al menos un Excel
+    for (let i=0;i<fileList.length;i++){
+      if (isPdf(fileList[i]) || isExcel(fileList[i])) return true;
+    }
+    return false;
+  }
+
+  // Tab clicks
+  tabs.forEach(t=> t.addEventListener('click', ()=> setType(t.getAttribute('data-type'))));
+
+  function updateSubmitVisibility(){
+    const ok = validateFiles(input.files || []);
+    if (ok){
+      submitBtn.classList.remove('hidden');
+    } else {
+      submitBtn.classList.add('hidden');
+    }
+  }
+
+  // Block submit if invalid just in case
+  form.addEventListener('submit', (e)=>{
+    if (!validateFiles(input.files||[])){
+      e.preventDefault();
+      showInlineError();
+    }
+  });
+
+  function updateIndicator(){
+    if (!tabIndicator) return;
+    const active = Array.from(tabs).find(t=>t.classList.contains('active'));
+    if (!active) return;
+    const left = active.offsetLeft;
+    const width = active.offsetWidth;
+    // Indicator spans full inner height: top/bottom handled via CSS; only move/resize horizontally
+    tabIndicator.style.left = left + 'px';
+    tabIndicator.style.width = width + 'px';
+  }
+  window.addEventListener('resize', updateIndicator);
+
+  // Init
+  // Position indicator without initial animation
+  if (tabIndicator) tabIndicator.classList.add('no-anim');
+  setType('pdf');
+  updateIndicator();
+  requestAnimationFrame(()=>{ if (tabIndicator) tabIndicator.classList.remove('no-anim'); });
+  updateSubmitVisibility();
+})();
+</script>
+<style>
+.upload-page{ display:flex; justify-content:center; align-items:center; min-height: calc(100vh - 120px); position: relative; width: 100%; }
+/* Ensure the centered card is above the blur overlay */
+.upload-card{ position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 1002; width:min(720px, 92vw); max-height: 90vh; overflow:auto; background: var(--color-violet-dark); border:2px solid var(--color-violet-light); border-radius:16px; padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-left: auto; margin-right: auto; height: auto; }
+/* Close X button styling (top-right inside the card) */
+.upload-close{ position:absolute; top:6px; right:6px; width:36px; height:36px; border: none; background: transparent; color: var(--color-violet-light); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: none; border-radius: 0; }
+.upload-close i{ color: var(--color-violet-light); font-size: 1.1rem; }
+.upload-close:hover{ opacity: 0.9; }
+.upload-close:focus{ outline:none; }
+/* Fullscreen overlay that blurs and dims everything behind it */
+.upload-overlay{ position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.28); backdrop-filter: blur(8px) saturate(0.9); -webkit-backdrop-filter: blur(8px) saturate(0.9); }
+/* If there's a captured backdrop from the previous screen, render it under the dim/blur */
+.upload-overlay::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--upload-backdrop);
+  background-size: auto;
+  background-position: var(--upload-backdrop-pos, 0 0);
+  filter: blur(12px) saturate(0.9) brightness(0.8);
+  z-index: 0;
+}
+/* Sidebar sits below overlay (so clicking outside still closes) */
+body[data-upload-page="true"] .sidebar,
+body[data-upload-page="true"] .sidebar-backdrop { z-index: 900; }
+/* On upload page, put FAB under overlay so it appears blurred and is not clickable */
+body[data-upload-page="true"] #fab-container { z-index: 999 !important; pointer-events: none; }
+/* Big bubble container for options */
+.upload-tabs{ position:relative; display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:16px; padding:4px 6px; background: var(--color-violet-light); border:1px solid var(--color-violet-dark); border-radius:999px; width: fit-content; margin-left:auto; margin-right:auto; overflow:hidden; }
+.upload-tab-indicator{ position:absolute; top:4px; bottom:4px; left:6px; width:0; background: var(--color-violet-dark); border-radius:999px; transition: left 240ms ease, width 240ms ease; }
+.upload-tab-indicator.no-anim{ transition: none !important; }
+.upload-tab{ position:relative; z-index:1; background:transparent; color: var(--color-violet-dark); border:none; border-radius:999px; padding:6px 14px; cursor:pointer; font-weight:600; white-space:nowrap; -webkit-tap-highlight-color: transparent; }
+.upload-tab:focus, .upload-tab:active, .upload-tab:focus-visible{ outline:none; box-shadow:none; }
+.upload-tab.active{ color: var(--color-violet-light); }
+.drop-zone{ border:2px solid var(--color-violet-dark); border-radius:12px; padding:24px; text-align:center; background: var(--color-violet-light); transition: background 0.2s, border-color 0.2s; min-height: 180px; }
+.drop-zone.dragover{ background: #ead9ff; border-color: var(--color-violet-dark); }
+.drop-icon{ font-size:2rem; color: var(--color-violet-dark); margin-bottom:8px; }
+.drop-title{ margin-bottom:2px; color: var(--color-violet-dark) !important; }
+.drop-hint{ margin-bottom:12px; opacity:0.95; color: var(--color-violet-dark) !important; }
+.selected-files{ margin-top:10px; color: var(--color-violet-light) !important; max-height:140px; overflow:auto; display:none; }
+.upload-actions{ display:flex; justify-content:flex-end; align-items: center; margin-top:12px; min-height: 40px; }
+/* Upload button as forward arrow */
+.btn-upload{ display:inline-flex; align-items:center; justify-content:center; width:56px; height:40px; border-radius:999px; border:none; background: var(--color-violet-light); color: var(--color-violet-dark); cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.btn-upload i{ color: var(--color-violet-dark); font-size:1.1rem; }
+.btn-upload:hover{ filter: brightness(1.04); }
+.btn-upload:focus{ outline:none; }
+.hidden{ display: none !important; }
+
+/* Bottom-left filename summary */
+.upload-summary{ margin-right:auto; color: var(--color-violet-light); font-weight:600; opacity:0.95; min-height: 20px; }
+.upload-summary.visible{ display:block; }
+
+/* Select device button styles */
+#select-files-btn{ color: var(--color-violet-dark) !important; border:1px solid var(--color-violet-dark) !important; background: transparent !important; }
+#select-files-btn:hover{ background: rgba(75, 0, 110, 0.08) !important; }
+
+/* Inline error hint + shake */
+.hint-error{ color: #ff4d6d !important; font-weight: 600; }
+@keyframes shakeX{ 0%,100%{ transform: translateX(0);} 20%{ transform: translateX(-6px);} 40%{ transform: translateX(6px);} 60%{ transform: translateX(-4px);} 80%{ transform: translateX(4px);} }
+.shake{ animation: shakeX 0.5s ease; }
+</style>
 {% endblock %}

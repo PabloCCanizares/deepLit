@@ -7,57 +7,404 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/colors.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- html2canvas for capturing the current screen before opening upload -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body style="background: var(--color-black); color: var(--color-violet-light);" data-upload-page="{{ 'true' if request.endpoint == 'upload.upload_page' else 'false' }}">
   <!-- Header / Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}"><b>deepLit</b></a>
+  <nav class="navbar navbar-expand-lg" style="background: var(--color-black); color: var(--color-violet-light);">
+      <button id="sidebar-toggle" class="btn btn-link p-0 mr-3" aria-label="Menú" style="color: var(--color-violet-light);">
+        <i class="fa-solid fa-bars" style="font-size: 1.5rem;"></i>
+      </button>
+  {# Ocultar el título en la página principal (dashboard) #}
+  {% if request.endpoint != 'dashboard.dashboard' and request.endpoint != 'upload.upload_page' %}
+  <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}"><b>deepLit</b></a>
+  {% endif %}
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
               aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav mr-auto">
-              <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-              </li>
-              <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('uploads.upload_pdf_page') }}">Subir PDF</a>
-              </li>
-              <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('documents.home') }}">Documentos</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('uploads.upload_folder') }}">Subir Carpeta</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('uploads.upload_excel') }}">Subir Excel</a>
-              </li>
-          </ul>
-          <form class="form-inline my-2 my-lg-0" action="{{ url_for('documents.search') }}" method="post">
-              <input class="form-control mr-sm-2" type="search" placeholder="Buscar por título" name="query" aria-label="Buscar" value="{{ query or '' }}">
-              <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
+          
+          <form class="navbar-search my-2 my-lg-0 mx-auto" action="{{ url_for('documents.search') }}" method="post">
+            <div class="search-wrapper">
+              <input class="form-control search-input" type="search" placeholder="Buscar por título" name="query" aria-label="Buscar" value="{{ query or '' }}">
+              <button class="search-btn" type="submit" aria-label="Buscar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+            </div>
           </form>
       </div>
   </nav>
-  <!-- Contenido principal -->
-  <div class="container mt-4">
-    {% block content %}{% endblock %}
-  </div>
-  <!-- Footer -->
-  <footer class="bg-light text-center py-3">
-      <div class="container">
-          <span class="text-muted">© 2024 <b>deepLit</b>. All rights non-reserved.</span>
+  <!-- Solo el botón de subir archivo -->
+  <!-- Sidebar -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+  <aside id="sidebar" class="sidebar" aria-hidden="true" hidden>
+    <nav class="sidebar-nav">
+      {# Mostrar el título dentro del desplegable sólo en la página principal #}
+  {% if request.endpoint == 'dashboard.dashboard' or request.endpoint == 'upload.upload_page' %}
+  <div class="sidebar-title">deepLit</div>
+  {% endif %}
+  <div class="sidebar-top-spacer"></div>
+      <!-- Explorar (placeholder: usa home por ahora) -->
+      <a href="{{ url_for('documents.home') }}" class="sidebar-link">
+        <i class="fa-solid fa-compass" aria-hidden="true"></i>
+        <span>Explorar</span>
+      </a>
+      <!-- Dashboard -->
+      <a href="{{ url_for('dashboard.dashboard') }}" class="sidebar-link">
+        <i class="fa-solid fa-gauge" aria-hidden="true"></i>
+        <span>Dashboard</span>
+      </a>
+      <!-- Colecciones -->
+      <a href="{{ url_for('documents.home') }}#colecciones" class="sidebar-link">
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        <span>Colecciones</span>
+      </a>
+      <!-- Documentos -->
+      <a href="{{ url_for('documents.home') }}" class="sidebar-link">
+        <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+        <span>Documentos</span>
+      </a>
+      <!-- Historial -->
+      <a href="{{ url_for('documents.home') }}#historial" class="sidebar-link">
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+        <span>Historial</span>
+      </a>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-footer">
+        <a href="#perfil" class="sidebar-link">
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          <span>Perfil</span>
+        </a>
+        <a href="{{ url_for('config_routes.config') }}" class="sidebar-link">
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+          <span>Configuración</span>
+        </a>
       </div>
+    </nav>
+  </aside>
+  <!-- Content area -->
+  <main id="content" role="main">
+    {% block content %}{% endblock %}
+  </main>
+  <!-- Footer -->
+  <footer class="text-center py-3" style="background: var(--color-black);">
+    <div class="container">
+  <span style="color: var(--color-violet-light);">© 2024 <b>deepLit</b>. All rights non-reserved.</span>
+    </div>
   </footer>
+    <div id="fab-container">
+      <button id="fab-btn" class="fab-main" type="button" aria-label="Subir archivos">
+        <span id="fab-plus" class="fab-plus" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+          <i class="fas fa-file-upload" style="font-size:2rem;"></i>
+        </span>
+      </button>
+    </div>
   {% block extra_js %}{% endblock %}
+  <style>
+    /* Keep layout width stable across pages by reserving vertical scrollbar space */
+    html { overflow-y: scroll; }
+    /* Sidebar styles */
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 998;
+      backdrop-filter: blur(1px);
+      opacity: 0;
+      transition: opacity 240ms ease;
+      pointer-events: none;
+    }
+    .sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 200px; /* Más estrecho */
+      background: var(--color-black);
+      color: var(--color-violet-light);
+      box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+      transform: translateX(-100%);
+      will-change: transform;
+      transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 999;
+      padding: 10px 12px; /* Un poco más arriba */
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 4px 0; /* Más pegado a las opciones */
+      color: var(--color-violet-light);
+    }
+    .sidebar-top-spacer { height: 10px; }
+    .sidebar-nav {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 12px; /* Baja el bloque principal */
+    }
+  .sidebar-spacer { flex: 1 1 auto; min-height: 12px; }
+  .sidebar-footer { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px solid rgba(220, 194, 255, 0.12); margin-top: 2px; margin-bottom: 8px; }
+    .sidebar-link {
+      color: var(--color-violet-light) !important;
+      text-decoration: none;
+  padding: 4px 8px; /* Todavía más compacto */
+      border-radius: 8px;
+      display: flex; /* Icono + texto */
+      align-items: center;
+      gap: 8px;
+    }
+    /* No subrayar texto ni iconos en hover/focus/active */
+    .sidebar-link,
+    .sidebar-link:hover,
+    .sidebar-link:focus,
+    .sidebar-link:active { text-decoration: none !important; }
+    .sidebar-link i,
+    .sidebar-link span { text-decoration: none !important; }
+    .sidebar-link i { color: var(--color-violet-light); font-size: 1rem; width: 1.25rem; text-align: center; }
+    .sidebar-link:hover { background: rgba(220, 194, 255, 0.12); }
+    nav.navbar { position: relative; }
+    /* Centrar barra de búsqueda y hacerla más ancha con bordes circulares */
+    .navbar .navbar-search {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(700px, 80vw);
+    }
+    .search-wrapper { position: relative; width: 100%; }
+    .search-input {
+      width: 100%;
+      border-radius: 999px;
+      padding-right: 48px;
+      background: var(--color-black);
+      color: var(--color-violet-light) !important;
+      border: 2px solid var(--color-violet-light);
+      caret-color: var(--color-violet-light);
+    }
+    .search-input::placeholder { color: var(--color-violet-light) !important; opacity: 1; }
+    .search-input:focus {
+      background: var(--color-black) !important;
+      color: var(--color-violet-light) !important;
+      border-color: var(--color-violet-light) !important;
+      box-shadow: none !important;
+      outline: none;
+    }
+    .search-wrapper:focus-within .search-btn { color: var(--color-violet-light) !important; background: transparent !important; }
+    .search-btn:focus { outline: none; }
+    .search-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--color-violet-light) !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .search-btn:hover { background: transparent; color: var(--color-violet-light) !important; }
+    .search-btn i { font-size: 1rem; }
+    /* Colocar la hamburguesa (tres líneas) un poco más abajo */
+    #sidebar-toggle { margin-top: 6px; }
+    .navbar-toggler { margin-top: 6px; }
+    #fab-container {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 1003; /* por encima de overlay y sidebar */
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: flex-end;
+    }
+    .fab-main {
+      background: var(--color-violet-light);
+      color: var(--color-violet-dark);
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      position: relative;
+      font-size: 2rem;
+      -webkit-tap-highlight-color: transparent; /* evitar resalte blanco en móviles */
+    }
+    /* Evitar borde/blanco al hacer click/focus en el botón + */
+    .fab-main:focus,
+    .fab-main:active,
+    .fab-main:focus-visible {
+      outline: none !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important; /* mantener sombra, sin anillo blanco */
+      border: none !important;
+    }
+    .fab-main::-moz-focus-inner { border: 0; }
+  .fab-plus {
+      font-size: 3rem;
+      font-weight: bold;
+      line-height: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.3s;
+      pointer-events: none;
+  color: var(--color-violet-dark) !important;
+    }
+    .fab-main:hover {
+      background: var(--color-violet-light) !important;
+      color: var(--color-violet-dark) !important;
+    }
+    /* Removed old fab-menu styles as options are no longer shown */
+    h1, h2, h3, h4, h5, h6, p, a, label, input, textarea, select, span, th, td {
+      color: var(--color-violet-light) !important;
+    }
+    /* Bajar un poco la barra de búsqueda centrada */
+    .navbar .navbar-search { top: 58%; }
+  </style>
+  <script>
+    // Sidebar logic
+    // Guard to avoid UI flicker when navigating via FAB
+    let suppressUI = false;
+    const pageLoadTs = Date.now();
+    const initialClickSuppressMs = 700; // ignore stray first clicks right after load
+    function suppressFor(ms){
+      suppressUI = true;
+      // Force sidebar closed during suppression
+      closeSidebar();
+      // Also block global clicks briefly in capture phase to avoid stray handlers
+      const swallow = (e)=>{ e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); };
+      const events = ['click','pointerdown','pointerup','touchstart','touchend'];
+      events.forEach(evt => window.addEventListener(evt, swallow, true));
+      setTimeout(()=>{
+        suppressUI = false;
+        events.forEach(evt => window.removeEventListener(evt, swallow, true));
+      }, ms);
+    }
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  let lastOpenedAt = 0;
+    
+    // Ensure sidebar is closed on page load
+    function closeSidebar(){
+      const wasOpen = sidebar.classList.contains('open');
+      // Start transitions: slide out + fade backdrop
+      sidebar.classList.remove('open');
+      sidebar.setAttribute('aria-hidden','true');
+      sidebarBackdrop.classList.remove('visible');
+      // If it was already closed, hide immediately and don't attach listeners
+      if (!wasOpen) {
+        sidebar.hidden = true;
+        sidebarBackdrop.hidden = true;
+        return;
+      }
+      // After transitions, actually hide elements to remove from tab order
+      const endSidebar = ()=>{ sidebar.hidden = true; sidebar.removeEventListener('transitionend', endSidebar); };
+      const endBackdrop = ()=>{ sidebarBackdrop.hidden = true; sidebarBackdrop.removeEventListener('transitionend', endBackdrop); };
+      sidebar.addEventListener('transitionend', endSidebar);
+      sidebarBackdrop.addEventListener('transitionend', endBackdrop);
+    }
+    function openSidebar(){
+      if (suppressUI) return; // don't open when navigation is in progress
+      // Make visible before starting animation
+      sidebar.hidden = false;
+      sidebarBackdrop.hidden = false;
+      // Force reflow to ensure transition kicks in
+      void sidebar.getBoundingClientRect();
+      // Slide in + fade backdrop
+      sidebar.classList.add('open');
+      sidebar.setAttribute('aria-hidden','false');
+      lastOpenedAt = Date.now();
+      // Defer backdrop visibility to next frame to avoid the opener click closing it immediately
+      requestAnimationFrame(()=>{ sidebarBackdrop.classList.add('visible'); });
+    }
+    
+    // Initialize sidebar as closed
+    closeSidebar();
+    // Swallow early interactions on upload page to avoid sidebar flashing
+    const swallowEarly = (e)=>{
+      if (suppressUI) { e.preventDefault(); e.stopPropagation(); return true; }
+      if (document.body.dataset.uploadPage === 'true' && (Date.now() - pageLoadTs) < initialClickSuppressMs) {
+        e.preventDefault(); e.stopPropagation(); return true;
+      }
+      return false;
+    };
+    sidebarToggle.addEventListener('pointerdown', (e)=>{ if (swallowEarly(e)) return; }, true);
+    sidebarToggle.addEventListener('click', (e)=>{ if (swallowEarly(e)) return; e.stopPropagation(); openSidebar(); });
+    sidebarBackdrop.addEventListener('click', (e)=>{
+      // Ignore clicks that occur immediately after opening
+      if (Date.now() - lastOpenedAt < 300) return;
+      closeSidebar();
+    });
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeSidebar(); });
+    const fabBtn = document.getElementById('fab-btn');
+    const fabPlus = document.getElementById('fab-plus');
+
+    // Evitar que cualquier interacción con el FAB dispare otros desplegables
+    // Importante: en pointerdown/mousedown/touchstart NO llamar a preventDefault
+    // para no suprimir el evento click subsiguiente.
+    const swallowStart = (e)=>{ e.stopPropagation(); };
+    const swallowClick = (e)=>{ e.preventDefault(); e.stopPropagation(); };
+    ['pointerdown','touchstart','mousedown'].forEach(evt=>{
+      fabBtn.addEventListener(evt, swallowStart, true); // captura para cortar antes, sin cancelar el click
+    });
+
+    const isUploadPage = document.body.dataset.uploadPage === 'true';
+    if (!isUploadPage) {
+      fabBtn.addEventListener('click', async function(e) {
+        swallowClick(e);
+        // Immediately suppress UI and close sidebars/menus
+        suppressFor(1600);
+        try {
+          // Best-effort capture of the current viewport as a lightweight JPEG
+          if (window.html2canvas) {
+            const canvas = await html2canvas(document.body, {
+              scale: 1,
+              useCORS: true,
+              backgroundColor: null,
+              windowWidth: window.innerWidth,
+              windowHeight: window.innerHeight,
+              scrollX: window.scrollX || window.pageXOffset || 0,
+              scrollY: window.scrollY || window.pageYOffset || 0,
+            });
+            try {
+              const data = canvas.toDataURL('image/jpeg', 0.7);
+              sessionStorage.setItem('upload:backdrop', data);
+              // Store current scroll to restore it on the upload page
+              sessionStorage.setItem('upload:scrollX', String(window.scrollX || window.pageXOffset || 0));
+              sessionStorage.setItem('upload:scrollY', String(window.scrollY || window.pageYOffset || 0));
+            } catch (_) { /* ignore storage errors */ }
+          }
+        } catch (_) { /* ignore capture errors */ }
+        // Navigate to upload page
+  window.location.href = "{{ url_for('upload.upload_page') }}";
+      });
+    }
+  </script>
 </body>
 </html>

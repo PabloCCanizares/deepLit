@@ -1,5 +1,6 @@
 # routes/documents.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from bson.errors import InvalidId
 from bson.objectid import ObjectId
 from extensions import mongo
 from utils import (extract_text_from_pdf, extract_title, extract_abstract,
@@ -54,24 +55,111 @@ def home():
 
 @documents_bp.route('/result/<id>')
 def result(id):
-    result = None
+    # Mantener compatibilidad: redirigir a la nueva pantalla de edición
     if not ObjectId.is_valid(id):
         flash("Documento no encontrado")
-    else:
+        return redirect(url_for('documents.home'))
+    return redirect(url_for('documents.edit_document', id=id))
+
+
+@documents_bp.route('/edit/<id>', methods=['GET', 'POST'])
+def edit_document(id):
+    """Pantalla de edición moderna para PDF/Excel.
+    Si viene en modo lote (batch), muestra botón 'Siguiente documento'.
+    """
+    if not ObjectId.is_valid(id):
+        flash("Documento no encontrado")
+        return redirect(url_for('documents.home'))
+
+    if request.method == 'POST':
+        # Recoger todos los campos posibles (usar claves de Excel como estándar)
+        fields = [
+            "Year", "Title", "Category", "Type", "Acronym", "Cites",
+            "Pag.", "Obs.", "Summary", "link", "citation", "abstract", "autores", "filename"
+        ]
+        payload = {}
+        for f in fields:
+            val = request.form.get(f, None)
+            if val is not None:
+                payload[f] = val
+
+        # Normalizar título: mantener sincronizados 'Title' (canónico) y 'title' (compat)
         try:
-            doc = mongo.db.documents.find_one({"_id": ObjectId(id)})
-            if doc:
-                oid = doc["_id"] if isinstance(doc["_id"], ObjectId) else ObjectId(doc["_id"])
-                doc["upload_date"] = oid.generation_time.strftime("%Y-%m-%d %H:%M:%S")
-                doc["_id"] = str(doc["_id"])
-                result = render_template('result.html', document=doc)
+            t_cap = (payload.get('Title') or '').strip()
+            t_low = (payload.get('title') or '').strip()
+            if t_cap:
+                payload['Title'] = t_cap
+                payload['title'] = t_cap
+            elif t_low:
+                payload['Title'] = t_low
+                payload['title'] = t_low
+        except Exception:
+            pass
+        try:
+            mongo.db.documents.update_one({"_id": ObjectId(id)}, {"$set": payload})
+            flash("Guardado")
+        except Exception as e:
+            flash(f"Error guardando: {str(e)}")
+
+        # Navegación por lote
+        in_batch = request.form.get('batch', request.args.get('batch', '0')) == '1'
+        go_next = request.form.get('next', '0') == '1'
+        try:
+            idx = int(request.form.get('index', request.args.get('index', '0')))
+        except Exception:
+            idx = 0
+        batch_ids = session.get('batch_ids', [])
+        if in_batch and batch_ids and go_next:
+            next_idx = idx + 1
+            if next_idx < len(batch_ids):
+                next_id = batch_ids[next_idx]
+                return redirect(url_for('documents.edit_document', id=next_id, batch=1, index=next_idx))
             else:
-                flash("Documento no encontrado")
-        except InvalidId: #FIXME IndexError ? 
-            flash("Documento no encontrado")
-    if result is None:
-        result = redirect(url_for('documents.home'))
-    return result
+                # Fin del lote
+                try:
+                    session.pop('batch_ids')
+                except KeyError:
+                    pass
+                return redirect(url_for('documents.home'))
+
+        # Redirigir a la URL de retorno si se proporcionó (y no es flujo de 'siguiente')
+        ret = request.form.get('return', '').strip()
+        try:
+            from urllib.parse import urlparse
+            host = urlparse(request.host_url)
+            target = urlparse(ret)
+            is_safe = target.scheme in ('http','https') and target.netloc == host.netloc
+        except Exception:
+            is_safe = False
+        if ret and is_safe:
+            return redirect(ret)
+        # Fallback: permanecer en la misma página
+        return redirect(url_for('documents.edit_document', id=id))
+
+    # GET
+    doc = mongo.db.documents.find_one({"_id": ObjectId(id)})
+    if not doc:
+        flash("Documento no encontrado")
+        return redirect(url_for('documents.home'))
+
+    # Normalizar id y fecha
+    oid = doc["_id"]
+    doc["_id"] = str(oid)
+    try:
+        doc["upload_date"] = oid.generation_time.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        pass
+
+    # Contexto de lote
+    in_batch = request.args.get('batch', '0') == '1'
+    try:
+        idx = int(request.args.get('index', '0'))
+    except Exception:
+        idx = 0
+    batch_ids = session.get('batch_ids', [])
+    is_last = in_batch and (idx >= len(batch_ids) - 1)
+
+    return render_template('complete_document.html', document=doc, batch=in_batch, index=idx, is_last=is_last)
 
 
 @documents_bp.route('/search', methods=['GET', 'POST'])

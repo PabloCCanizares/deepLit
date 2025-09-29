@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Editar documento{% endblock %}
+{% block navbar %}
+<!-- Encabezado personalizado sin barra de búsqueda ni menú -->
+<nav class="navbar" style="background: var(--color-black); color: var(--color-violet-light); min-height:56px;"></nav>
+{% endblock %}
+{% block extra_head %}
+<style>
+  /* Oculta el botón flotante de "+" en esta página */
+  #fab-container { display: none !important; }
+  /* Ocultar barra de búsqueda y botones de menú/colapso del encabezado en esta página */
+  .navbar-search,
+  #navbarNav,
+  #sidebar-toggle,
+  .navbar-toggler { display: none !important; }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var brand = document.querySelector('.navbar .navbar-brand');
+    if (brand) {
+      brand.innerHTML = '<b>Completar documento</b>';
+    }
+  });
+  </script>
+{% endblock %}
+{% block content %}
+<div class="editor-page">
+  <div class="editor-card">
+    <div class="editor-header">
+      <a href="{{ url_for('upload.upload_page') }}" class="btn-back-icon" aria-label="Volver">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </a>
+    </div>
+
+  <form method="post" action="{% if draft_batch %}{{ url_for('upload.draft_edit', batch_id=draft_batch, index=index or 0, batch='1' if batch else '0') }}{% else %}{{ url_for('upload.upload_edit', id=document._id, batch='1' if batch else '0', index=index or 0) }}{% endif %}" novalidate>
+      <input type="hidden" name="batch" value="{{ '1' if batch else '0' }}">
+      <input type="hidden" name="index" value="{{ index or 0 }}">
+      <input type="hidden" name="return" id="return-url" value="">
+
+      <div class="grid">
+        <div class="field">
+          <label for="Title">Título</label>
+          <input id="Title" name="Title" type="text">
+        </div>
+        <div class="field">
+          <label for="Year">Año</label>
+          <input id="Year" name="Year" type="text" value="{{ document.get('Year','') }}">
+        </div>
+        <div class="field">
+          <label for="Category">Categoría</label>
+          <input id="Category" name="Category" type="text" value="{{ document.get('Category','') }}">
+        </div>
+        <div class="field">
+          <label for="Type">Tipo</label>
+          <input id="Type" name="Type" type="text" value="{{ document.get('Type','') }}">
+        </div>
+        <div class="field">
+          <label for="Acronym">Acrónimo</label>
+          <input id="Acronym" name="Acronym" type="text" value="{{ document.get('Acronym','') }}">
+        </div>
+        <div class="field">
+          <label for="Obs.">Observaciones</label>
+          <input id="Obs." name="Obs." type="text" value="{{ document.get('Obs.','') }}">
+        </div>
+        <div class="field">
+          <label for="autores">Autores</label>
+          <input id="autores" name="autores" type="text" value="{{ document.get('autores','') }}">
+        </div>
+        <div class="field">
+          <label for="filename">Archivo</label>
+          <input id="filename" name="filename" type="text" value="{{ document.get('filename','') }}" readonly>
+        </div>
+      </div>
+        <div class="field full">
+          <label for="citation">Citaciones</label>
+          <textarea id="citation" name="citation" rows="3">{{ document.get('citation','') }}</textarea>
+        </div>
+        <div class="field full">
+          <label for="abstract">Abstract</label>
+          <textarea id="abstract" name="abstract" rows="6"></textarea>
+        </div>
+        <div class="field full">
+          <label for="Summary">Resumen</label>
+          <textarea id="Summary" name="Summary" rows="6">{{ document.get('Summary','') }}</textarea>
+        </div>
+
+      <div class="editor-actions">
+        <button class="btn-editor-primary" type="submit" name="save" value="1">Guardar</button>
+        {% if batch %}
+          <button class="btn-editor-primary next" type="submit" name="next" value="1">Siguiente documento</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.editor-page{ display:flex; justify-content:center; align-items:flex-start; min-height: calc(100vh - 140px); padding: 24px 12px; }
+.editor-card{ width:min(1000px, 96vw); background: var(--color-violet-dark); border:2px solid var(--color-violet-light); border-radius:16px; padding:16px 16px 72px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; }
+.editor-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+/* .editor-title is not present in markup; keep style minimal to avoid unused rules */
+.editor-subtitle{ color: rgba(220,194,255,0.8); font-size: 0.9rem; margin-top: 2px; }
+/* Back button as icon only: light violet, no background */
+.btn-back-icon{ color: var(--color-violet-light) !important; background: transparent; border:none; border-radius: 0; padding: 6px; text-decoration: none; display:inline-flex; align-items:center; justify-content:center; }
+.btn-back-icon i{ color: var(--color-violet-light); font-size: 1.1rem; }
+.btn-back-icon:hover, .btn-back-icon:focus, .btn-back-icon:active{ text-decoration: none !important; opacity: 0.9; }
+.grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.field{ display:flex; flex-direction:column; }
+.field.full{ grid-column: 1 / -1; }
+.field label{ font-weight:700; color: var(--color-violet-light); margin-bottom: 6px; }
+.field input, .field textarea{
+  background: var(--color-black);
+  border: 2px solid var(--color-violet-light);
+  color: var(--color-violet-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.field input::placeholder, .field textarea::placeholder{ color: rgba(220,194,255,0.7); }
+.field input:focus, .field textarea:focus{ outline:none; box-shadow:none; border-color: var(--color-violet-light); }
+.editor-actions{ position:absolute; right: 16px; bottom: 16px; display:flex; gap: 10px; }
+.btn-editor-primary{ background: var(--color-violet-light); color: var(--color-violet-dark); border:none; border-radius: 999px; padding: 10px 16px; font-weight:700; }
+.btn-editor-primary.next{ padding: 10px 18px; }
+@media (max-width: 720px){ .grid{ grid-template-columns: 1fr; } }
+</style>
+<script>
+// Configura el return para Guardar y sobreescribe el botón Volver
+document.addEventListener('DOMContentLoaded', function(){
+  const RETURN_KEY = 'upload:return';
+  const fallback = "{{ url_for('upload.upload_page') }}";
+  try {
+    const val = sessionStorage.getItem(RETURN_KEY);
+    const input = document.getElementById('return-url');
+    if (val && input) input.value = val;
+  } catch(_) {}
+
+  const backBtn = document.querySelector('.btn-back-icon');
+  if (backBtn) {
+    backBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      // Comportamiento como el botón "+": capturar fondo y navegar a subir archivo
+      try { if (typeof suppressFor === 'function') suppressFor(1600); } catch(_) {}
+      (async () => {
+        try {
+          if (window.html2canvas) {
+            const canvas = await html2canvas(document.body, {
+              scale: 1,
+              useCORS: true,
+              backgroundColor: null,
+              windowWidth: window.innerWidth,
+              windowHeight: window.innerHeight,
+              scrollX: window.scrollX || window.pageXOffset || 0,
+              scrollY: window.scrollY || window.pageYOffset || 0,
+            });
+            try {
+              const data = canvas.toDataURL('image/jpeg', 0.7);
+              sessionStorage.setItem('upload:backdrop', data);
+              sessionStorage.setItem('upload:scrollX', String(window.scrollX || window.pageXOffset || 0));
+              sessionStorage.setItem('upload:scrollY', String(window.scrollY || window.pageYOffset || 0));
+            } catch(_) { /* ignore storage errors */ }
+          }
+        } catch(_) { /* ignore capture errors */ }
+        // Navegar a la página de subida
+        window.location.assign(fallback);
+      })();
+    });
+  }
+});
+</script>
+{% endblock %}

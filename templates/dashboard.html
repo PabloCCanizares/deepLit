@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - Gestor de Documentos{% endblock %}
 {% block content %}
-<div class="container my-4">
+<div class="container my-4" style="background: var(--color-black); border-radius: 16px; padding: 24px;">
   <h1 class="mb-4">Panel de Control</h1>
   <div class="row">
       <!-- Estadísticas generales -->
@@ -74,7 +74,7 @@
 
   <!-- Botones de acción -->
   <div class="mt-4">
-      <a href="{{ url_for('uploads.upload_pdf_page') }}" class="btn btn-primary">Subir Nuevo PDF</a>
+    <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary">Subir Nuevo PDF</a>
       <a href="{{ url_for('documents.home') }}" class="btn btn-secondary">Ver Lista de Documentos</a>
   </div>
 </div>
