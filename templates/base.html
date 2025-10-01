@@ -26,10 +26,7 @@
       <button id="sidebar-toggle" class="btn btn-link p-0 mr-3" aria-label="Menú" style="color: var(--color-violet-light);">
         <i class="fa-solid fa-bars" style="font-size: 1.5rem;"></i>
       </button>
-  {# Ocultar el título en la página principal (dashboard) #}
-  {% if request.endpoint != 'dashboard.dashboard' and request.endpoint != 'upload.upload_page' %}
-  <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}"><b>deepLit</b></a>
-  {% endif %}
+  {# Sin marca en el encabezado; el título aparece siempre dentro del desplegable #}
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
               aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -51,11 +48,13 @@
   <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
   <aside id="sidebar" class="sidebar" aria-hidden="true" hidden>
     <nav class="sidebar-nav">
-      {# Mostrar el título dentro del desplegable sólo en la página principal #}
-  {% if request.endpoint == 'dashboard.dashboard' or request.endpoint == 'upload.upload_page' %}
-  <div class="sidebar-title">deepLit</div>
-  {% endif %}
+      <div class="sidebar-title">deepLit</div>
   <div class="sidebar-top-spacer"></div>
+      <!-- Inicio -->
+      <a href="{{ url_for('inicio.inicio') }}" class="sidebar-link">
+          <i class="fa-solid fa-house" aria-hidden="true"></i>
+          <span>Inicio</span>
+      </a>
       <!-- Explorar (placeholder: usa home por ahora) -->
       <a href="{{ url_for('documents.home') }}" class="sidebar-link">
         <i class="fa-solid fa-compass" aria-hidden="true"></i>
@@ -67,7 +66,7 @@
         <span>Dashboard</span>
       </a>
       <!-- Colecciones -->
-      <a href="{{ url_for('documents.home') }}#colecciones" class="sidebar-link">
+      <a href="{{ url_for('colecciones.colecciones') }}" class="sidebar-link">
         <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
         <span>Colecciones</span>
       </a>
@@ -77,15 +76,15 @@
         <span>Documentos</span>
       </a>
       <!-- Historial -->
-      <a href="{{ url_for('documents.home') }}#historial" class="sidebar-link">
-        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-        <span>Historial</span>
+      <a href="{{ url_for('historial.historial') }}" class="sidebar-link">
+          <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+          <span>Historial</span>
       </a>
       <div class="sidebar-spacer"></div>
       <div class="sidebar-footer">
-        <a href="#perfil" class="sidebar-link">
-          <i class="fa-solid fa-user" aria-hidden="true"></i>
-          <span>Perfil</span>
+        <a href="{{ url_for('perfil.perfil') }}" class="sidebar-link">
+            <i class="fa-solid fa-user" aria-hidden="true"></i>
+            <span>Perfil</span>
         </a>
         <a href="{{ url_for('config_routes.config') }}" class="sidebar-link">
           <i class="fa-solid fa-gear" aria-hidden="true"></i>
@@ -394,10 +393,16 @@
             });
             try {
               const data = canvas.toDataURL('image/jpeg', 0.7);
+              // Store snapshot for immediate next upload screen
               sessionStorage.setItem('upload:backdrop', data);
-              // Store current scroll to restore it on the upload page
               sessionStorage.setItem('upload:scrollX', String(window.scrollX || window.pageXOffset || 0));
               sessionStorage.setItem('upload:scrollY', String(window.scrollY || window.pageYOffset || 0));
+              // Also persist an origin snapshot for this upload flow, so returning from editor shows the initial page (e.g., Home)
+              sessionStorage.setItem('upload:backdrop:origin', data);
+              sessionStorage.setItem('upload:scrollX:origin', String(window.scrollX || window.pageXOffset || 0));
+              sessionStorage.setItem('upload:scrollY:origin', String(window.scrollY || window.pageYOffset || 0));
+              // Persist origin return URL
+              sessionStorage.setItem('upload:return:origin', window.location.href);
             } catch (_) { /* ignore storage errors */ }
           }
         } catch (_) { /* ignore capture errors */ }

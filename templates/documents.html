@@ -72,7 +72,7 @@
             <i class="fas fa-exclamation-triangle warning-icon" title="Faltan: {{ missing|join(', ') }}"></i>
           {% endif %}
         {% else %}
-          {% if not doc.get("Year") or not doc.get("Title") or not doc.get("Category") or not doc.get("Type") or not doc.get("Acronym") or not doc.get("Cites") or not doc.get("Pag.") or not doc.get("Obs.") or not doc.get("Summary") or not doc.get("link") or not doc.get("citation") or not doc.get("abstract") %}
+          {% if not doc.get("Year") or not doc.get("Title") or not doc.get("Category") or not doc.get("Type") or not doc.get("Acronym") or not doc.get("Cites") or not doc.get("Pag") or not doc.get("Obs") or not doc.get("Summary") or not doc.get("link") or not doc.get("citation") or not doc.get("abstract") %}
             <i class="fas fa-exclamation-triangle warning-icon" title="Campos faltantes"></i>
           {% endif %}
         {% endif %}
@@ -92,7 +92,7 @@
       </div>
       <div class="modal-body">
         <form id="requiredFieldsForm">
-          {% set fields = ['Year', 'Title', 'Category', 'Type', 'Acronym', 'Cites', 'Pag.', 'Obs.', 'Summary', 'link', 'citation', 'abstract'] %}
+          {% set fields = ['Year', 'Title', 'Category', 'Type', 'Acronym', 'Cites', 'Pag', 'Obs', 'Summary', 'link', 'citation', 'abstract'] %}
           {% set req_fields = config.required_fields if config and config.required_fields else fields %}
           {% for field in fields %}
           <div class="form-check">

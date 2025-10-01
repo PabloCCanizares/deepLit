@@ -29,7 +29,7 @@ def count_citations(value):
             return len([p for p in s.split(',') if p.strip()])
     return 0
 
-@dashboard_bp.route('/')
+@dashboard_bp.route('/dashboard')
 def dashboard():
     """Dashboard avanzado: estadísticas, diagrama de barras, wordcloud, etc."""
     docs = list(mongo.db.documents.find())
@@ -104,3 +104,4 @@ def dashboard():
         notif_keywords=notif_keywords,
         wordcloud_img=wordcloud_img
     )
+

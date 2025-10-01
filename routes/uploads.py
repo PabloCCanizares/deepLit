@@ -89,7 +89,7 @@ def draft_edit(batch_id, index: int):
         # Recoger campos estándar
         fields = [
             "Year", "Title", "Category", "Type", "Acronym", "Cites",
-            "Pag.", "Obs.", "Summary", "link", "citation", "abstract", "autores", "filename",
+            "Pag", "Obs", "Summary", "link", "citation", "abstract", "autores", "filename",
             # También conservar variantes en minúscula si vienen del extractor
             "title", "keywords", "bibliography", "citations"
         ]
@@ -212,8 +212,8 @@ def upload_pdf():
         "Type": tipo,
         "Acronym": acronimo,
         "Cites": "",
-        "Pag.": paginas,
-        "Obs.": obs,
+        "Pag": paginas,
+        "Obs": obs,
         "Summary": resumen,
         "link": enlace,
         "citation": cita
@@ -269,8 +269,8 @@ def upload_folder():
                 "Type": tipo,
                 "Acronym": acronimo,
                 "Cites": "",
-                "Pag.": paginas,
-                "Obs.": obs,
+                "Pag": paginas,
+                "Obs": obs,
                 "Summary": resumen,
                 "link": enlace,
                 "citation": cita
@@ -299,7 +299,7 @@ def upload_excel():
         drafts = []
         required_columns = [
             "Year", "Title", "Category", "Type", "Acronym", "Cites",
-            "Pag.", "Obs.", "Summary", "link", "citation", "abstract"
+            "Pag", "Obs", "Summary", "link", "citation", "abstract"
         ]
 
         from openpyxl import load_workbook
@@ -396,8 +396,8 @@ def upload_zip():
                         "Type": extract_tipo(text),
                         "Acronym": extract_acronimo(text),
                         "Cites": "",
-                        "Pag.": extract_paginas(text),
-                        "Obs.": extract_obs(text),
+                        "Pag": extract_paginas(text),
+                        "Obs": extract_obs(text),
                         "Summary": extract_resumen(text),
                         "link": extract_enlace(text),
                         "citation": extract_cita(text)
@@ -416,7 +416,7 @@ def upload_zip():
             from openpyxl import load_workbook
             required_columns = [
                 "Year", "Title", "Category", "Type", "Acronym", "Cites",
-                "Pag.", "Obs.", "Summary", "link", "citation", "abstract"
+                "Pag", "Obs", "Summary", "link", "citation", "abstract"
             ]
             for temp_path in excel_docs:
                 try:

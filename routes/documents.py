@@ -13,14 +13,16 @@ import os
 documents_bp = Blueprint('documents', __name__, template_folder='../templates')
 
 
+@documents_bp.route('/documents')
 @documents_bp.route('/home')
 def home():
+
     # Carga la configuración
     config = mongo.db.configuration.find_one({"_id": "settings"})
     if not config:
         config = {
             "_id": "settings",
-            "required_fields": ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag.", "Obs.", "Summary", "link", "citation", "abstract"],
+            "required_fields": ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag", "Obs", "Summary", "link", "citation", "abstract"],
             "order_by_year": "asc"
         }
         mongo.db.configuration.insert_one(config)
@@ -51,7 +53,7 @@ def home():
     
     sorted_docs = valid_docs + invalid_docs
     
-    return render_template('home.html', documents=sorted_docs, config=config)
+    return render_template('documents.html', documents=sorted_docs, config=config)
 
 @documents_bp.route('/result/<id>')
 def result(id):
@@ -75,7 +77,7 @@ def edit_document(id):
         # Recoger todos los campos posibles (usar claves de Excel como estándar)
         fields = [
             "Year", "Title", "Category", "Type", "Acronym", "Cites",
-            "Pag.", "Obs.", "Summary", "link", "citation", "abstract", "autores", "filename"
+            "Pag", "Obs", "Summary", "link", "citation", "abstract", "autores", "filename"
         ]
         payload = {}
         for f in fields:
@@ -174,8 +176,8 @@ def search():
                 results.append(doc)
         else:
             results = []
-        return render_template('home.html', documents=results, query=query)
-    return render_template('home.html', documents=None)
+        return render_template('documents.html', documents=results, query=query)
+    return render_template('documents.html', documents=None)
 
 @documents_bp.route('/delete_all', methods=['POST'])
 def delete_all():

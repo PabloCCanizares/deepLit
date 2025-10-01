@@ -52,9 +52,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Mark body contextually for styling
   try { document.body.setAttribute('data-upload-page','true'); } catch(_) {}
 
-  // Compute and persist a single, explicit return URL to avoid skipping too far back
+  // Compute and persist explicit return URLs
   const DASHBOARD_URL = "{{ url_for('dashboard.dashboard') }}";
   const RETURN_KEY = 'upload:return';
+  const RETURN_ORIGIN_KEY = 'upload:return:origin';
   try {
     const params = new URLSearchParams(window.location.search);
     const qpReturn = params.get('return');
@@ -70,7 +71,13 @@ document.addEventListener('DOMContentLoaded', function() {
         computedReturn = ref.href;
       }
     }
-    sessionStorage.setItem(RETURN_KEY, computedReturn || DASHBOARD_URL);
+    // Only set origin return URL once per flow
+    if (!sessionStorage.getItem(RETURN_ORIGIN_KEY)) {
+      const originHref = sessionStorage.getItem(RETURN_ORIGIN_KEY) || computedReturn || document.referrer || DASHBOARD_URL;
+      sessionStorage.setItem(RETURN_ORIGIN_KEY, originHref);
+    }
+    // Always set the immediate return for this page instance
+    sessionStorage.setItem(RETURN_KEY, computedReturn || document.referrer || DASHBOARD_URL);
   } catch(_) {}
 
   // Helper to return to the stored screen
@@ -79,7 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closing) return; // guard to avoid multiple navigations
     closing = true;
     try { if (typeof suppressFor === 'function') suppressFor(1200); } catch(_) {}
-    const target = sessionStorage.getItem(RETURN_KEY) || DASHBOARD_URL;
+    // Prefer origin (e.g., Home) so the user returns to what they see blurred
+    const target = sessionStorage.getItem(RETURN_ORIGIN_KEY) || sessionStorage.getItem(RETURN_KEY) || DASHBOARD_URL;
     // Clear the key to avoid stale returns if user returns again later
     try { sessionStorage.removeItem(RETURN_KEY); } catch(_) {}
     window.location.assign(target);
@@ -97,16 +105,22 @@ document.addEventListener('DOMContentLoaded', function() {
   if (overlay) {
     // If a backdrop image was captured from the previous page, use it
     try {
-      const bg = sessionStorage.getItem('upload:backdrop');
+      // Prefer per-navigation snapshot; otherwise fall back to origin (first page in this flow, e.g., Home)
+      let bg = sessionStorage.getItem('upload:backdrop');
+      let sx = sessionStorage.getItem('upload:scrollX');
+      let sy = sessionStorage.getItem('upload:scrollY');
+      if (!bg) {
+        bg = sessionStorage.getItem('upload:backdrop:origin');
+        sx = sessionStorage.getItem('upload:scrollX:origin');
+        sy = sessionStorage.getItem('upload:scrollY:origin');
+      }
       if (bg) {
-  overlay.style.setProperty('--upload-backdrop', `url(${bg})`);
-        // Align the captured image with previous scroll position
-        const sx = parseInt(sessionStorage.getItem('upload:scrollX')||'0', 10) || 0;
-        const sy = parseInt(sessionStorage.getItem('upload:scrollY')||'0', 10) || 0;
-  overlay.style.setProperty('--upload-backdrop-pos', `-${sx}px -${sy}px`);
-        // Also try to restore scroll so the card appears over same content
-  window.scrollTo(sx, sy);
-        // Clear the stored backdrop so it doesn't leak into future navigations
+        overlay.style.setProperty('--upload-backdrop', `url(${bg})`);
+        const sxNum = parseInt(sx||'0', 10) || 0;
+        const syNum = parseInt(sy||'0', 10) || 0;
+        overlay.style.setProperty('--upload-backdrop-pos', `-${sxNum}px -${syNum}px`);
+        window.scrollTo(sxNum, syNum);
+        // Clear only the one-time snapshot; keep origin for the whole flow so user can back out later
         sessionStorage.removeItem('upload:backdrop');
         sessionStorage.removeItem('upload:scrollX');
         sessionStorage.removeItem('upload:scrollY');

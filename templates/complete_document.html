@@ -37,15 +37,23 @@
       <input type="hidden" name="index" value="{{ index or 0 }}">
       <input type="hidden" name="return" id="return-url" value="">
 
-      <div class="grid">
+      <!-- Primera fila: Título (más de la mitad), Año y Pag -->
+      <div class="grid-first">
         <div class="field">
           <label for="Title">Título</label>
-          <input id="Title" name="Title" type="text">
+          <input id="Title" name="Title" type="text" value="{{ document.get('Title','') or document.get('title','') }}">
         </div>
         <div class="field">
           <label for="Year">Año</label>
           <input id="Year" name="Year" type="text" value="{{ document.get('Year','') }}">
         </div>
+        <div class="field">
+          <label for="Pag">Páginas</label>
+          <input id="Pag" name="Pag" type="text" value="{{ document.get('Pag','') }}">
+        </div>
+      </div>
+
+      <div class="grid">
         <div class="field">
           <label for="Category">Categoría</label>
           <input id="Category" name="Category" type="text" value="{{ document.get('Category','') }}">
@@ -59,8 +67,8 @@
           <input id="Acronym" name="Acronym" type="text" value="{{ document.get('Acronym','') }}">
         </div>
         <div class="field">
-          <label for="Obs.">Observaciones</label>
-          <input id="Obs." name="Obs." type="text" value="{{ document.get('Obs.','') }}">
+          <label for="link">Enlace</label>
+          <input id="link" name="link" type="text" value="{{ document.get('link','') }}">
         </div>
         <div class="field">
           <label for="autores">Autores</label>
@@ -69,10 +77,6 @@
         <div class="field">
           <label for="filename">Archivo</label>
           <input id="filename" name="filename" type="text" value="{{ document.get('filename','') }}" readonly>
-        </div>
-        <div class="field">
-          <label for="autores">Enlace</label>
-          <input id="autores" name="link" type="text" value="{{ document.get('autores','') }}">
         </div>
       </div>
         <div class="field full">
@@ -87,6 +91,17 @@
           <label for="Summary">Resumen</label>
           <textarea id="Summary" name="Summary" rows="6">{{ document.get('Summary','') }}</textarea>
         </div>
+        <div class="field full">
+          <label for="Obs">Observaciones</label>
+          <textarea id="Obs" name="Obs" rows="6">{{ document.get('Obs','') }}</textarea>
+        </div>
+
+      <!-- Campos ocultos para compatibilidad con backend -->
+      <input type="hidden" id="hidden-title" name="title" value="{{ document.get('title','') or document.get('Title','') }}">
+      <input type="hidden" name="Cites" value="{{ document.get('Cites','') }}">
+      <input type="hidden" name="keywords" value="{{ document.get('keywords','') }}">
+      <input type="hidden" name="bibliography" value="{{ document.get('bibliography','') }}">
+      <input type="hidden" id="hidden-citations" name="citations" value="{{ document.get('citations','') or document.get('citation','') }}">
 
       <div class="editor-actions">
         <button class="btn-editor-primary" type="submit" name="save" value="1">Guardar</button>
@@ -108,6 +123,7 @@
 .btn-back-icon{ color: var(--color-violet-light) !important; background: transparent; border:none; border-radius: 0; padding: 6px; text-decoration: none; display:inline-flex; align-items:center; justify-content:center; }
 .btn-back-icon i{ color: var(--color-violet-light); font-size: 1.1rem; }
 .btn-back-icon:hover, .btn-back-icon:focus, .btn-back-icon:active{ text-decoration: none !important; opacity: 0.9; }
+.grid-first{ display:grid; grid-template-columns: 3fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
 .field{ display:flex; flex-direction:column; }
 .field.full{ grid-column: 1 / -1; }
@@ -124,50 +140,91 @@
 .editor-actions{ position:absolute; right: 16px; bottom: 16px; display:flex; gap: 10px; }
 .btn-editor-primary{ background: var(--color-violet-light); color: var(--color-violet-dark); border:none; border-radius: 999px; padding: 10px 16px; font-weight:700; }
 .btn-editor-primary.next{ padding: 10px 18px; }
-@media (max-width: 720px){ .grid{ grid-template-columns: 1fr; } }
+@media (max-width: 720px){
+  .grid-first{ grid-template-columns: 1fr; }
+  .grid{ grid-template-columns: 1fr; }
+}
 </style>
 <script>
-// Configura el return para Guardar y sobreescribe el botón Volver
+// Configura el return para Guardar y comportamiento de flecha "Atrás"
 document.addEventListener('DOMContentLoaded', function(){
+  const DASHBOARD_URL = "{{ url_for('dashboard.dashboard') }}";
+  const HOME_URL = "{{ url_for('documents.home') }}";
   const RETURN_KEY = 'upload:return';
-  const fallback = "{{ url_for('upload.upload_page') }}";
+  const RETURN_ORIGIN_KEY = 'upload:return:origin';
+
+  // Determinar si venimos de Home
+  let fromHome = false;
+  let refUrl = null;
   try {
-    const val = sessionStorage.getItem(RETURN_KEY);
-    const input = document.getElementById('return-url');
-    if (val && input) input.value = val;
+    if (document.referrer) {
+      const ref = new URL(document.referrer, window.location.origin);
+      if (ref.origin === window.location.origin) {
+        refUrl = ref.href;
+        // Coincide con la ruta de Home
+        const homePath = new URL(HOME_URL, window.location.origin).pathname;
+        if (ref.pathname === homePath) fromHome = true;
+      }
+    }
   } catch(_) {}
 
+  // Computar un destino seguro para volver (evitar upload)
+  function pickSafeReturn() {
+    try {
+      const origin = sessionStorage.getItem(RETURN_ORIGIN_KEY);
+      if (origin) {
+        const u = new URL(origin, window.location.origin);
+        if (u.origin === window.location.origin && !u.pathname.includes('/uploads')) return u.href;
+      }
+    } catch(_) {}
+    try {
+      const ret = sessionStorage.getItem(RETURN_KEY);
+      if (ret) {
+        const u = new URL(ret, window.location.origin);
+        if (u.origin === window.location.origin && !u.pathname.includes('/uploads')) return u.href;
+      }
+    } catch(_) {}
+    if (refUrl && !refUrl.includes('/uploads')) return refUrl;
+    return HOME_URL || DASHBOARD_URL;
+  }
+
+  // Establecer hidden return para "Guardar"
+  try {
+    const input = document.getElementById('return-url');
+    if (input) {
+      input.value = fromHome ? HOME_URL : pickSafeReturn();
+    }
+  } catch(_) {}
+
+  // Botón "Atrás" debe ir a Home si venimos de Home; si no, a un destino seguro (no upload)
   const backBtn = document.querySelector('.btn-back-icon');
   if (backBtn) {
     backBtn.addEventListener('click', function(e){
       e.preventDefault();
-      // Comportamiento como el botón "+": capturar fondo y navegar a subir archivo
-      try { if (typeof suppressFor === 'function') suppressFor(1600); } catch(_) {}
-      (async () => {
-        try {
-          if (window.html2canvas) {
-            const canvas = await html2canvas(document.body, {
-              scale: 1,
-              useCORS: true,
-              backgroundColor: null,
-              windowWidth: window.innerWidth,
-              windowHeight: window.innerHeight,
-              scrollX: window.scrollX || window.pageXOffset || 0,
-              scrollY: window.scrollY || window.pageYOffset || 0,
-            });
-            try {
-              const data = canvas.toDataURL('image/jpeg', 0.7);
-              sessionStorage.setItem('upload:backdrop', data);
-              sessionStorage.setItem('upload:scrollX', String(window.scrollX || window.pageXOffset || 0));
-              sessionStorage.setItem('upload:scrollY', String(window.scrollY || window.pageYOffset || 0));
-            } catch(_) { /* ignore storage errors */ }
-          }
-        } catch(_) { /* ignore capture errors */ }
-        // Navegar a la página de subida
-        window.location.assign(fallback);
-      })();
+      try { if (typeof suppressFor === 'function') suppressFor(800); } catch(_) {}
+      const target = fromHome ? HOME_URL : pickSafeReturn();
+      window.location.assign(target);
     });
   }
+
+  // Mantener variantes en minúscula y campos duplicados para backend
+  try {
+    const titleInput = document.getElementById('Title');
+    const hiddenTitle = document.getElementById('hidden-title');
+    if (titleInput && hiddenTitle) {
+      const syncTitle = () => { hiddenTitle.value = titleInput.value; };
+      titleInput.addEventListener('input', syncTitle);
+      syncTitle();
+    }
+
+    const citationArea = document.getElementById('citation');
+    const hiddenCitations = document.getElementById('hidden-citations');
+    if (citationArea && hiddenCitations) {
+      const syncCitations = () => { hiddenCitations.value = citationArea.value; };
+      citationArea.addEventListener('input', syncCitations);
+      syncCitations();
+    }
+  } catch(_) {}
 });
 </script>
 {% endblock %}

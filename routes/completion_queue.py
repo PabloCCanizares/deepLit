@@ -24,7 +24,7 @@ def update_document_with_openalex(document, best_match):
       - publication_date
       - journal (usando host_venue)
       - abstract
-      - Pag. (páginas)
+      - Pag (páginas)
       - link (enlace al PDF)
       - Type (si es journal-article o conference-paper)
       - citation (BibTeX de la cita)
@@ -51,10 +51,10 @@ def update_document_with_openalex(document, best_match):
     if "abstract" in best_match and not document.get("abstract"):
         update_data["abstract"] = best_match["abstract"]
     # Actualiza las páginas. Se asume que en OpenAlex puede venir en "pages" o "page"
-    if "pages" in best_match and not document.get("Pag."):
-        update_data["Pag."] = best_match["pages"]
-    elif "page" in best_match and not document.get("Pag."):
-        update_data["Pag."] = best_match["page"]
+    if "pages" in best_match and not document.get("Pag"):
+        update_data["Pag"] = best_match["pages"]
+    elif "page" in best_match and not document.get("Pag"):
+        update_data["Pag"] = best_match["page"]
     # Actualiza el enlace al PDF, usando "link" de OpenAlex
     if "link" in best_match and not document.get("link"):
         update_data["link"] = best_match["link"]
