@@ -12,6 +12,7 @@ from routes.history import historial_bp
 from routes.profile import perfil_bp
 from routes.home import inicio_bp
 
+
 import click
 import unittest
 
