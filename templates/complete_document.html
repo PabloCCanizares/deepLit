@@ -114,31 +114,43 @@
 </div>
 
 <style>
+/* Página de edición */
 .editor-page{ display:flex; justify-content:center; align-items:flex-start; min-height: calc(100vh - 140px); padding: 24px 12px; }
-.editor-card{ width:min(1000px, 96vw); background: var(--color-violet-dark); border:2px solid var(--color-violet-light); border-radius:16px; padding:16px 16px 72px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; }
+.editor-card{ 
+  width:min(1000px, 96vw); background: var(--color-violet-dark); 
+  border:2px solid var(--color-violet-light); border-radius:16px; 
+  padding:16px 16px 72px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; 
+}
 .editor-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-/* .editor-title is not present in markup; keep style minimal to avoid unused rules */
 .editor-subtitle{ color: rgba(220,194,255,0.8); font-size: 0.9rem; margin-top: 2px; }
-/* Back button as icon only: light violet, no background */
-.btn-back-icon{ color: var(--color-violet-light) !important; background: transparent; border:none; border-radius: 0; padding: 6px; text-decoration: none; display:inline-flex; align-items:center; justify-content:center; }
-.btn-back-icon i{ color: var(--color-violet-light); font-size: 1.1rem; }
-.btn-back-icon:hover, .btn-back-icon:focus, .btn-back-icon:active{ text-decoration: none !important; opacity: 0.9; }
+.btn-back-icon{ 
+  color: var(--color-violet-light); background: transparent; border:none; 
+  padding: 6px; text-decoration: none; display:inline-flex; 
+  align-items:center; justify-content:center; 
+}
+.btn-back-icon:hover, .btn-back-icon:focus, .btn-back-icon:active{ text-decoration: none; opacity: 0.9; }
+/* Formulario */
 .grid-first{ display:grid; grid-template-columns: 3fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
 .field{ display:flex; flex-direction:column; }
 .field.full{ grid-column: 1 / -1; }
 .field label{ font-weight:700; color: var(--color-violet-light); margin-bottom: 6px; }
 .field input, .field textarea{
-  background: var(--color-black);
-  border: 2px solid var(--color-violet-light);
-  color: var(--color-violet-light);
-  border-radius: 10px;
-  padding: 10px 12px;
+  background: var(--color-black); border: 2px solid var(--color-violet-light);
+  color: var(--color-violet-light); border-radius: 10px; padding: 10px 12px;
 }
 .field input::placeholder, .field textarea::placeholder{ color: rgba(220,194,255,0.7); }
-.field input:focus, .field textarea:focus{ outline:none; box-shadow:none; border-color: var(--color-violet-light); }
-.editor-actions{ position:absolute; right: 16px; bottom: 16px; display:flex; gap: 10px; }
-.btn-editor-primary{ background: var(--color-violet-light); color: var(--color-violet-dark); border:none; border-radius: 999px; padding: 10px 16px; font-weight:700; }
+.field input:focus, .field textarea:focus{ 
+  outline:none; box-shadow:none; border-color: var(--color-violet-light); 
+}
+.editor-actions{ 
+  position:absolute; right: 16px; bottom: 16px; 
+  display:flex; gap: 10px; 
+}
+.btn-editor-primary{ 
+  background: var(--color-violet-light); color: var(--color-violet-dark); 
+  border:none; border-radius: 999px; padding: 10px 16px; font-weight:700; 
+}
 .btn-editor-primary.next{ padding: 10px 18px; }
 @media (max-width: 720px){
   .grid-first{ grid-template-columns: 1fr; }
@@ -146,14 +158,14 @@
 }
 </style>
 <script>
-// Configura el return para Guardar y comportamiento de flecha "Atrás"
+// Configuración de navegación y campos
 document.addEventListener('DOMContentLoaded', function(){
   const DASHBOARD_URL = "{{ url_for('dashboard.dashboard') }}";
   const HOME_URL = "{{ url_for('documents.home') }}";
   const RETURN_KEY = 'upload:return';
   const RETURN_ORIGIN_KEY = 'upload:return:origin';
 
-  // Determinar si venimos de Home
+  // Determinar origen de navegación
   let fromHome = false;
   let refUrl = null;
   try {
@@ -161,14 +173,13 @@ document.addEventListener('DOMContentLoaded', function(){
       const ref = new URL(document.referrer, window.location.origin);
       if (ref.origin === window.location.origin) {
         refUrl = ref.href;
-        // Coincide con la ruta de Home
         const homePath = new URL(HOME_URL, window.location.origin).pathname;
         if (ref.pathname === homePath) fromHome = true;
       }
     }
   } catch(_) {}
 
-  // Computar un destino seguro para volver (evitar upload)
+  // Calcular destino de retorno seguro
   function pickSafeReturn() {
     try {
       const origin = sessionStorage.getItem(RETURN_ORIGIN_KEY);
@@ -188,15 +199,13 @@ document.addEventListener('DOMContentLoaded', function(){
     return HOME_URL || DASHBOARD_URL;
   }
 
-  // Establecer hidden return para "Guardar"
-  try {
-    const input = document.getElementById('return-url');
-    if (input) {
-      input.value = fromHome ? HOME_URL : pickSafeReturn();
-    }
-  } catch(_) {}
+  // Configurar campo de retorno para "Guardar"
+  const input = document.getElementById('return-url');
+  if (input) {
+    input.value = fromHome ? HOME_URL : pickSafeReturn();
+  }
 
-  // Botón "Atrás" debe ir a Home si venimos de Home; si no, a un destino seguro (no upload)
+  // Botón "Atrás"
   const backBtn = document.querySelector('.btn-back-icon');
   if (backBtn) {
     backBtn.addEventListener('click', function(e){
@@ -207,24 +216,22 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  // Mantener variantes en minúscula y campos duplicados para backend
-  try {
-    const titleInput = document.getElementById('Title');
-    const hiddenTitle = document.getElementById('hidden-title');
-    if (titleInput && hiddenTitle) {
-      const syncTitle = () => { hiddenTitle.value = titleInput.value; };
-      titleInput.addEventListener('input', syncTitle);
-      syncTitle();
-    }
+  // Sincronizar campos para compatibilidad con backend
+  const titleInput = document.getElementById('Title');
+  const hiddenTitle = document.getElementById('hidden-title');
+  if (titleInput && hiddenTitle) {
+    const syncTitle = () => { hiddenTitle.value = titleInput.value; };
+    titleInput.addEventListener('input', syncTitle);
+    syncTitle();
+  }
 
-    const citationArea = document.getElementById('citation');
-    const hiddenCitations = document.getElementById('hidden-citations');
-    if (citationArea && hiddenCitations) {
-      const syncCitations = () => { hiddenCitations.value = citationArea.value; };
-      citationArea.addEventListener('input', syncCitations);
-      syncCitations();
-    }
-  } catch(_) {}
+  const citationArea = document.getElementById('citation');
+  const hiddenCitations = document.getElementById('hidden-citations');
+  if (citationArea && hiddenCitations) {
+    const syncCitations = () => { hiddenCitations.value = citationArea.value; };
+    citationArea.addEventListener('input', syncCitations);
+    syncCitations();
+  }
 });
 </script>
 {% endblock %}

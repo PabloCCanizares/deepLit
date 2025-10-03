@@ -31,10 +31,6 @@
       </div>
   </div>
 
-  <!-- Diagrama de barras por año -->
-  <h3>Documentos por Año</h3>
-  <canvas id="yearChart" style="height:300px;"></canvas>
-
   <!-- Ranking de Keywords -->
   <h3 class="mt-4">Ranking de Keywords</h3>
   <ul class="list-group mb-4">
@@ -62,31 +58,15 @@
           </li>
       {% endfor %}
   </ul>
-
-  <!-- Notificaciones -->
-  <div class="mt-4">
-      {% if notif_abstract > 0 or notif_keywords > 0 %}
-          <div class="alert alert-warning">
-              Se encontraron {{ notif_abstract }} documentos sin abstract y {{ notif_keywords }} sin keywords.
-          </div>
-      {% endif %}
-  </div>
-
-  <!-- Botones de acción -->
-  <div class="mt-4">
-    <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary">Subir Nuevo PDF</a>
-      <a href="{{ url_for('documents.home') }}" class="btn btn-secondary">Ver Lista de Documentos</a>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Cargar Chart.js desde CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Cargar el archivo JS externo -->
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <!-- Insertar los datos JSON en elementos ocultos (antes de los scripts) -->
+    <div id="chartLabels" style="display: none;">{{ chart_labels|tojson|safe }}</div>
+    <div id="chartValues" style="display: none;">{{ chart_values|tojson|safe }}</div>
 
-  <!-- Insertar los datos JSON en elementos ocultos -->
-  <div id="chartLabels" style="display: none;">{{ chart_labels|tojson|safe }}</div>
-  <div id="chartValues" style="display: none;">{{ chart_values|tojson|safe }}</div>
+    <!-- Cargar Chart.js UMD desde CDN (expuesta como global 'Chart') -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-d4LCSK3NQF8I2e4kI0MyiB1vIkryK6QfGMN5b6mB6ms=" crossorigin="anonymous"></script>
+    <!-- Cargar el archivo JS externo -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

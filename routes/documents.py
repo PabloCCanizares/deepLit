@@ -55,13 +55,34 @@ def home():
     
     return render_template('documents.html', documents=sorted_docs, config=config)
 
-@documents_bp.route('/result/<id>')
-def result(id):
-    # Mantener compatibilidad: redirigir a la nueva pantalla de edición
+
+@documents_bp.route('/visualizar/<id>')
+def watch_document(id):
+    """Vista de solo lectura del documento (watch_document.html).
+    Valida el ObjectId y la existencia del documento, igual que en edición.
+    """
     if not ObjectId.is_valid(id):
         flash("Documento no encontrado")
         return redirect(url_for('documents.home'))
-    return redirect(url_for('documents.edit_document', id=id))
+
+    doc = mongo.db.documents.find_one({"_id": ObjectId(id)})
+    if not doc:
+        flash("Documento no encontrado")
+        return redirect(url_for('documents.home'))
+
+    # Normalizar id y fecha
+    oid = doc.get("_id")
+    if oid is not None:
+        try:
+            doc["_id"] = str(oid)
+            doc["upload_date"] = oid.generation_time.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            try:
+                doc["_id"] = str(oid)
+            except Exception:
+                pass
+
+    return render_template('watch_document.html', document=doc)
 
 
 @documents_bp.route('/edit/<id>', methods=['GET', 'POST'])
@@ -99,7 +120,6 @@ def edit_document(id):
             pass
         try:
             mongo.db.documents.update_one({"_id": ObjectId(id)}, {"$set": payload})
-            flash("Guardado")
         except Exception as e:
             flash(f"Error guardando: {str(e)}")
 
@@ -135,8 +155,8 @@ def edit_document(id):
             is_safe = False
         if ret and is_safe:
             return redirect(ret)
-        # Fallback: permanecer en la misma página
-        return redirect(url_for('documents.edit_document', id=id))
+        # Fallback: volver a la lista de documentos actualizada
+        return redirect(url_for('documents.home'))
 
     # GET
     doc = mongo.db.documents.find_one({"_id": ObjectId(id)})

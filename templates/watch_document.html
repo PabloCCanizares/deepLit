@@ -7,53 +7,64 @@
 
 {% block extra_head %}
 <style>
-  /* Ocultar FAB y elementos de navbar en esta vista */
-  #fab-container { display: none !important; }
-  .navbar-search, #navbarNav, #sidebar-toggle, .navbar-toggler { display: none !important; }
-
+  /* Ocultar elementos innecesarios */
+  #fab-container, .navbar-search, #navbarNav, #sidebar-toggle, .navbar-toggler { display: none; }
+  
+  /* Visor de documento */
   .viewer-page{ display:flex; justify-content:center; align-items:flex-start; min-height: calc(100vh - 140px); padding: 24px 12px; }
-  .viewer-card{ width:min(800px, 96vw); background: var(--color-violet-dark); border:2px solid var(--color-violet-light); border-radius:16px; padding:16px 16px 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; }
+  .viewer-card{ 
+    width:min(800px, 96vw); background: var(--color-violet-dark); 
+    border:2px solid var(--color-violet-light); border-radius:16px; 
+    padding:16px 16px 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; 
+  }
   .viewer-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .btn-back-icon{ color: var(--color-violet-light) !important; background: transparent; border:none; border-radius: 0; padding: 6px; text-decoration: none; display:inline-flex; align-items:center; justify-content:center; }
-  .btn-back-icon i{ color: var(--color-violet-light); font-size: 1.1rem; }
-  .btn-back-icon:hover, .btn-back-icon:focus, .btn-back-icon:active{ text-decoration: none !important; opacity: 0.9; }
-
-  .btn-download-icon{ color: var(--color-violet-light) !important; background: transparent; border:none; border-radius: 0; padding: 6px; text-decoration: none; display:inline-flex; align-items:center; justify-content:center; }
-  .btn-download-icon i{ color: var(--color-violet-light); font-size: 1.1rem; }
-  .btn-download-icon:hover, .btn-download-icon:focus, .btn-download-icon:active{ text-decoration: none !important; opacity: 0.9; }
-
+  
+  /* Botones de navegación */
+  .btn-back-icon, .btn-download-icon{ 
+    color: var(--color-violet-light); background: transparent; border:none; 
+    padding: 6px; text-decoration: none; display:inline-flex; 
+    align-items:center; justify-content:center; 
+  }
+  .btn-back-icon:hover, .btn-download-icon:hover{ text-decoration: none; opacity: 0.9; }
+  
+  /* Lista clave-valor con nuevo esquema de colores */
   .kv-list{ display:flex; flex-direction:column; gap: 6px; }
-  .kv-row{ display:grid; grid-template-columns: max-content 1fr; column-gap: 8px; padding-left: 30px;; }
-  .kv-key{ font-weight:700; color: var(--color-violet-light); white-space: nowrap; }
-  .kv-val{ color:#fff; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; }
-  .kv-link{ color:#fff; text-decoration: underline; }
+  .kv-row{ display:grid; grid-template-columns: max-content 1fr; column-gap: 8px; padding-left: 30px; }
+  .kv-key{ font-weight:700; color: #fff; white-space: nowrap; }
+  .kv-val{ color: var(--color-violet-light); white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; }
+  .kv-link{ color: var(--color-violet-light); text-decoration: underline; }
   .kv-link:hover{ opacity:0.9; }
 </style>
 <script>
+  // Configuración del visor de documentos
   document.addEventListener('DOMContentLoaded', function(){
-    // Título del navbar en esta vista
-    var brand = document.querySelector('.navbar .navbar-brand');
+    // Título en la barra de navegación
+    const brand = document.querySelector('.navbar .navbar-brand');
     if (brand) brand.innerHTML = '<b>Ver documento</b>';
 
-  // Botón atrás: prioriza volver a la lista
     const HOME_URL = "{{ url_for('documents.home') }}";
+    
+    // Botón volver
     const backBtn = document.querySelector('.btn-back-icon');
-    backBtn?.addEventListener('click', function(e){
-      e.preventDefault();
-      const ref = document.referrer || '';
-      if (ref && ref.startsWith(location.origin)) {
-        try { history.back(); return; } catch(_) {}
-      }
-      window.location.assign(HOME_URL);
-    });
+    if (backBtn) {
+      backBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        const ref = document.referrer || '';
+        if (ref && ref.startsWith(location.origin)) {
+          try { history.back(); return; } catch(_) {}
+        }
+        window.location.assign(HOME_URL);
+      });
+    }
 
-  // Botón descargar (placeholder)
+    // Botón descargar (placeholder)
     const downloadBtn = document.querySelector('.btn-download-icon');
-    downloadBtn?.addEventListener('click', function(e){
-      e.preventDefault();
-      // TODO: implementar descarga
-      // Por ahora, no hace nada.
-    });
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        // TODO: implementar descarga
+      });
+    }
   });
 </script>
 {% endblock %}

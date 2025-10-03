@@ -7,7 +7,17 @@
 
 {% block content %}
 <div class="container my-4">
-  <h2>Lista de Documentos</h2>
+  <h2 class="text-center">Lista de Documentos</h2>
+  <div class="doc-controls" style="text-align:center;margin:1rem 0;">
+    <button type="button" id="btnSort" style="background:none !important;background-color:transparent !important;border:none !important;box-shadow:none !important;color:var(--color-violet-light);font-weight:600;padding:6px 10px;outline:none;margin-right:1rem;">
+      <i class="fas fa-sort" aria-hidden="true" style="margin-right:6px;"></i>
+      Ordenar por
+    </button>
+    <button type="button" id="btnFilter" style="background:none !important;background-color:transparent !important;border:none !important;box-shadow:none !important;color:var(--color-violet-light);font-weight:600;padding:6px 10px;outline:none;">
+      <i class="fas fa-filter" aria-hidden="true" style="margin-right:6px;"></i>
+      Filtrar por
+    </button>
+  </div>
   
     <!-- Bloque para mostrar mensajes flash -->
     {% with messages = get_flashed_messages() %}
@@ -20,64 +30,45 @@
     {% endif %}
   {% endwith %}
   
-  <!-- Cabecera que actúa como filtro y ordenación -->
-  <div class="doc-entry doc-header">
-    <div class="doc-info">
-      <div class="doc-select">
-        <input type="checkbox" id="select-all">
-      </div>
-      <div class="doc-year">
-        Año
-        <a href="#" id="sortAsc" title="Ordenar Año Ascendente">
-          <i class="fas fa-arrow-up"></i>
-        </a>
-        <a href="#" id="sortDesc" title="Ordenar Año Descendente">
-          <i class="fas fa-arrow-down"></i>
-        </a>
-      </div>
-      <div class="doc-title">Título</div>
-    </div>
-    <div class="doc-icons">
-      <div class="doc-operations">Operaciones</div>
-      <a href="#" data-bs-toggle="modal" data-bs-target="#requiredFieldsModal" title="Modificar Campos Requeridos">
-        <i class="fas fa-cog"></i>
-      </a>
-    </div>
-  </div>
-  
-  <!-- Listado de documentos -->
-  <div class="list-group">
+  <!-- Vista tipo librería optimizada: 3 artículos por fila con hover en portada -->
+  <style>
+    .library { display:flex; flex-wrap:wrap; gap:16px; }
+    .lib-item { flex:0 0 calc(33.333% - 12px); display:flex; align-items:flex-start; gap:12px; padding:12px; border:none; border-radius:8px; background:transparent; box-shadow:none; }
+    .lib-cover { width:90px; height:120px; background:#ddd; border:none; border-radius:4px; flex-shrink:0; position:relative; cursor:pointer; transition:all 0.3s ease; }
+    .lib-cover:hover { transform:scale(1.05); box-shadow:0 4px 15px var(--color-violet-light); }
+    .lib-cover-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:var(--color-violet-light); border-radius:4px; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease; }
+    .lib-cover:hover .lib-cover-overlay { opacity:1; }
+    .lib-cover-icon { color:var(--color-violet-dark); font-size:24px; }
+    .lib-meta { line-height:1.5; flex:1; }
+    .lib-edit-btn { margin-top:6px; font-size:0.95rem; }
+    .lib-edit-btn a { background:none; border:none; color:var(--color-violet-light); text-decoration:none; display:inline-flex; align-items:center; }
+  </style>
+  <div class="library">
     {% for doc in documents %}
-    <div class="doc-entry">
-      <div class="doc-info">
-        <input type="checkbox" class="select-doc" name="select_doc" value="{{ doc._id }}">
-        <div class="doc-year">{{ doc.Year }}</div>
-  <div class="doc-title">{{ doc.get('Title', doc.get('title','')) }}</div>
-      </div>
-      <div class="doc-icons">
-        <a href="{{ url_for('documents.result', id=doc._id) }}" title="Ver Detalles">
-          <i class="fas fa-eye"></i>
+      {% set title = doc.get('Title') or doc.get('title') or '-' %}
+      {% set categoria = doc.get('Category') or '-' %}
+      {% set pag = doc.get('Pag') or '-' %}
+      {% set anio = doc.get('Year') or doc.Year or '-' %}
+      <div class="lib-item">
+        <a href="{{ url_for('documents.watch_document', id=doc._id) }}" class="lib-cover-link" style="text-decoration:none;color:inherit;">
+          <div class="lib-cover">
+            <div class="lib-cover-overlay">
+              <i class="fas fa-eye lib-cover-icon" aria-hidden="true"></i>
+            </div>
+          </div>
         </a>
-        <a href="{{ url_for('documents.result', id=doc._id) }}" title="Modificar">
-          <i class="fas fa-edit"></i>
-        </a>
-        {% if config and config.required_fields %}
-          {% set missing = [] %}
-          {% for field in config.required_fields %}
-            {% if not doc.get(field) %}
-              {% set missing = missing + [field] %}
-            {% endif %}
-          {% endfor %}
-          {% if missing %}
-            <i class="fas fa-exclamation-triangle warning-icon" title="Faltan: {{ missing|join(', ') }}"></i>
-          {% endif %}
-        {% else %}
-          {% if not doc.get("Year") or not doc.get("Title") or not doc.get("Category") or not doc.get("Type") or not doc.get("Acronym") or not doc.get("Cites") or not doc.get("Pag") or not doc.get("Obs") or not doc.get("Summary") or not doc.get("link") or not doc.get("citation") or not doc.get("abstract") %}
-            <i class="fas fa-exclamation-triangle warning-icon" title="Campos faltantes"></i>
-          {% endif %}
-        {% endif %}
+        <div class="lib-meta">
+          <div><strong>Título:</strong> {{ title }}</div>
+          <div><strong>Categoria:</strong> {{ categoria }}</div>
+          <div><strong>Páginas:</strong> {{ pag }}</div>
+          <div><strong>Año:</strong> {{ anio }}</div>
+          <div class="lib-edit-btn">
+            <a href="{{ url_for('documents.edit_document', id=doc._id) }}" title="Editar" aria-label="Editar">
+              <i class="fas fa-edit" aria-hidden="true"></i> Editar
+            </a>
+          </div>
+        </div>
       </div>
-    </div>
     {% endfor %}
   </div>
 </div>

@@ -99,113 +99,152 @@
   </main>
   <!-- Footer -->
   <footer class="text-center py-3" style="background: var(--color-black);">
-    <div class="container">
-  <span style="color: var(--color-violet-light);">© 2024 <b>deepLit</b>. All rights non-reserved.</span>
-    </div>
+    <span style="color: var(--color-violet-light);">© 2024 <b>deepLit</b>. All rights non-reserved.</span>
   </footer>
-    <div id="fab-container">
-      <button id="fab-btn" class="fab-main" type="button" aria-label="Subir archivos">
-        <span id="fab-plus" class="fab-plus" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-          <i class="fas fa-file-upload" style="font-size:2rem;"></i>
-        </span>
-      </button>
-    </div>
+  
+  <!-- Botón flotante -->
+  <div id="fab-container">
+    <button id="fab-btn" class="fab-main" type="button" aria-label="Subir archivos">
+      <i class="fas fa-file-upload" style="font-size:2rem;"></i>
+    </button>
+  </div>
+  
   {% block extra_js %}{% endblock %}
   <style>
-    /* Keep layout width stable across pages by reserving vertical scrollbar space */
-    html { overflow-y: scroll; }
-    /* Sidebar styles */
+    html {
+      overflow-y: scroll; /* Evita salto de contenido cuando aparece scrollbar */
+    }
+    
     .sidebar-backdrop {
       position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
       z-index: 998;
       backdrop-filter: blur(1px);
       opacity: 0;
       transition: opacity 240ms ease;
       pointer-events: none;
     }
-    .sidebar-backdrop.visible { opacity: 1; pointer-events: auto; }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .sidebar {
       position: fixed;
       top: 0;
       left: 0;
       height: 100vh;
-      width: 200px; /* Más estrecho */
-      background: var(--color-black);
+      width: 200px;
+      background-color: var(--color-black);
       color: var(--color-violet-light);
-      box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+      box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
       transform: translateX(-100%);
-      will-change: transform;
       transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 999;
-      padding: 10px 12px; /* Un poco más arriba */
+      padding: 10px 12px;
     }
-    .sidebar.open { transform: translateX(0); }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
     .sidebar-title {
       font-size: 1.25rem;
       font-weight: 700;
       text-align: center;
-      margin: 0 0 4px 0; /* Más pegado a las opciones */
+      margin: 0 0 4px 0;
       color: var(--color-violet-light);
     }
-    .sidebar-top-spacer { height: 10px; }
+
+    .sidebar-top-spacer {
+      height: 10px;
+    }
+
     .sidebar-nav {
       height: 100%;
       display: flex;
       flex-direction: column;
       gap: 2px;
-      margin-top: 12px; /* Baja el bloque principal */
+      margin-top: 12px;
     }
-  .sidebar-spacer { flex: 1 1 auto; min-height: 12px; }
-  .sidebar-footer { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px solid rgba(220, 194, 255, 0.12); margin-top: 2px; margin-bottom: 8px; }
+
+    .sidebar-spacer {
+      flex: 1;
+      min-height: 12px;
+    }
+
+    .sidebar-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(220, 194, 255, 0.12);
+      margin: 2px 0 8px;
+    }
+
     .sidebar-link {
-      color: var(--color-violet-light) !important;
+      color: var(--color-violet-light);
       text-decoration: none;
-  padding: 4px 8px; /* Todavía más compacto */
+      padding: 4px 8px;
       border-radius: 8px;
-      display: flex; /* Icono + texto */
+      display: flex;
       align-items: center;
       gap: 8px;
     }
-    /* No subrayar texto ni iconos en hover/focus/active */
-    .sidebar-link,
+
     .sidebar-link:hover,
-    .sidebar-link:focus,
-    .sidebar-link:active { text-decoration: none !important; }
-    .sidebar-link i,
-    .sidebar-link span { text-decoration: none !important; }
-    .sidebar-link i { color: var(--color-violet-light); font-size: 1rem; width: 1.25rem; text-align: center; }
-    .sidebar-link:hover { background: rgba(220, 194, 255, 0.12); }
-    nav.navbar { position: relative; }
-    /* Centrar barra de búsqueda y hacerla más ancha con bordes circulares */
+    .sidebar-link:focus {
+      text-decoration: none;
+      background-color: rgba(220, 194, 255, 0.12);
+    }
+
+    .sidebar-link i {
+      color: var(--color-violet-light);
+      font-size: 1rem;
+      width: 1.25rem;
+      text-align: center;
+    }
+
     .navbar .navbar-search {
       position: absolute;
       left: 50%;
-      top: 50%;
+      top: 58%;
       transform: translate(-50%, -50%);
       width: min(700px, 80vw);
     }
-    .search-wrapper { position: relative; width: 100%; }
+
+    .search-wrapper {
+      position: relative;
+    }
+
     .search-input {
       width: 100%;
       border-radius: 999px;
       padding-right: 48px;
-      background: var(--color-black);
-      color: var(--color-violet-light) !important;
+      background-color: var(--color-black);
+      color: var(--color-violet-light);
       border: 2px solid var(--color-violet-light);
       caret-color: var(--color-violet-light);
     }
-    .search-input::placeholder { color: var(--color-violet-light) !important; opacity: 1; }
+
+    .search-input::placeholder {
+      color: var(--color-violet-light);
+      opacity: 1;
+    }
+
     .search-input:focus {
-      background: var(--color-black) !important;
-      color: var(--color-violet-light) !important;
-      border-color: var(--color-violet-light) !important;
-      box-shadow: none !important;
+      background-color: var(--color-black);
+      color: var(--color-violet-light);
+      border-color: var(--color-violet-light);
+      box-shadow: none;
       outline: none;
     }
-    .search-wrapper:focus-within .search-btn { color: var(--color-violet-light) !important; background: transparent !important; }
-    .search-btn:focus { outline: none; }
+
     .search-btn {
       position: absolute;
       right: 6px;
@@ -216,53 +255,57 @@
       border-radius: 50%;
       border: none;
       background: transparent;
-      color: var(--color-violet-light) !important;
+      color: var(--color-violet-light);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
     }
-    .search-btn:hover { background: transparent; color: var(--color-violet-light) !important; }
-    .search-btn i { font-size: 1rem; }
-    /* Colocar la hamburguesa (tres líneas) un poco más abajo */
-    #sidebar-toggle { margin-top: 6px; }
-    .navbar-toggler { margin-top: 6px; }
+
+    .search-btn:hover,
+    .search-btn:focus {
+      background: transparent;
+      outline: none;
+    }
+
+    #sidebar-toggle,
+    .navbar-toggler {
+      margin-top: 6px;
+    }
+
+    /* Estilos del FAB */
     #fab-container {
       position: fixed;
       bottom: 32px;
       right: 32px;
-      z-index: 1003; /* por encima de overlay y sidebar */
+      z-index: 1003;
       display: flex;
       flex-direction: column-reverse;
       align-items: flex-end;
     }
+
     .fab-main {
-      background: var(--color-violet-light);
+      background-color: var(--color-violet-light);
       color: var(--color-violet-dark);
       border: none;
       border-radius: 50%;
       width: 64px;
       height: 64px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
-      position: relative;
-      font-size: 2rem;
-      -webkit-tap-highlight-color: transparent; /* evitar resalte blanco en móviles */
+      transition: background-color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
     }
-    /* Evitar borde/blanco al hacer click/focus en el botón + */
+
     .fab-main:focus,
-    .fab-main:active,
-    .fab-main:focus-visible {
-      outline: none !important;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important; /* mantener sombra, sin anillo blanco */
-      border: none !important;
+    .fab-main:active {
+      outline: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
-    .fab-main::-moz-focus-inner { border: 0; }
-  .fab-plus {
+    .fab-plus {
       font-size: 3rem;
       font-weight: bold;
       line-height: 1;
@@ -272,144 +315,205 @@
       transform: translate(-50%, -50%);
       transition: opacity 0.3s;
       pointer-events: none;
-  color: var(--color-violet-dark) !important;
+      color: var(--color-violet-dark);
     }
-    .fab-main:hover {
-      background: var(--color-violet-light) !important;
-      color: var(--color-violet-dark) !important;
-    }
-    /* Removed old fab-menu styles as options are no longer shown */
+
+    /* Configuracion de Colores */
     h1, h2, h3, h4, h5, h6, p, a, label, input, textarea, select, span, th, td {
-      color: var(--color-violet-light) !important;
+      color: var(--color-violet-light);
     }
-    /* Bajar un poco la barra de búsqueda centrada */
-    .navbar .navbar-search { top: 58%; }
+
+    /* Bajar la búsqueda */
+    .navbar .navbar-search {
+      top: 58%;
+    }
   </style>
   <script>
-    // Sidebar logic
-    // Guard to avoid UI flicker when navigating via FAB
-    let suppressUI = false;
-    const pageLoadTs = Date.now();
-    const initialClickSuppressMs = 700; // ignore stray first clicks right after load
-    function suppressFor(ms){
-      suppressUI = true;
-      // Force sidebar closed during suppression
-      closeSidebar();
-      // Also block global clicks briefly in capture phase to avoid stray handlers
-      const swallow = (e)=>{ e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); };
-      const events = ['click','pointerdown','pointerup','touchstart','touchend'];
-      events.forEach(evt => window.addEventListener(evt, swallow, true));
-      setTimeout(()=>{
-        suppressUI = false;
-        events.forEach(evt => window.removeEventListener(evt, swallow, true));
-      }, ms);
-    }
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-  let lastOpenedAt = 0;
-    
-    // Ensure sidebar is closed on page load
-    function closeSidebar(){
-      const wasOpen = sidebar.classList.contains('open');
-      // Start transitions: slide out + fade backdrop
-      sidebar.classList.remove('open');
-      sidebar.setAttribute('aria-hidden','true');
-      sidebarBackdrop.classList.remove('visible');
-      // If it was already closed, hide immediately and don't attach listeners
-      if (!wasOpen) {
-        sidebar.hidden = true;
-        sidebarBackdrop.hidden = true;
-        return;
-      }
-      // After transitions, actually hide elements to remove from tab order
-      const endSidebar = ()=>{ sidebar.hidden = true; sidebar.removeEventListener('transitionend', endSidebar); };
-      const endBackdrop = ()=>{ sidebarBackdrop.hidden = true; sidebarBackdrop.removeEventListener('transitionend', endBackdrop); };
-      sidebar.addEventListener('transitionend', endSidebar);
-      sidebarBackdrop.addEventListener('transitionend', endBackdrop);
-    }
-    function openSidebar(){
-      if (suppressUI) return; // don't open when navigation is in progress
-      // Make visible before starting animation
-      sidebar.hidden = false;
-      sidebarBackdrop.hidden = false;
-      // Force reflow to ensure transition kicks in
-      void sidebar.getBoundingClientRect();
-      // Slide in + fade backdrop
-      sidebar.classList.add('open');
-      sidebar.setAttribute('aria-hidden','false');
-      lastOpenedAt = Date.now();
-      // Defer backdrop visibility to next frame to avoid the opener click closing it immediately
-      requestAnimationFrame(()=>{ sidebarBackdrop.classList.add('visible'); });
-    }
-    
-    // Initialize sidebar as closed
-    closeSidebar();
-    // Swallow early interactions on upload page to avoid sidebar flashing
-    const swallowEarly = (e)=>{
-      if (suppressUI) { e.preventDefault(); e.stopPropagation(); return true; }
-      if (document.body.dataset.uploadPage === 'true' && (Date.now() - pageLoadTs) < initialClickSuppressMs) {
-        e.preventDefault(); e.stopPropagation(); return true;
-      }
-      return false;
-    };
-    sidebarToggle.addEventListener('pointerdown', (e)=>{ if (swallowEarly(e)) return; }, true);
-    sidebarToggle.addEventListener('click', (e)=>{ if (swallowEarly(e)) return; e.stopPropagation(); openSidebar(); });
-    sidebarBackdrop.addEventListener('click', (e)=>{
-      // Ignore clicks that occur immediately after opening
-      if (Date.now() - lastOpenedAt < 300) return;
-      closeSidebar();
-    });
-    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeSidebar(); });
-    const fabBtn = document.getElementById('fab-btn');
-    const fabPlus = document.getElementById('fab-plus');
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elementos del DOM
+      const sidebar = document.getElementById('sidebar');
+      const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      const fabBtn = document.getElementById('fab-btn');
 
-    // Evitar que cualquier interacción con el FAB dispare otros desplegables
-    // Importante: en pointerdown/mousedown/touchstart NO llamar a preventDefault
-    // para no suprimir el evento click subsiguiente.
-    const swallowStart = (e)=>{ e.stopPropagation(); };
-    const swallowClick = (e)=>{ e.preventDefault(); e.stopPropagation(); };
-    ['pointerdown','touchstart','mousedown'].forEach(evt=>{
-      fabBtn.addEventListener(evt, swallowStart, true); // captura para cortar antes, sin cancelar el click
-    });
-
-    const isUploadPage = document.body.dataset.uploadPage === 'true';
-    if (!isUploadPage) {
-      fabBtn.addEventListener('click', async function(e) {
-        swallowClick(e);
-        // Immediately suppress UI and close sidebars/menus
-        suppressFor(1600);
-        try {
-          // Best-effort capture of the current viewport as a lightweight JPEG
-          if (window.html2canvas) {
-            const canvas = await html2canvas(document.body, {
-              scale: 1,
-              useCORS: true,
-              backgroundColor: null,
-              windowWidth: window.innerWidth,
-              windowHeight: window.innerHeight,
-              scrollX: window.scrollX || window.pageXOffset || 0,
-              scrollY: window.scrollY || window.pageYOffset || 0,
-            });
-            try {
-              const data = canvas.toDataURL('image/jpeg', 0.7);
-              // Store snapshot for immediate next upload screen
-              sessionStorage.setItem('upload:backdrop', data);
-              sessionStorage.setItem('upload:scrollX', String(window.scrollX || window.pageXOffset || 0));
-              sessionStorage.setItem('upload:scrollY', String(window.scrollY || window.pageYOffset || 0));
-              // Also persist an origin snapshot for this upload flow, so returning from editor shows the initial page (e.g., Home)
-              sessionStorage.setItem('upload:backdrop:origin', data);
-              sessionStorage.setItem('upload:scrollX:origin', String(window.scrollX || window.pageXOffset || 0));
-              sessionStorage.setItem('upload:scrollY:origin', String(window.scrollY || window.pageYOffset || 0));
-              // Persist origin return URL
-              sessionStorage.setItem('upload:return:origin', window.location.href);
-            } catch (_) { /* ignore storage errors */ }
+      // Verificar si estamos en la página de upload
+      const isUploadPage = document.body.dataset.uploadPage === 'true';
+      
+      // Variables de control de estado
+      let suppressUI = false;
+      let lastOpenedAt = 0;
+      const pageLoadTs = Date.now();
+      const initialClickSuppressMs = 700;
+      
+      // Función para suprimir UI temporalmente
+      function suppressFor(ms) {
+        suppressUI = true;
+        closeSidebar();
+        
+        const events = ['click', 'pointerdown', 'pointerup', 'touchstart', 'touchend'];
+        const swallow = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) {
+            e.stopImmediatePropagation();
           }
-        } catch (_) { /* ignore capture errors */ }
-        // Navigate to upload page
-  window.location.href = "{{ url_for('upload.upload_page') }}";
+        };
+        
+        events.forEach(function(evt) {
+          window.addEventListener(evt, swallow, true);
+        });
+        
+        setTimeout(function() {
+          suppressUI = false;
+          events.forEach(function(evt) {
+            window.removeEventListener(evt, swallow, true);
+          });
+        }, ms);
+      }
+      
+      // Funciones para controlar el sidebar
+      function closeSidebar() {
+        var wasOpen = sidebar.classList.contains('open');
+        
+        sidebar.classList.remove('open');
+        sidebar.setAttribute('aria-hidden', 'true');
+        sidebarBackdrop.classList.remove('visible');
+        
+        if (!wasOpen) {
+          sidebar.hidden = true;
+          sidebarBackdrop.hidden = true;
+          return;
+        }
+        
+        function endSidebar() {
+          sidebar.hidden = true;
+          sidebar.removeEventListener('transitionend', endSidebar);
+        }
+        
+        function endBackdrop() {
+          sidebarBackdrop.hidden = true;
+          sidebarBackdrop.removeEventListener('transitionend', endBackdrop);
+        }
+        
+        sidebar.addEventListener('transitionend', endSidebar);
+        sidebarBackdrop.addEventListener('transitionend', endBackdrop);
+      }
+      
+      function openSidebar() {
+        if (suppressUI) return;
+        
+        sidebar.hidden = false;
+        sidebarBackdrop.hidden = false;
+        
+        // Force reflow para asegurar que hidden se ha aplicado
+        void sidebar.getBoundingClientRect();
+        
+        sidebar.classList.add('open');
+        sidebar.setAttribute('aria-hidden', 'false');
+        lastOpenedAt = Date.now();
+        
+        requestAnimationFrame(function() {
+          sidebarBackdrop.classList.add('visible');
+        });
+      }
+      
+      // Función helper para eventos
+      function swallowEarly(e) {
+        if (suppressUI) {
+          e.preventDefault();
+          e.stopPropagation();
+          return true;
+        }
+        
+        if (isUploadPage && (Date.now() - pageLoadTs) < initialClickSuppressMs) {
+          e.preventDefault();
+          e.stopPropagation();
+          return true;
+        }
+        
+        return false;
+      }
+      
+      // Inicializar el sidebar cerrado
+      closeSidebar();
+      
+      // Event listeners para el sidebar
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('pointerdown', function(e) {
+          if (swallowEarly(e)) return;
+        }, true);
+        
+        sidebarToggle.addEventListener('click', function(e) {
+          if (swallowEarly(e)) return;
+          e.stopPropagation();
+          openSidebar();
+        });
+      }
+
+      if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', function(e) {
+          if (Date.now() - lastOpenedAt < 300) return;
+          closeSidebar();
+        });
+      }
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeSidebar();
+        }
       });
-    }
+      
+      // FAB button functionality
+      if (fabBtn) {
+        ['pointerdown', 'touchstart', 'mousedown'].forEach(function(evt) {
+          fabBtn.addEventListener(evt, function(e) {
+            e.stopPropagation();
+          }, true);
+        });
+        
+        if (!isUploadPage) {
+          fabBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            suppressFor(1600);
+            
+            try {
+              if (window.html2canvas) {
+                html2canvas(document.body, {
+                  scale: 1,
+                  useCORS: true,
+                  backgroundColor: null,
+                  windowWidth: window.innerWidth,
+                  windowHeight: window.innerHeight,
+                  scrollX: window.scrollX || 0,
+                  scrollY: window.scrollY || 0,
+                }).then(function(canvas) {
+                  var data = canvas.toDataURL('image/jpeg', 0.7);
+                  var scrollX = String(window.scrollX || 0);
+                  var scrollY = String(window.scrollY || 0);
+                  
+                  // Guardar datos de backdrop
+                  sessionStorage.setItem('upload:backdrop', data);
+                  sessionStorage.setItem('upload:scrollX', scrollX);
+                  sessionStorage.setItem('upload:scrollY', scrollY);
+                  sessionStorage.setItem('upload:backdrop:origin', data);
+                  sessionStorage.setItem('upload:scrollX:origin', scrollX);
+                  sessionStorage.setItem('upload:scrollY:origin', scrollY);
+                  sessionStorage.setItem('upload:return:origin', window.location.href);
+                  
+                  window.location.href = "{{ url_for('upload.upload_page') }}";
+                });
+              } else {
+                window.location.href = "{{ url_for('upload.upload_page') }}";
+              }
+            } catch (error) {
+              // Captura falló, continuar sin backdrop
+              window.location.href = "{{ url_for('upload.upload_page') }}";
+            }
+          });
+        }
+      }
+    });
   </script>
 </body>
 </html>

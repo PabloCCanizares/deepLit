@@ -119,7 +119,6 @@ def draft_edit(batch_id, index: int):
         try:
             ins = mongo.db.documents.insert_one(updated)
             inserted_id = str(ins.inserted_id)
-            flash("Guardado")
         except Exception as e:
             flash(f"Error guardando: {str(e)}")
             return redirect(url_for('upload.draft_edit', batch_id=batch_id, index=index))
