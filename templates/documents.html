@@ -33,13 +33,18 @@
   <!-- Vista tipo librería optimizada: 3 artículos por fila con hover en portada -->
   <style>
     .library { display:flex; flex-wrap:wrap; gap:16px; }
-    .lib-item { flex:0 0 calc(33.333% - 12px); display:flex; align-items:flex-start; gap:12px; padding:12px; border:none; border-radius:8px; background:transparent; box-shadow:none; }
+    .lib-item { flex:0 0 calc(33.333% - 12px); display:flex; align-items:flex-start; gap:12px; padding:12px; border:none; border-radius:8px; background:transparent; box-shadow:none; overflow: hidden; }
     .lib-cover { width:90px; height:120px; background:#ddd; border:none; border-radius:4px; flex-shrink:0; position:relative; cursor:pointer; transition:all 0.3s ease; }
     .lib-cover:hover { transform:scale(1.05); box-shadow:0 4px 15px var(--color-violet-light); }
     .lib-cover-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:var(--color-violet-light); border-radius:4px; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s ease; }
     .lib-cover:hover .lib-cover-overlay { opacity:1; }
     .lib-cover-icon { color:var(--color-violet-dark); font-size:24px; }
-    .lib-meta { line-height:1.5; flex:1; }
+    .lib-meta { line-height:1.5; flex:1; min-width: 0; }
+    .title-line {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .lib-edit-btn { margin-top:6px; font-size:0.95rem; }
     .lib-edit-btn a { background:none; border:none; color:var(--color-violet-light); text-decoration:none; display:inline-flex; align-items:center; }
   </style>
@@ -58,7 +63,7 @@
           </div>
         </a>
         <div class="lib-meta">
-          <div><strong>Título:</strong> {{ title }}</div>
+          <div class="title-line" title="{{ title }}"><strong>Título:</strong> {{ title }}</div>
           <div><strong>Categoria:</strong> {{ categoria }}</div>
           <div><strong>Páginas:</strong> {{ pag }}</div>
           <div><strong>Año:</strong> {{ anio }}</div>
