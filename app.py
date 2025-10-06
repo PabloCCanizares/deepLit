@@ -20,7 +20,7 @@ app.register_blueprint(dashboard_bp)            # Dashboard (ruta raíz)
 app.register_blueprint(documents_bp)              # Rutas de documentos
 app.register_blueprint(config_bp)                 # Rutas de configuración
 app.register_blueprint(scholar_bp)                # Rutas de búsqueda Scholar
-app.register_blueprint(uploads_bp, url_prefix='/uploads')  # Rutas de subida
+app.register_blueprint(uploads_bp)  # Rutas de subida
 app.register_blueprint(completion_bp)
 
 # Comando CLI para ejecutar tests

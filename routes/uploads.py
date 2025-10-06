@@ -10,34 +10,58 @@ from utils import (
 )
 import os
 
-uploads_bp = Blueprint('uploads', __name__, template_folder='../templates')
+uploads_bp = Blueprint('upload', __name__, template_folder='../templates')
 
-@uploads_bp.route('/upload_pdf_page')
-def upload_pdf_page():
+@uploads_bp.route('/upload', methods=['GET'])
+def upload_page():
     """Página para subir un PDF."""
     return render_template('upload.html')
 
 @uploads_bp.route('/upload_pdf', methods=['POST'])
 def upload_pdf():
     if 'pdf' not in request.files:
+        print("No se encontró el archivo PDF.")
         flash("No se encontró el archivo PDF.")
-        return redirect(url_for('uploads.upload_pdf_page'))
+        return redirect(url_for('upload.upload_page'))
     
     file = request.files['pdf']
     if file.filename == '':
+        print("No se seleccionó ningún archivo.")
         flash("No se seleccionó ningún archivo.")
-        return redirect(url_for('uploads.upload_pdf_page'))
+        return redirect(url_for('upload.upload_page'))
     
-    autores = request.form.get('autores', '').strip()
-    anio = request.form.get('anio', '').strip()
-    categoria = request.form.get('categoria', '').strip()
-    tipo = request.form.get('tipo', '').strip()
-    acronimo = request.form.get('acronimo', '').strip()
-    paginas = request.form.get('paginas', '').strip()
-    obs = request.form.get('obs', '').strip()  
-    resumen = request.form.get('resumen', '').strip()
-    enlace = request.form.get('enlace', '').strip()
-    cita = request.form.get('cita', '').strip()
+    # autores = request.form.get('autores', '').strip()
+    # anio = request.form.get('anio', '').strip()
+    # categoria = request.form.get('categoria', '').strip()
+    # tipo = request.form.get('tipo', '').strip()
+    # acronimo = request.form.get('acronimo', '').strip()
+    # paginas = request.form.get('paginas', '').strip()
+    # obs = request.form.get('obs', '').strip()  
+    # resumen = request.form.get('resumen', '').strip()
+    # enlace = request.form.get('enlace', '').strip()
+    # cita = request.form.get('cita', '').strip()
+
+    # temp_folder = os.path.join("temp")
+    # os.makedirs(temp_folder, exist_ok=True)
+    # temp_path = os.path.join(temp_folder, file.filename)
+    # file.save(temp_path)
+    
+    # text = extract_text_from_pdf(temp_path)
+    # title = extract_title(text)
+    # abstract = extract_abstract(text)
+    # keywords = extract_keywords(text)
+    # bibliography = extract_bibliography(text)
+    # citations = extract_citations(bibliography)
+    
+    # anio = extract_anio(text) if not anio else anio
+    # categoria = extract_categoria(text) if not categoria else categoria
+    # tipo = extract_tipo(text) if not tipo else tipo
+    # acronimo = extract_acronimo(text) if not acronimo else acronimo
+    # paginas = extract_paginas(text) if not paginas else paginas
+    # obs = extract_obs(text) if not obs else obs
+    # resumen = extract_resumen(text) if not resumen else resumen
+    # enlace = extract_enlace(text) if not enlace else enlace
+    # cita = extract_cita(text) if not cita else cita
 
     temp_folder = os.path.join("temp")
     os.makedirs(temp_folder, exist_ok=True)
@@ -50,17 +74,18 @@ def upload_pdf():
     keywords = extract_keywords(text)
     bibliography = extract_bibliography(text)
     citations = extract_citations(bibliography)
-    
-    anio = extract_anio(text) if not anio else anio
-    categoria = extract_categoria(text) if not categoria else categoria
-    tipo = extract_tipo(text) if not tipo else tipo
-    acronimo = extract_acronimo(text) if not acronimo else acronimo
-    paginas = extract_paginas(text) if not paginas else paginas
-    obs = extract_obs(text) if not obs else obs
-    resumen = extract_resumen(text) if not resumen else resumen
-    enlace = extract_enlace(text) if not enlace else enlace
-    cita = extract_cita(text) if not cita else cita
-    
+
+    anio = extract_anio(text)
+    categoria = extract_categoria(text)
+    tipo = extract_tipo(text)
+    acronimo = extract_acronimo(text)
+    paginas = extract_paginas(text) 
+    obs = extract_obs(text)
+    resumen = extract_resumen(text)
+    enlace = extract_enlace(text)
+    cita = extract_cita(text)
+    autores = ""
+
     doc = {
         "filename": file.filename,
         "title": title,
@@ -82,8 +107,8 @@ def upload_pdf():
     }
     mongo.db.documents.insert_one(doc)
     os.remove(temp_path)
-    
-    return render_template('result.html', document=doc)
+    return redirect(url_for('documents.home'))
+    #return render_template('result.html', document=doc)
 
 @uploads_bp.route('/upload_folder', methods=['GET', 'POST'])
 def upload_folder():

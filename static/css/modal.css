@@ -1,0 +1,122 @@
+    /* --- Modal CSS --- */
+    .upload-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .upload-page {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+
+    .upload-card {
+      position: relative;
+      background: var(--color-violet-dark);
+      border: 2px solid var(--color-violet-light);
+      border-radius: 16px;
+      padding: 24px;
+      width: min(700px, 90vw);
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .upload-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border: none;
+      background: transparent;
+      color: var(--color-violet-light);
+      font-size: 1.5rem;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .upload-close:focus {
+      outline: none;   /* quitar contorno al hacer click */
+      box-shadow: none;
+    }
+
+    .upload-tabs {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--color-violet-light);
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .upload-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--color-violet-light);
+      padding: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .upload-tab.active {
+      background: var(--color-white);
+      color: var(--color-violet-dark);
+    }
+
+    .upload-tab:focus {
+      outline: none;   /* quitar contorno al hacer click */
+      box-shadow: none;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--color-white);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-violet-light);
+      margin-top: 16px;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .drop-zone.dragover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--color-white);
+    }
+
+    .btn-upload {
+      background: var(--color-violet-light);
+      color: var(--color-violet-dark);
+      border: none;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
+
+    .file-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      color: var(--color-white);
+      font-size: 0.9rem;
+    }
+    .file-preview i {
+      font-size: 1.2rem;
+      color: var(--color-white);
+    }

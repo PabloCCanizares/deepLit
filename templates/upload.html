@@ -1,63 +1,22 @@
-{% extends "base.html" %}
-{% block title %}Subir PDF - Gestor de Documentos{% endblock %}
-{% block content %}
-<div class="container my-4">
-  <h1>Subir PDF</h1>
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div class="alert alert-warning">
-        {% for message in messages %}
-          <p>{{ message }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-  <form action="{{ url_for('uploads.upload_pdf') }}" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-      <label for="pdf">Selecciona el archivo PDF:</label>
-      <input type="file" name="pdf" id="pdf" class="form-control-file" required>
+<!--
+
+{% block upload_modal %}
+<div id="upload-overlay" class="upload-overlay hidden" aria-hidden="true"></div>
+
+<div class="upload-card hidden" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+  <button type="button" class="upload-close" aria-label="Cerrar">&times;</button>
+  <h2 id="upload-title">Subir archivos</h2>
+  
+  <form id="upload-form" action="{{ url_for('upload.upload_pdf') }}" method="post" enctype="multipart/form-data">
+    <input id="upload-input" type="file" name="pdf" hidden accept=".pdf,application/pdf">
+    <div id="drop-zone" class="drop-zone">
+      <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+      <p class="drop-title">Arrastra y suelta aquí</p>
+      <p id="drop-hint" class="drop-hint">Solo PDF (.pdf)</p>
+      <button type="button" class="btn btn-light" id="select-files-btn">Seleccionar del dispositivo</button>
     </div>
-    <div class="form-group">
-      <label for="autores">Autores:</label>
-      <input type="text" name="autores" id="autores" class="form-control" placeholder="Ej: Juan Pérez, Ana López">
-    </div>
-    <div class="form-group">
-      <label for="anio">Año:</label>
-      <input type="text" name="anio" id="anio" class="form-control" placeholder="Ej: 2022">
-    </div>
-    <div class="form-group">
-      <label for="categoria">Categoría:</label>
-      <input type="text" name="categoria" id="categoria" class="form-control" placeholder="Ej: Investigación, Educación">
-    </div>
-    <div class="form-group">
-      <label for="tipo">Tipo:</label>
-      <input type="text" name="tipo" id="tipo" class="form-control" placeholder="Ej: Artículo, Tesis">
-    </div>
-    <div class="form-group">
-      <label for="acronimo">Acrónimo:</label>
-      <input type="text" name="acronimo" id="acronimo" class="form-control" placeholder="Ej: ABC">
-    </div>
-    <div class="form-group">
-      <label for="paginas">Páginas:</label>
-      <input type="text" name="paginas" id="paginas" class="form-control" placeholder="Ej: 12">
-    </div>
-    <div class="form-group">
-      <label for="obs">Observaciones:</label>
-      <input type="text" name="obs" id="obs" class="form-control" placeholder="Ej: Notas sobre el documento">
-    </div>
-    <div class="form-group">
-      <label for="resumen">Resumen:</label>
-      <textarea name="resumen" id="resumen" class="form-control" rows="3" placeholder="Resumen del documento"></textarea>
-    </div>
-    <div class="form-group">
-      <label for="enlace">Enlace:</label>
-      <input type="text" name="enlace" id="enlace" class="form-control" placeholder="Ej: http://ejemplo.com">
-    </div>
-    <div class="form-group">
-      <label for="cita">Cita:</label>
-      <textarea name="cita" id="cita" class="form-control" rows="2" placeholder="Cita bibliográfica"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Subir y Procesar PDF</button>
   </form>
 </div>
 {% endblock %}
+
+-->

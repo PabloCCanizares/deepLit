@@ -1,0 +1,9 @@
+/* Evita salto de contenido cuando aparece scrollbar */
+html {
+  overflow-y: scroll;
+}
+
+/* Colores y tipografía globales */
+h1, h2, h3, h4, h5, h6, p, a, label, input, textarea, select, span, th, td {
+  color: var(--color-violet-light);
+}
