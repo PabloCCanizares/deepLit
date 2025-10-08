@@ -1,0 +1,108 @@
+
+{% extends "base.html" %}
+{% block title %}Ver documento{% endblock %}
+
+{% block navbar %}
+<nav class="navbar" style="background: var(--color-black); color: var(--color-violet-light); min-height:56px;"></nav>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Ocultar elementos innecesarios */
+  #fab-container, .navbar-search, #navbarNav, #sidebar-toggle, .navbar-toggler { display: none; }
+  
+  /* Visor de documento */
+  .viewer-page{ display:flex; justify-content:center; align-items:flex-start; min-height: calc(100vh - 140px); padding: 24px 12px; }
+  .viewer-card{ 
+    width:min(800px, 96vw); background: var(--color-violet-dark); 
+    border:2px solid var(--color-violet-light); border-radius:16px; 
+    padding:16px 16px 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; 
+  }
+  .viewer-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  
+  /* Botones de navegación */
+  .btn-back-icon, .btn-download-icon{ 
+    color: var(--color-violet-light); background: transparent; border:none; 
+    padding: 6px; text-decoration: none; display:inline-flex; 
+    align-items:center; justify-content:center; 
+  }
+  .btn-back-icon:hover, .btn-download-icon:hover{ text-decoration: none; opacity: 0.9; }
+  
+  /* Lista clave-valor con nuevo esquema de colores */
+  .kv-list{ display:flex; flex-direction:column; gap: 6px; }
+  .kv-row{ display:grid; grid-template-columns: max-content 1fr; column-gap: 8px; padding-left: 30px; }
+  .kv-key{ font-weight:700; color: #fff; white-space: nowrap; }
+  .kv-val{ color: var(--color-violet-light); white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; }
+  .kv-link{ color: var(--color-violet-light); text-decoration: underline; }
+  .kv-link:hover{ opacity:0.9; }
+</style>
+<script>
+  // Configuración del visor de documentos
+  document.addEventListener('DOMContentLoaded', function(){
+    // Título en la barra de navegación
+    const brand = document.querySelector('.navbar .navbar-brand');
+    if (brand) brand.innerHTML = '<b>Ver documento</b>';
+
+    const HOME_URL = "{{ url_for('documents.home') }}";
+    
+    // Botón volver
+    const backBtn = document.querySelector('.btn-back-icon');
+    if (backBtn) {
+      backBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        const ref = document.referrer || '';
+        if (ref && ref.startsWith(location.origin)) {
+          try { history.back(); return; } catch(_) {}
+        }
+        window.location.assign(HOME_URL);
+      });
+    }
+
+    // Botón descargar (placeholder)
+    const downloadBtn = document.querySelector('.btn-download-icon');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        // TODO: implementar descarga
+      });
+    }
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="viewer-page">
+  <div class="viewer-card">
+    <div class="viewer-header">
+      <a href="{{ url_for('documents.home') }}" class="btn-back-icon" aria-label="Volver">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </a>
+      <a href="#" class="btn-download-icon" aria-label="Descargar" title="Descargar">
+        <i class="fa-solid fa-download" aria-hidden="true"></i>
+      </a>
+    </div>
+
+    {% set items = [
+      ('Título', document.get('Title') or document.get('title')),
+      ('Año', document.get('Year')),
+      ('Páginas', document.get('Pag')),
+      ('Categoría', document.get('Category')),
+      ('Tipo', document.get('Type')),
+      ('Acrónimo', document.get('Acronym')),
+      ('Enlace', document.get('link')),
+      ('Autores', document.get('autores')),
+      ('Archivo', document.get('filename')),
+      ('Citaciones', document.get('citation') or document.get('citations')),
+      ('Abstract', document.get('abstract')),
+      ('Resumen', document.get('Summary')),
+      ('Observaciones', document.get('Obs'))
+    ] %}
+
+    <div class="kv-list">
+      {% for label, value in items %}
+        <div class="kv-row"><span class="kv-key">{{ label }}:</span><span class="kv-val">{% if label == 'Enlace' and value %}<a class="kv-link" href="{{ value }}" target="_blank" rel="noopener">{{ value }}</a>{% else %}{{ (value if value else '-') | replace('\\n','<br>') | safe }}{% endif %}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

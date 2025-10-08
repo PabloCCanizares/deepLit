@@ -7,7 +7,7 @@
       {% for doc in documents %}
         <a href="{{ url_for('documents.result', id=doc._id) }}" class="list-group-item list-group-item-action entry">
           <div class="d-flex w-100 justify-content-between">
-            <h5>{{ doc.title }}</h5>
+            <h5>{{ doc.get('Title', doc.get('title','')) }}</h5>
             <small>{{ doc.filename }}</small>
           </div>
           <p>{{ doc.abstract[:150] ~ ('...' if doc.abstract|length > 150 else '') }}</p>
