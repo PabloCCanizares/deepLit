@@ -7,11 +7,6 @@ from routes.scholar import scholar_bp
 from routes.dashboard import dashboard_bp
 from routes.uploads import uploads_bp
 from routes.completion_queue import completion_bp
-from routes.colections import colecciones_bp
-from routes.history import historial_bp
-from routes.profile import perfil_bp
-from routes.home import inicio_bp
-
 
 import click
 import unittest
@@ -27,11 +22,6 @@ app.register_blueprint(config_bp)                 # Rutas de configuración
 app.register_blueprint(scholar_bp)                # Rutas de búsqueda Scholar
 app.register_blueprint(uploads_bp)  # Rutas de subida
 app.register_blueprint(completion_bp)
-app.register_blueprint(colecciones_bp)
-app.register_blueprint(historial_bp)
-app.register_blueprint(perfil_bp)
-app.register_blueprint(inicio_bp)
-
 
 # Comando CLI para ejecutar tests
 @app.cli.command("test")

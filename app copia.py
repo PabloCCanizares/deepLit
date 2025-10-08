@@ -546,7 +546,7 @@ def upload_excel():
             # Encabezados esperados (en el orden que quieras procesarlos)
             required_columns = [
                 "Year", "Title", "Category", "Type", "Acronym", "Cites",
-                "Pag", "Obs", "Summary", "link", "citation", "abstract"
+                "Pag.", "Obs.", "Summary", "link", "citation", "abstract"
             ]
             
             # Leer la primera fila (encabezados del Excel)

@@ -6,7 +6,7 @@
 
 
 # routes/uploads.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from bson.objectid import ObjectId
 from extensions import mongo
 from utils import (
@@ -16,11 +16,6 @@ from utils import (
     extract_paginas, extract_obs, extract_resumen, extract_enlace, extract_cita
 )
 import os
-import zipfile
-import tempfile
-import uuid
-import json
-from routes.documents import edit_document as documents_edit_document
 
 uploads_bp = Blueprint('upload', __name__, template_folder='../templates')
 
@@ -81,6 +76,7 @@ def upload_pdf():
     os.makedirs(temp_folder, exist_ok=True)
     temp_path = os.path.join(temp_folder, file.filename)
     file.save(temp_path)
+    
     text = extract_text_from_pdf(temp_path)
     title = extract_title(text)
     abstract = extract_abstract(text)
@@ -107,17 +103,18 @@ def upload_pdf():
         "bibliography": bibliography,
         "citations": citations,
         "autores": autores,
-        "Year": anio,
+        "Year": anio,             # Usamos "Year" para mantener la consistencia con home.html
         "Category": categoria,
         "Type": tipo,
         "Acronym": acronimo,
-        "Cites": "",
-        "Pag": paginas,
-        "Obs": obs,
+        "Cites": "",              # Ajusta según necesites
+        "Pag.": paginas,
+        "Obs.": obs,
         "Summary": resumen,
         "link": enlace,
         "citation": cita
     }
+    mongo.db.documents.insert_one(doc)
     os.remove(temp_path)
     return redirect(url_for('documents.home'))
     #no funciona
@@ -129,25 +126,25 @@ def upload_folder():
         files = request.files.getlist('pdfs')
         if not files or len(files) == 0:
             flash("No se seleccionaron archivos.")
-            return redirect(url_for('upload.upload_folder'))
-
-        drafts = []
+            return redirect(url_for('documents.upload_folder'))
+        
+        processed_docs = []
         temp_folder = os.path.join("temp")
         os.makedirs(temp_folder, exist_ok=True)
-
+        
         for file in files:
             if file.filename == '' or not file.filename.lower().endswith('.pdf'):
                 continue
             temp_path = os.path.join(temp_folder, file.filename)
             file.save(temp_path)
-
+            
             text = extract_text_from_pdf(temp_path)
             title = extract_title(text)
             abstract = extract_abstract(text)
             keywords = extract_keywords(text)
             bibliography = extract_bibliography(text)
             citations = extract_citations(bibliography)
-
+            
             anio = extract_anio(text)
             categoria = extract_categoria(text)
             tipo = extract_tipo(text)
@@ -157,7 +154,7 @@ def upload_folder():
             resumen = extract_resumen(text)
             enlace = extract_enlace(text)
             cita = extract_cita(text)
-
+            
             doc = {
                 "filename": file.filename,
                 "title": title,
@@ -170,20 +167,19 @@ def upload_folder():
                 "Type": tipo,
                 "Acronym": acronimo,
                 "Cites": "",
-                "Pag": paginas,
-                "Obs": obs,
+                "Pag.": paginas,
+                "Obs.": obs,
                 "Summary": resumen,
                 "link": enlace,
                 "citation": cita
             }
-            drafts.append(doc)
+            mongo.db.documents.insert_one(doc)
+            processed_docs.append(doc)
             os.remove(temp_path)
-
-        if drafts:
-            batch_id = save_drafts_list(drafts)
-            return redirect(url_for('upload.draft_edit', batch_id=batch_id, index=0, batch=1))
-        flash("No se han subido documentos válidos.")
-        return redirect(url_for('upload.upload_page'))
+        
+        flash(f"Se han subido {len(processed_docs)} documentos.")
+        return render_template('result_folder.html', documents=processed_docs)
+    
     return render_template('upload_folder.html')
 
 
@@ -195,135 +191,29 @@ def upload_folder():
 @uploads_bp.route('/upload_excel', methods=['GET', 'POST'])
 def upload_excel():
     if request.method == 'POST':
-        files = request.files.getlist('excel') if 'excel' in request.files else []
-        if not files:
+        if 'excel' not in request.files:
             flash("No se encontró el archivo Excel.")
-            return redirect(url_for('upload.upload_excel'))
-
+            return redirect(url_for('documents.upload_excel'))
+        
+        file = request.files['excel']
+        if file.filename == '':
+            flash("No se seleccionó ningún archivo Excel.")
+            return redirect(url_for('documents.upload_excel'))
+        
         temp_folder = os.path.join("temp")
         os.makedirs(temp_folder, exist_ok=True)
-
-        drafts = []
-        required_columns = [
-            "Year", "Title", "Category", "Type", "Acronym", "Cites",
-            "Pag", "Obs", "Summary", "link", "citation", "abstract"
-        ]
-
-        from openpyxl import load_workbook
-        for file in files:
-            if not file or file.filename == '':
-                continue
-            temp_path = os.path.join(temp_folder, file.filename)
-            file.save(temp_path)
-            try:
-                wb = load_workbook(temp_path)
-                sheet = wb.active
-                headers = [cell.value for cell in sheet[1]]
-                for col_name in required_columns:
-                    if col_name not in headers:
-                        flash(f"No se encontró la columna requerida: {col_name} en {file.filename}.")
-                        # saltar este archivo
-                        raise ValueError("Faltan columnas requeridas")
-                col_index_map = { col_name: headers.index(col_name) + 1 for col_name in required_columns }
-                for row in sheet.iter_rows(min_row=2, values_only=True):
-                    if not any(row):
-                        continue
-                    doc = {}
-                    for col_name in required_columns:
-                        idx = col_index_map[col_name] - 1
-                        valor = row[idx] if idx < len(row) else None
-                        doc[col_name] = valor if valor is not None else ""
-                    drafts.append(doc)
-            except Exception as e:
-                # Reportar error y continuar con otros archivos
-                flash(f"Error procesando {file.filename}: {str(e)}")
-            finally:
-                try:
-                    os.remove(temp_path)
-                except OSError:
-                    pass
-
-        if drafts:
-            batch_id = save_drafts_list(drafts)
-            return redirect(url_for('upload.draft_edit', batch_id=batch_id, index=0, batch=1))
-        flash("No se han subido documentos desde los Excel seleccionados.")
-        return redirect(url_for('upload.upload_page'))
-    return render_template('upload_excel.html')
-
-@uploads_bp.route('/upload_zip', methods=['POST'])
-def upload_zip():
-    if 'zipfile' not in request.files:
-        flash("No se encontró el archivo ZIP.")
-        return redirect(url_for('upload.upload_page'))
-
-    zf = request.files['zipfile']
-    if not zf or zf.filename == '':
-        flash("No se seleccionó ningún ZIP.")
-        return redirect(url_for('upload.upload_page'))
-
-    temp_dir = tempfile.mkdtemp(prefix='upload_zip_')
-    zip_path = os.path.join(temp_dir, zf.filename)
-    zf.save(zip_path)
-
-    pdf_docs = []
-    excel_docs = []
-    drafts = []
-    try:
-        with zipfile.ZipFile(zip_path, 'r') as z:
-            members = [m for m in z.namelist() if not m.endswith('/')]
-            for m in members:
-                lower = m.lower()
-                if lower.endswith('.pdf') or lower.endswith('.xlsx') or lower.endswith('.xls'):
-                    out = os.path.join(temp_dir, os.path.basename(m))
-                    with z.open(m) as src, open(out, 'wb') as dst:
-                        dst.write(src.read())
-                    if lower.endswith('.pdf'):
-                        pdf_docs.append(out)
-                    else:
-                        excel_docs.append(out)
-
-        if pdf_docs:
-            for temp_path in pdf_docs:
-                try:
-                    text = extract_text_from_pdf(temp_path)
-                    title = extract_title(text)
-                    abstract = extract_abstract(text)
-                    keywords = extract_keywords(text)
-                    bibliography = extract_bibliography(text)
-                    citations = extract_citations(bibliography)
-                    doc = {
-                        "filename": os.path.basename(temp_path),
-                        "title": title,
-                        "abstract": abstract,
-                        "keywords": keywords,
-                        "bibliography": bibliography,
-                        "citations": citations,
-                        "Year": extract_anio(text),
-                        "Category": extract_categoria(text),
-                        "Type": extract_tipo(text),
-                        "Acronym": extract_acronimo(text),
-                        "Cites": "",
-                        "Pag": extract_paginas(text),
-                        "Obs": extract_obs(text),
-                        "Summary": extract_resumen(text),
-                        "link": extract_enlace(text),
-                        "citation": extract_cita(text)
-                    }
-                    drafts.append(doc)
-                except Exception as e:
-                    flash(f"Error procesando PDF {os.path.basename(temp_path)}: {str(e)}")
-
-            if drafts:
-                batch_id = save_drafts_list(drafts)
-                return redirect(url_for('upload.draft_edit', batch_id=batch_id, index=0, batch=1))
-            flash("No se han subido documentos desde el ZIP.")
-            return redirect(url_for('upload.upload_page'))
-
-        if excel_docs:
+        temp_path = os.path.join(temp_folder, file.filename)
+        file.save(temp_path)
+        
+        processed_docs = []
+        try:
             from openpyxl import load_workbook
+            wb = load_workbook(temp_path)
+            sheet = wb.active
+            
             required_columns = [
                 "Year", "Title", "Category", "Type", "Acronym", "Cites",
-                "Pag", "Obs", "Summary", "link", "citation", "abstract"
+                "Pag.", "Obs.", "Summary", "link", "citation", "abstract"
             ]
             
             headers = [cell.value for cell in sheet[1]]

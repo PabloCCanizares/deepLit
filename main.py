@@ -113,7 +113,7 @@ def main(pdf_path):
     
     # Extraer y mostrar las citas de la bibliografía
     citations = extract_citations(bibliography)
-    print("Citas extraídas: ", len(citations))
+    print("Citas extraídas: " + citations.size())
     '''for citation in citations:
         print(citation)
         print("-" * 30)'''
