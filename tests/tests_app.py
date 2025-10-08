@@ -99,7 +99,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # Insertar configuración inicial en la base de datos de prueba
         mongo.db.configuration.insert_one({
             "_id": "settings",
-            "required_fields": ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag.", "Obs.", "Summary", "link", "citation", "abstract"],
+            "required_fields": ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag", "Obs", "Summary", "link", "citation", "abstract"],
             "order_by_year": "asc"
         })
 
@@ -118,7 +118,7 @@ class FlaskAppTestCase(unittest.TestCase):
                 "_id": ObjectId()
             }
             mongo.db.documents.insert_one(doc)
-        response = self.client.get('/')
+        response = self.client.get('/dashboard')
         self.assertEqual(response.status_code, 200)
         # Verifica que se incluya el total de documentos y otros elementos del dashboard
         self.assertIn(b"Panel de Control", response.data)
@@ -200,7 +200,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # Crear un archivo Excel en memoria con openpyxl
         wb = Workbook()
         ws = wb.active
-        headers = ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag.", "Obs.", "Summary", "link", "citation", "abstract"]
+        headers = ["Year", "Title", "Category", "Type", "Acronym", "Cites", "Pag", "Obs", "Summary", "link", "citation", "abstract"]
         ws.append(headers)
         row = ["2022", "Excel Doc", "Cat", "Type", "Acr", "Cites", "10", "Obs", "Summary", "http://link", "Citation", "abstract"]
         ws.append(row)

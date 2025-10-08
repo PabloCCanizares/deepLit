@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - Gestor de Documentos{% endblock %}
 {% block content %}
-<div class="container my-4">
+<div class="container my-4" style="background: var(--color-black); border-radius: 16px; padding: 24px;">
   <h1 class="mb-4">Panel de Control</h1>
   <div class="row">
       <!-- Estadísticas generales -->
@@ -30,10 +30,6 @@
           </div>
       </div>
   </div>
-
-  <!-- Diagrama de barras por año -->
-  <h3>Documentos por Año</h3>
-  <canvas id="yearChart" style="height:300px;"></canvas>
 
   <!-- Ranking de Keywords -->
   <h3 class="mt-4">Ranking de Keywords</h3>
@@ -80,12 +76,12 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Cargar Chart.js desde CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Cargar el archivo JS externo -->
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <!-- Insertar los datos JSON en elementos ocultos (antes de los scripts) -->
+    <div id="chartLabels" style="display: none;">{{ chart_labels|tojson|safe }}</div>
+    <div id="chartValues" style="display: none;">{{ chart_values|tojson|safe }}</div>
 
-  <!-- Insertar los datos JSON en elementos ocultos -->
-  <div id="chartLabels" style="display: none;">{{ chart_labels|tojson|safe }}</div>
-  <div id="chartValues" style="display: none;">{{ chart_values|tojson|safe }}</div>
+    <!-- Cargar Chart.js UMD desde CDN (expuesta como global 'Chart') -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-d4LCSK3NQF8I2e4kI0MyiB1vIkryK6QfGMN5b6mB6ms=" crossorigin="anonymous"></script>
+    <!-- Cargar el archivo JS externo -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
