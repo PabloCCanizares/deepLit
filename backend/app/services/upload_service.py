@@ -16,15 +16,20 @@ class UploadService:
         """
         Subir un nuevo PDF.
         """
-        
+        #TODO Revisar si hay que implementar transacciones para guardar el PDF y el artículo
         # Construir el id unico con timestamp y user id
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         
+        # Quitar la extensión .pdf del filename
+        filename_without_extension = pdf_data.filename
+        if filename_without_extension.lower().endswith('.pdf'):
+            filename_without_extension = filename_without_extension[:-4]
+        
         #FIXME Crear un objeto ODM
         pdf_dict = {
-            "_id": f"{current_user.email}_{timestamp}",
-            "id_user": current_user.email, #FIXME cambiar por id
-            "filename": pdf_data.file_name
+            "_id": f"{filename_without_extension}_{timestamp}",
+            "id_user": current_user.get('_id'),
+            "filename": filename_without_extension
         }
        
         id_pdf = await self.pdf_repo.create(pdf_dict)
