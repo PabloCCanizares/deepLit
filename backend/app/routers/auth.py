@@ -2,10 +2,10 @@
 Rutas de autenticación
 """
 from fastapi import APIRouter, Depends
-from app.controllers.auth_controller import AuthController
-from app.models.user import UserRegister, UserLogin
+from app.controllers import AuthController
+from app.models import UserRegister, UserLogin
 from app.core import StandardResponse, create_response_examples
-from app.core.auth import get_current_user
+from app.core import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 

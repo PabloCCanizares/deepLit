@@ -4,7 +4,7 @@ Servicio de autenticación
 from datetime import datetime
 from app.core.auth import hash_password, verify_password, create_access_token
 from app.core import AuthenticationError, ConflictError
-from app.repositories.user_repository import UserRepository
+from app.repositories import UserRepository
 from app.models.user import UserRegister
 
 class AuthService:
