@@ -21,15 +21,19 @@ class UploadService:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         
         # Quitar la extensión .pdf del filename
-        filename_without_extension = pdf_data.filename
-        if filename_without_extension.lower().endswith('.pdf'):
-            filename_without_extension = filename_without_extension[:-4]
+        original_filename = pdf_data.filename
+        if original_filename.lower().endswith('.pdf'):
+            original_filename = original_filename[:-4]
+        
+        # Construir nombre único para el archivo
+        unique_id = f"{original_filename}_{timestamp}"
+        unique_filename = f"{unique_id}.pdf"
         
         #FIXME Crear un objeto ODM
         pdf_dict = {
-            "_id": f"{filename_without_extension}_{timestamp}",
+            "_id": unique_id,
             "id_user": current_user.get('_id'),
-            "filename": filename_without_extension
+            "filename": unique_filename
         }
        
         id_pdf = await self.pdf_repo.create(pdf_dict)
