@@ -22,7 +22,7 @@ function Dashboard() {
       setStats(data);
     } catch (err) {
       console.log('Dashboard error:', err);
-      setError(err.message);
+      setError(err.status ? err.message : 'Error de conexión con el servidor');
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ function Dashboard() {
       alert('PDF subido correctamente');
       loadDashboard();
     } catch (err) {
-      alert('Error al subir el PDF');
+      alert(err.status ? err.message : 'Error de conexión con el servidor');
     } finally {
       setUploading(false);
       fileInputRef.current.value = '';

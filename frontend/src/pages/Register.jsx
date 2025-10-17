@@ -65,21 +65,16 @@ function Register() {
     }
 
     try {
-      const result = await register(
-        formData.email, 
-        formData.password, 
-        formData.name
-      );
-      
-      if (result.success) {
-        // Registro y login exitoso, redirigir al dashboard
-        navigate('/dashboard');
-      } else {
-        setError(result.error);
-        setSubmitting(false);
-      }
+      await register(formData.email, formData.password, formData.name);
+      // Si llega aquí, registro y login exitoso
+      navigate('/dashboard');
     } catch (err) {
-      setError('Error de conexión. Verifica que el backend esté corriendo.');
+      console.error('Error en register:', err);
+      // Si no hay status code = error de red/conexión
+      setError(err.status 
+        ? err.message 
+        : 'Error de conexión. Verifica que el backend esté corriendo.'
+      );
       setSubmitting(false);
     }
   };

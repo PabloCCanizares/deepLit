@@ -51,18 +51,16 @@ function Login() {
     }
 
     try {
-      const result = await login(formData.email, formData.password);
-      
-      if (result.success) {
-        // Login exitoso, redirigir al dashboard
-        navigate('/dashboard');
-      } else {
-        setError(result.error);
-        setSubmitting(false);
-      }
+      await login(formData.email, formData.password);
+      // Si llega aquí, login exitoso
+      navigate('/dashboard');
     } catch (err) {
-      console.error('Error completo en login:', err);
-      setError('Error de conexión. Verifica que el backend esté corriendo en http://localhost:8000');
+      console.error('Error en login:', err);
+      // Si no hay status code = error de red/conexión
+      setError(err.status 
+        ? err.message 
+        : 'Error de conexión. Verifica que el backend esté corriendo.'
+      );
       setSubmitting(false);
     }
   };
