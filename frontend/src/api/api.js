@@ -73,10 +73,31 @@ export const statsAPI = {
   getStats: () => apiFetch('/stats'),
 };
 
+// Upload API - Subida de documentos
+export const uploadAPI = {
+  uploadPDF: (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        const base64String = e.target.result.split(',')[1];
+        apiFetch('/upload/pdf', {
+          method: 'POST',
+          body: JSON.stringify({ filename: file.name, content: base64String }),
+        }).then(resolve).catch(reject);
+      };
+      
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+  },
+};
+
 // Exportar por defecto para import por defecto
 export default {
   auth: authAPI,
   stats: statsAPI,
+  upload: uploadAPI,
 };
 
 

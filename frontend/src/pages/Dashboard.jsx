@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { statsAPI } from '../api/api'
+import { useEffect, useState, useRef } from 'react'
+import { statsAPI, uploadAPI } from '../api/api'
 import StatCard from '../components/Dashboard/StatCard'
 import YearChart from '../components/Dashboard/YearChart'
 import KeywordRanking from '../components/Dashboard/KeywordRanking'
@@ -8,6 +8,8 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadDashboard();
@@ -23,6 +25,32 @@ function Dashboard() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      alert('Por favor selecciona un archivo PDF');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      await uploadAPI.uploadPDF(file);
+      alert('PDF subido correctamente');
+      loadDashboard();
+    } catch (err) {
+      alert('Error al subir el PDF');
+    } finally {
+      setUploading(false);
+      fileInputRef.current.value = '';
     }
   };
 
@@ -51,7 +79,33 @@ function Dashboard() {
 
   return (
     <div className="container my-4">
-      <h1 className="mb-4">Panel de Control</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h1 style={{ margin: 0 }}>Panel de Control</h1>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+          <button
+            onClick={handleUploadClick}
+            disabled={uploading}
+            className="btn-primary"
+            style={{
+              padding: '10px 20px',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <i className={uploading ? "fas fa-spinner fa-spin" : "fas fa-upload"}></i>
+            {uploading ? 'Subiendo...' : 'Subir PDF'}
+          </button>
+        </div>
+      </div>
 
       {/* Statistics Cards */}
       <div className="stats-grid">
