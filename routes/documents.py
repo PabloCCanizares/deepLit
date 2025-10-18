@@ -104,7 +104,6 @@ documents_bp = Blueprint('documents', __name__, template_folder='../templates')
 @documents_bp.route('/documents')
 @documents_bp.route('/home')
 def home():
-
     # Carga la configuración
     config = mongo.db.configuration.find_one({"_id": "settings"})
     if not config:
@@ -141,6 +140,12 @@ def home():
     
     sorted_docs = valid_docs + invalid_docs
     
+    # Si el cliente acepta JSON, devolver JSON
+    if request.headers.get('Accept') == 'application/json':
+        from flask import jsonify
+        return jsonify(documents=sorted_docs)
+    
+    # Si no, devolver HTML
     return render_template('documents.html', documents=sorted_docs, config=config)
 
 

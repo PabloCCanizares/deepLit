@@ -1,12 +1,14 @@
+import '../../styles/App.css';
+
 function StatCard({ title, value, icon }) {
   return (
-    <div className="stat-card">
-      <div className="stat-icon">
+    <div className="statCard">
+      <div className="icon">
         <i className={`fas ${icon}`}></i>
       </div>
-      <div className="stat-content">
-        <h2 className="stat-value">{value}</h2>
-        <p className="stat-title">{title}</p>
+      <div className="content">
+        <h2 className="value">{value}</h2>
+        <p className="title">{title}</p>
       </div>
     </div>
   )

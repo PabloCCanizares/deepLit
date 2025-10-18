@@ -1,10 +1,25 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import '../../styles/App.css'
 
 function Navbar({ toggleSidebar }) {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -14,24 +29,26 @@ function Navbar({ toggleSidebar }) {
 
   return (
     <nav className="navbar">
-      <div className="navbar-container">
-        <button 
-          className="sidebar-toggle" 
-          onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
-        >
-          <i className="fas fa-bars"></i>
-        </button>
+      <div className="navbarContainer">
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button 
+            className="sidebarToggle" 
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+          >
+            <i className="fas fa-bars"></i>
+          </button>
 
-        <Link to="/" className="navbar-brand">
-          <strong>deepLit</strong>
-        </Link>
+          <Link to="/" className="navbarBrand">
+            deepLit
+          </Link>
+        </div>
 
-        <div className="navbar-menu">
+        <div className="navbarMenu">
           {/* User menu */}
-          <div className="user-menu">
+          <div className="userMenu" ref={userMenuRef}>
             <button 
-              className="user-button"
+              className="userButton"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <i className="fas fa-user-circle"></i>
@@ -40,13 +57,13 @@ function Navbar({ toggleSidebar }) {
             </button>
             
             {showUserMenu && (
-              <div className="user-dropdown">
-                <div className="user-info">
+              <div className="userDropdown">
+                <div className="userInfo">
                   <strong>{user?.name || 'Usuario'}</strong>
                   <small>{user?.email}</small>
                 </div>
                 <hr />
-                <button onClick={handleLogout} className="logout-button">
+                <button onClick={handleLogout} className="logoutButton">
                   <i className="fas fa-sign-out-alt"></i>
                   Cerrar Sesión
                 </button>

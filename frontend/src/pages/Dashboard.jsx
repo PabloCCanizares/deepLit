@@ -3,6 +3,8 @@ import { statsAPI, uploadAPI } from '../api/api'
 import StatCard from '../components/Dashboard/StatCard'
 import YearChart from '../components/Dashboard/YearChart'
 import KeywordRanking from '../components/Dashboard/KeywordRanking'
+import '../styles/App.css'
+
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -56,9 +58,9 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="loading">
-          <i className="fas fa-spinner fa-spin"></i>
+      <div className="dashboardContainer">
+        <div className="loadingContainer">
+          <i className="fas fa-spinner fa-spin fa-3x"></i>
           <p>Cargando dashboard...</p>
         </div>
       </div>
@@ -67,20 +69,22 @@ function Dashboard() {
 
   if (error) {
     return (
-      <div className="container">
-        <div className="error-message">
-          <i className="fas fa-exclamation-circle"></i>
+      <div className="dashboardContainer">
+        <div className="errorContainer">
+          <i className="fas fa-exclamation-circle fa-3x"></i>
           <p>Error: {error}</p>
-          <button onClick={loadDashboard} className="btn-primary">Reintentar</button>
+          <button onClick={loadDashboard} className="retryButton">
+            Reintentar
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container my-4">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0 }}>Panel de Control</h1>
+    <div className="dashboardContainer">
+      <div className="header">
+        <h1 className="title">Panel de Control</h1>
         <div>
           <input
             ref={fileInputRef}
@@ -92,14 +96,7 @@ function Dashboard() {
           <button
             onClick={handleUploadClick}
             disabled={uploading}
-            className="btn-primary"
-            style={{
-              padding: '10px 20px',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
+            className="uploadButton"
           >
             <i className={uploading ? "fas fa-spinner fa-spin" : "fas fa-upload"}></i>
             {uploading ? 'Subiendo...' : 'Subir PDF'}
@@ -108,7 +105,7 @@ function Dashboard() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="stats-grid">
+      <div className="statsGrid">
         <StatCard 
           title="Documentos Subidos"
           value={stats?.total_documents || 0}
@@ -126,56 +123,67 @@ function Dashboard() {
         />
       </div>
 
-      {/* Year Chart */}
-      <div className="section">
-        <h3>Documentos por Año</h3>
-        <YearChart 
-          labels={stats?.chart_labels || []}
-          values={stats?.chart_values || []}
-        />
-      </div>
-
-      {/* Keywords Ranking */}
-      <div className="section">
-        <h3>Ranking de Keywords</h3>
-        <KeywordRanking keywords={stats?.sorted_keywords?.slice(0, 10) || []} />
-      </div>
-
-      {/* WordCloud */}
-      {stats?.wordcloud_img && (
-        <div className="section">
-          <h3>WordCloud de Keywords</h3>
-          <div className="wordcloud-container">
-            <img 
-              src={`data:image/png;base64,${stats.wordcloud_img}`}
-              alt="Wordcloud de Keywords"
-              className="wordcloud-img"
+      <div className="gridLayout">
+        <div>
+          {/* Year Chart */}
+          <div className="section">
+            <h3 className="sectionTitle">Documentos por Año</h3>
+            <YearChart 
+              labels={stats?.chart_labels || []}
+              values={stats?.chart_values || []}
             />
           </div>
-        </div>
-      )}
 
-      {/* Recent Documents */}
-      {stats?.recent_docs && stats.recent_docs.length > 0 && (
-        <div className="section">
-          <h3>Actividad Reciente</h3>
-          <ul className="recent-docs-list">
-            {stats.recent_docs.map((doc, index) => (
-              <li key={index} className="recent-doc-item">
-                <strong>{doc.title || doc.Title || 'Sin título'}</strong>
-                <br />
-                <small>Subido: {doc.upload_date}</small>
-              </li>
-            ))}
-          </ul>
+          {/* Keywords Ranking */}
+          <div className="section">
+            <h3 className="sectionTitle">Ranking de Keywords</h3>
+            <KeywordRanking keywords={stats?.sorted_keywords?.slice(0, 10) || []} />
+          </div>
         </div>
-      )}
+
+        <div>
+          {/* WordCloud */}
+          {stats?.wordcloud_img && (
+            <div className="section">
+              <h3 className="sectionTitle">WordCloud de Keywords</h3>
+              <div className="wordcloudContainer">
+                <img 
+                  src={`data:image/png;base64,${stats.wordcloud_img}`}
+                  alt="Wordcloud de Keywords"
+                  className="wordcloudImg"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Recent Documents */}
+          {stats?.recent_docs && stats.recent_docs.length > 0 && (
+            <div className="section">
+              <h3 className="sectionTitle">Actividad Reciente</h3>
+              <ul className="recentDocsList">
+                {stats.recent_docs.map((doc, index) => (
+                  <li key={index} className="recentDocItem">
+                    <div className="recentDocTitle">
+                      {doc.title || doc.Title || 'Sin título'}
+                    </div>
+                    <div className="recentDocDate">
+                      Subido: {doc.upload_date}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Notifications */}
       {(stats?.notif_abstract > 0 || stats?.notif_keywords > 0) && (
-        <div className="alert alert-warning">
+        <div className="notification">
           <i className="fas fa-exclamation-triangle"></i>
-          Se encontraron {stats.notif_abstract} documentos sin abstract y {stats.notif_keywords} sin keywords.
+          <span>
+            Se encontraron {stats.notif_abstract} documentos sin abstract y {stats.notif_keywords} sin keywords.
+          </span>
         </div>
       )}
     </div>
