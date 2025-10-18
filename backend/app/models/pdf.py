@@ -4,4 +4,4 @@ from typing import Optional
 class PdfUpload(BaseModel):
     """Schema para subir pdf"""
     filename: str
-    content: bytes
+    content: str
