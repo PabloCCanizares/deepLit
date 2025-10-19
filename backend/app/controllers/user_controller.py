@@ -3,12 +3,12 @@ Controlador de autenticación
 """
 from fastapi import Depends
 from app.core import StandardResponse
-from app.services.stats_service import StatsService
+from app.services.user_service import UserService
 
 
-class StatsController:
+class UserController:
     
-    def __init__(self, service: StatsService = Depends()):
+    def __init__(self, service: UserService = Depends()):
         self.service = service
     
     async def get_dashboard_stats(self, current_user: dict) -> StandardResponse:

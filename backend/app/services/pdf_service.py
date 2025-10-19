@@ -8,7 +8,7 @@ from app.models import PdfUpload
 from app.services import StorageService
 
 
-class UploadService:
+class PdfService:
     
     def __init__(self):
         self.pdf_repo = PdfRepository()
@@ -60,5 +60,19 @@ class UploadService:
         return {
             "id_pdf": id_pdf,
             #"article": article,
+        }
+    
+
+    async def get_document_count(self, current_user: dict) -> dict:
+        """
+        Recuperar estadísticas del dashboard para el usuario actual.
+        """
+        #Cuantos documentos tienen id de este usuario
+        
+        document_count = await self.pdf_repo.count_documents(current_user.get('_id')) #FIXME ¿Pasar todo el user o solo el id?
+        
+        # 3. Devolver info del usuario (sin password)
+        return {
+            "document_count": document_count,
         }
     

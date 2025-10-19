@@ -1,7 +1,7 @@
 # Controllers
 
 from .auth_controller import AuthController
-from .upload_controller import UploadController
-from .stats_controller import StatsController
+from .pdf_controller import PdfController
+from .user_controller import UserController
 
-__all__ = ["AuthController", "UploadController", "StatsController"]
+__all__ = ["AuthController", "PdfController", "UserController"]

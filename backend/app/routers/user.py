@@ -2,11 +2,11 @@
 Rutas de autenticación
 """
 from fastapi import APIRouter, Depends
-from app.controllers import StatsController
+from app.controllers import UserController
 from app.core import StandardResponse, create_response_examples
 from app.core import get_current_user
 
-router = APIRouter(prefix="/stats", tags=["Recopilación de estadísticas"])
+router = APIRouter(prefix="/user", tags=["User"])
 
 # ============================================
 # RUTAS PÚBLICAS (sin token)
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/stats", tags=["Recopilación de estadísticas"])
 )
 async def get_dashboard_stats(
     current_user: dict = Depends(get_current_user),
-    controller: StatsController = Depends()
+    controller: UserController = Depends()
 ):
     """
     Recuperar estadísticas del dashboard para el usuario actual.
