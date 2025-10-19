@@ -20,8 +20,9 @@ function Dashboard() {
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const data = await statsAPI.getStats();
-      setStats(data);
+      const response = await statsAPI.getStats();
+      setStats(response.data);
+      console.log('Dashboard stats:', response);
     } catch (err) {
       console.log('Dashboard error:', err);
       setError(err.status ? err.message : 'Error de conexión con el servidor');
@@ -108,7 +109,7 @@ function Dashboard() {
       <div className="statsGrid">
         <StatCard 
           title="Documentos Subidos"
-          value={stats?.total_documents || 0}
+          value={stats?.document_count || 0}
           icon="fa-book"
         />
         <StatCard 

@@ -70,7 +70,7 @@ export const authAPI = {
 
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
-  getStats: () => apiFetch('/stats'),
+  getStats: () => apiFetch('/stats/stats'),
 };
 
 // Upload API - Subida de documentos

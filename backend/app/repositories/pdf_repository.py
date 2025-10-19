@@ -14,3 +14,9 @@ class PdfRepository:
         """Crear un nuevo pdf"""
         result = await self.collection.insert_one(pdf_data)
         return str(result.inserted_id)
+
+    async def count_documents(self, user_id: str) -> int:
+        """Contar documentos asociados a un usuario"""
+        count = await self.collection.count_documents({"id_user": user_id})
+        return count
+    
