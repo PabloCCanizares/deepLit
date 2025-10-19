@@ -8,21 +8,21 @@
   border-radius: 999px;
   padding: 0.75rem 1.5rem;
   background: white;
-  color: #4f46e5;
-  border: 2px solid #4f46e5;
-  caret-color: #4f46e5;
+  color: var(--dark);
+  border: 2px solid var(--dark);
+  caret-color: var(--dark);
   font-size: 1rem;
   transition: all 0.3s ease;
 }
 
 .search-input::placeholder {
-  color: #4f46e5;
+  color: var(--dark);
   opacity: 0.7;
 }
 
 .search-input:focus {
   background: white;
-  color: #4f46e5;
+  color: var(--dark);
   border-color: #4338ca;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
   outline: none;
