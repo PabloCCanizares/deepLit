@@ -1,6 +1,6 @@
 /* ======= StatCard Component Styles ======= */
 .statCard {
-  background: linear-gradient(135deg, #6366f1 0%, var(--dark) 100%);
+  background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
   border-radius: 1rem;
   padding: 1.5rem;
   color: white;
@@ -32,7 +32,7 @@
 }
 
 .value {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
   line-height: 1.2;

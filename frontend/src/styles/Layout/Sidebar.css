@@ -26,13 +26,15 @@
   left: 0;
   height: 100vh;
   width: 200px;
-  background: linear-gradient(135deg, var(--dark) 0%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
   color: white;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
   transform: translateX(-100%);
   transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 999;
   padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar.open {
@@ -47,16 +49,72 @@
   color: white;
 }
 
+/* Header inside the sidebar with close button */
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+/* deepLit Logo Styling */
+.deepLitLogo {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.deepLit-d {
+  color: #00d4ff;
+  background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+.deepLit-lit {
+  color: #ff6b6b;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff0080 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+.sidebarClose {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  position: absolute;
+  right: 6px;
+}
+
+.sidebarClose:hover,
+.sidebarClose:focus {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .sidebarTopSpacer {
   height: 10px;
 }
 
 .sidebarNav {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 24px;
   margin-top: 12px;
+  flex: 1;
 }
 
 .sidebarSpacer {
@@ -68,9 +126,9 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 2px 0 8px;
+  padding-top: 12px;
+  margin-top: auto;
+  border-top: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 .sidebarLink {

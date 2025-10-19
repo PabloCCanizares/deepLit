@@ -21,4 +21,17 @@ class UserRepository:
         if user:
             user["_id"] = str(user["_id"])
         return user
+    
+    async def update_by_email(self, email: str, update_data: dict) -> Optional[dict]:
+        """Actualizar usuario por email"""
+        result = await self.collection.update_one(
+            {"email": email},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            return None
+        
+        # Devolver el usuario actualizado
+        return await self.find_by_email(email)
 

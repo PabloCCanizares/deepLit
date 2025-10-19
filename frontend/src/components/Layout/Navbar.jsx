@@ -51,17 +51,38 @@ function Navbar({ toggleSidebar }) {
               className="userButton"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              <i className="fas fa-user-circle"></i>
+              {user?.profileImage ? (
+                <img 
+                  src={user.profileImage} 
+                  alt="Perfil"
+                  className="userProfileImage"
+                />
+              ) : (
+                <i className="fas fa-user-circle"></i>
+              )}
               <span>{user?.name || user?.email || 'Usuario'}</span>
             </button>
             
             {showUserMenu && (
               <div className="userDropdown">
                 <div className="userInfo">
-                  <strong>{user?.name || 'Usuario'}</strong>
-                  <small>{user?.email}</small>
+                  {user?.profileImage && (
+                    <img 
+                      src={user.profileImage} 
+                      alt="Perfil"
+                      className="userDropdownImage"
+                    />
+                  )}
+                  <div>
+                    <strong>{user?.name || 'Usuario'}</strong>
+                    <small>{user?.email}</small>
+                  </div>
                 </div>
                 <hr />
+                <Link to="/profile" className="profileLink">
+                  <i className="fas fa-user-cog"></i>
+                  Mi Perfil
+                </Link>
                 <button onClick={handleLogout} className="logoutButton">
                   <i className="fas fa-sign-out-alt"></i>
                   Cerrar Sesión

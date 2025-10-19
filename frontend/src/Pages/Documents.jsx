@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import SearchBar from '../components/documents/SearchBar'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
+import DocumentList from '../components/Documents/DocumentList'
 import '../styles/App.css'
 
 function Documents() {
@@ -12,6 +13,7 @@ function Documents() {
   const [sortCriteria, setSortCriteria] = useState('year-desc')
   const [filterCriteria, setFilterCriteria] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState('grid')
 
   useEffect(() => {
     loadDocuments()
@@ -30,12 +32,12 @@ function Documents() {
       
       // Datos de prueba
       const mockDocuments = [
-        { _id: '1', Title: 'Introducción a React', Category: 'Web Development', Pag: '350', Year: '2023' },
-        { _id: '2', Title: 'Python para Ciencia de Datos', Category: 'Data Science', Pag: '450', Year: '2022' },
-        { _id: '3', Title: 'Machine Learning Avanzado', Category: 'AI', Pag: '520', Year: '2024' },
-        { _id: '4', Title: 'Diseño de Sistemas Distribuidos', Category: 'Architecture', Pag: '380', Year: '2023' },
-        { _id: '5', Title: 'Testing en JavaScript', Category: 'Quality Assurance', Pag: '280', Year: '2022' },
-        { _id: '6', Title: 'DevOps y Cloud Computing', Category: 'Infrastructure', Pag: '410', Year: '2024' },
+        { _id: '1', Title: 'Systematic Literature Review on Machine Learning', Category: 'Computer Science', Pag: '350', Year: '2023' },
+        { _id: '2', Title: 'Deep Learning Applications in Medical Imaging', Category: 'Healthcare', Pag: '450', Year: '2022' },
+        { _id: '3', Title: 'Natural Language Processing: A Survey', Category: 'Artificial Intelligence', Pag: '520', Year: '2024' },
+        { _id: '4', Title: 'Software Testing Automation Techniques', Category: 'Software Engineering', Pag: '380', Year: '2023' },
+        { _id: '5', Title: 'Blockchain Technology in Supply Chain', Category: 'Information Systems', Pag: '280', Year: '2022' },
+        { _id: '6', Title: 'Quantum Computing: Current State and Future', Category: 'Computer Science', Pag: '410', Year: '2024' },
       ]
       setDocuments(mockDocuments)
     } catch (err) {
@@ -97,6 +99,10 @@ function Documents() {
     setSearchQuery(query)
   }
 
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode)
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -107,13 +113,26 @@ function Documents() {
       <div className="container">
         <SearchBar onSearch={handleSearch} placeholder="Buscar por título" />
         
-        <DocumentControls onSort={handleSort} onFilter={handleFilter} />
-        
-        <DocumentGrid 
-          documents={filteredDocuments} 
-          loading={loading} 
-          error={error} 
+        <DocumentControls 
+          onSort={handleSort} 
+          onFilter={handleFilter}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
+        
+        {viewMode === 'grid' ? (
+          <DocumentGrid 
+            documents={filteredDocuments} 
+            loading={loading} 
+            error={error} 
+          />
+        ) : (
+          <DocumentList 
+            documents={filteredDocuments} 
+            loading={loading} 
+            error={error} 
+          />
+        )}
       </div>
     </div>
   )
