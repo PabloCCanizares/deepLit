@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import connect_to_mongo, close_mongo_connection
 from app.core import register_exception_handlers
 from app.routers import include_routers
+from app.services import StorageService
 
 
 # ============================================
@@ -48,7 +49,11 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     """Ejecutado al iniciar el servidor"""
+    # Conectar a MongoDB
     await connect_to_mongo()
+    
+    storage = StorageService()
+    
     print(f"✅ {settings.APP_NAME} iniciado correctamente")
 
 

@@ -46,6 +46,15 @@ class Settings(BaseSettings):
     # ============================================
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     
+    # ============================================
+    # STORAGE (Almacenamiento de archivos)
+    # ============================================
+    # Directorio base para todos los archivos
+    STORAGE_BASE_DIR: str = "./storage"
+    
+    UPLOADS_DIR: str = "uploads"
+    PROFILES_DIR: str = "profiles"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

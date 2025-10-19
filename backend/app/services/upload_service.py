@@ -1,19 +1,18 @@
 """
-Servicio de autenticación
+Servicio de upload de PDFs
 """
-import os
 import base64
 from datetime import datetime
-from app.core.auth import hash_password, verify_password, create_access_token
-from app.core import AuthenticationError, ConflictError
 from app.repositories import PdfRepository
 from app.models import PdfUpload
+from app.services import StorageService
 
 
 class UploadService:
     
     def __init__(self):
         self.pdf_repo = PdfRepository()
+        self.storage = StorageService()
     
     async def upload_pdf(self, pdf_data: PdfUpload, current_user: dict) -> dict:
         """
@@ -41,18 +40,16 @@ class UploadService:
        
         id_pdf = await self.pdf_repo.create(pdf_dict)
 
-
-        # FIXME REVISAR: guardar el PDF en local o en un servicio de almacenamiento
-        """Guardar el PDF en local (temporalmente)"""
+        # Guardar el PDF usando el servicio de almacenamiento
         pdf_data.filename = unique_filename  # Actualizar el nombre del archivo en el objeto
-
         decoded_content = base64.b64decode(pdf_data.content)
-
-        #Make folder if not exists
-        save_path = f"./uploads/{unique_filename}"
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        with open(save_path, "wb") as f:
-            f.write(decoded_content)
+        
+        # Usar el servicio centralizado - no hay que preocuparse de crear directorios
+        save_path = self.storage.save_file(
+            content=decoded_content,
+            filename=unique_filename,
+            storage_location="uploads"  # PDFs permanentes
+        )
          
         #TODO Analizar el PDF y extraer el artículo (servicio externo que trabaja para este)
 
