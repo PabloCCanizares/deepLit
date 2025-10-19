@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { statsAPI, uploadAPI } from '../api/api'
-import StatCard from '../components/Dashboard/StatCard'
-import YearChart from '../components/Dashboard/YearChart'
-import KeywordRanking from '../components/Dashboard/KeywordRanking'
+import StatCard from '../components/dashboard/StatCard'
+import YearChart from '../components/dashboard/YearChart'
+import KeywordRanking from '../components/dashboard/KeywordRanking'
 import '../styles/App.css'
 
 

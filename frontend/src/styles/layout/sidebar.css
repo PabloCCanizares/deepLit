@@ -1,0 +1,107 @@
+/* ======= Sidebar Styles ======= */
+.sidebarOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  backdrop-filter: blur(1px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 240ms ease, visibility 240ms ease;
+  pointer-events: none;
+}
+
+.sidebarOverlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 200px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: white;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  transform: translateX(-100%);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 999;
+  padding: 10px 12px;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebarTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 4px 0;
+  color: white;
+}
+
+.sidebarTopSpacer {
+  height: 10px;
+}
+
+.sidebarNav {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 12px;
+}
+
+.sidebarSpacer {
+  flex: 1;
+  min-height: 12px;
+}
+
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 2px 0 8px;
+}
+
+.sidebarLink {
+  color: white;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebarLink:hover,
+.sidebarLink:focus {
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.sidebarLink.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebarLink i {
+  color: white;
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.sidebarLink span {
+  color: white;
+}

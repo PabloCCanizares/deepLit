@@ -1,0 +1,92 @@
+.doc-controls {
+  text-align: center;
+  margin: 1.5rem 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.control-group {
+  position: relative;
+  display: inline-block;
+}
+
+.control-btn {
+  background: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-btn:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.control-btn i {
+  font-size: 0.9rem;
+}
+
+.control-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+  margin-top: 0.75rem;
+  min-width: 200px;
+  z-index: 1000;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.control-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background: none;
+  border: none;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.control-dropdown button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  padding-left: 1.5rem;
+}
+
+.control-dropdown button:active {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.control-dropdown button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}

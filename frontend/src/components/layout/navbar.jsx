@@ -53,7 +53,6 @@ function Navbar({ toggleSidebar }) {
             >
               <i className="fas fa-user-circle"></i>
               <span>{user?.name || user?.email || 'Usuario'}</span>
-              <i className="fas fa-chevron-down"></i>
             </button>
             
             {showUserMenu && (

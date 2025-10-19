@@ -1,0 +1,29 @@
+.documents-search {
+  margin: 0.2rem auto 0.2rem auto;
+  width: min(700px, 90%);
+}
+
+.search-input {
+  width: 100%;
+  border-radius: 999px;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #4f46e5;
+  border: 2px solid #4f46e5;
+  caret-color: #4f46e5;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.search-input::placeholder {
+  color: #4f46e5;
+  opacity: 0.7;
+}
+
+.search-input:focus {
+  background: white;
+  color: #4f46e5;
+  border-color: #4338ca;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  outline: none;
+}
