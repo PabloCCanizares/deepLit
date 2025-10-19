@@ -3,7 +3,7 @@ Rutas de autenticación
 """
 from fastapi import APIRouter, Depends
 from app.controllers import AuthController
-from app.models import UserRegister, UserLogin
+from app.models import UserRegister, UserLogin, UserProfileUpdate, ChangePasswordRequest
 from app.core import StandardResponse, create_response_examples
 from app.core import get_current_user
 
@@ -114,6 +114,72 @@ async def get_current_user_info(
     """
     return await controller.get_user_info(current_user)
 
+@router.put(
+    "/profile",
+    response_model=StandardResponse,
+    responses=create_response_examples(
+        success_example={
+            "message": "Perfil actualizado exitosamente",
+            "data": {
+                "email": "usuario@example.com",
+                "name": "Nuevo Nombre",
+                "profileImage": "data:image/png;base64,iVBORw0KGgo..."
+            }
+        },
+        error_example={
+            "message": "Error al actualizar perfil",
+            "error": "Usuario no encontrado",
+            "error_code": "USER_NOT_FOUND"
+        }
+    )
+)
+async def update_profile(
+    update_data: UserProfileUpdate,
+    current_user: dict = Depends(get_current_user),
+    controller: AuthController = Depends()
+):
+    """
+    Actualizar perfil del usuario (nombre e imagen)
+    
+    Requiere token en header: Authorization: Bearer <token>
+    
+    Parámetros:
+    - name: Nuevo nombre del usuario
+    - profileImage: Imagen en formato base64 (opcional)
+    """
+    return await controller.update_profile(update_data, current_user)
+
+@router.post(
+    "/change-password",
+    response_model=StandardResponse,
+    responses=create_response_examples(
+        success_example={
+            "message": "Contraseña actualizada exitosamente",
+            "data": None
+        },
+        error_example={
+            "message": "Error al cambiar contraseña",
+            "error": "La contraseña actual es incorrecta",
+            "error_code": "INVALID_PASSWORD"
+        }
+    )
+)
+async def change_password(
+    pwd_data: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+    controller: AuthController = Depends()
+):
+    """
+    Cambiar contraseña del usuario
+    
+    Requiere token en header: Authorization: Bearer <token>
+    
+    Parámetros:
+    - currentPassword: Contraseña actual (para verificación)
+    - newPassword: Nueva contraseña (mínimo 6 caracteres)
+    """
+    return await controller.change_password(pwd_data, current_user)
+
 @router.post(
     "/logout",
     response_model=StandardResponse,
@@ -135,3 +201,4 @@ async def logout(
     Este endpoint solo confirma que el token es válido antes de que el cliente lo elimine.
     """
     return await controller.logout(current_user)
+

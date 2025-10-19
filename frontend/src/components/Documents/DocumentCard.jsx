@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '../../styles/documents/documentCard.css'
+import '../../styles/Documents/DocumentCard.css'
 
 function DocumentCard({ document }) {
   const title = document.Title || document.title || '-'

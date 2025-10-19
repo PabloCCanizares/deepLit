@@ -66,6 +66,20 @@ export const authAPI = {
   logout: () => apiFetch('/auth/logout', {
     method: 'POST',
   }),
+  updateProfile: (name, profileImage) => {
+    const body = { name };
+    if (profileImage) {
+      body.profileImage = profileImage;
+    }
+    return apiFetch('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  },
+  changePassword: (currentPassword, newPassword) => apiFetch('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  }),
 };
 
 // Stats API - Estadísticas y analytics

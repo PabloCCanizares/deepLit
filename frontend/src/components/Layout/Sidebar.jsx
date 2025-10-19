@@ -13,95 +13,86 @@ function Sidebar({ isOpen, onClose }) {
       ></div>
       
       {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`} aria-hidden={!isOpen}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="sidebarHeader">
+          <div className="deepLitLogo">
+            <span className="deepLit-d">deep</span><span className="deepLit-lit">Lit</span>
+          </div>
+        </div>
+
         <nav className="sidebarNav">
-          {/* Título principal */}
-          <div className="sidebarTitle">deepLit</div>
-          <div className="sidebarTopSpacer"></div>
-
-          {/* Inicio */}
-          <Link 
-            to="/inicio" 
-            className={`sidebarLink ${location.pathname === '/inicio' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-house"></i>
-            <span>Inicio</span>
-          </Link>
-
-          {/* Explorar */}
-          <Link 
-            to="/explorar" 
-            className={`sidebarLink ${location.pathname === '/explorar' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-compass"></i>
-            <span>Explorar</span>
-          </Link>
-
-          {/* Dashboard */}
+          {/* Principal */}
           <Link 
             to="/dashboard" 
             className={`sidebarLink ${location.pathname === '/dashboard' ? 'active' : ''}`}
             onClick={onClose}
           >
-            <i className="fas fa-gauge"></i>
+            <i className="fas fa-chart-line"></i>
             <span>Dashboard</span>
           </Link>
 
-          {/* Colecciones */}
-          <Link 
-            to="/colecciones" 
-            className={`sidebarLink ${location.pathname === '/colecciones' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-layer-group"></i>
-            <span>Colecciones</span>
-          </Link>
-
           {/* Documentos */}
-          <Link 
-            to="/documents" 
-            className={`sidebarLink ${location.pathname === '/documents' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-file-lines"></i>
-            <span>Documentos</span>
-          </Link>
-
-          {/* Historial */}
-          <Link 
-            to="/historial" 
-            className={`sidebarLink ${location.pathname === '/historial' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-clock-rotate-left"></i>
-            <span>Historial</span>
-          </Link>
-
-          {/* Spacer para empujar el footer al final */}
-          <div className="sidebarSpacer"></div>
-
-          {/* Footer con configuración y perfil */}
-          <div className="sidebarFooter">
+          <div className="sidebarGroup">
+            <div className="sidebarGroupTitle">Documentos</div>
             <Link 
-              to="/perfil" 
-              className={`sidebarLink ${location.pathname === '/perfil' ? 'active' : ''}`}
+              to="/documents" 
+              className={`sidebarLink ${location.pathname === '/documents' ? 'active' : ''}`}
               onClick={onClose}
             >
-              <i className="fas fa-user"></i>
-              <span>Perfil</span>
+              <i className="fas fa-file-alt"></i>
+              <span>Mis Documentos</span>
             </Link>
             <Link 
-              to="/configuracion" 
-              className={`sidebarLink ${location.pathname === '/configuracion' ? 'active' : ''}`}
+              to="/upload" 
+              className={`sidebarLink ${location.pathname === '/upload' ? 'active' : ''}`}
               onClick={onClose}
             >
-              <i className="fas fa-gear"></i>
-              <span>Configuración</span>
+              <i className="fas fa-cloud-upload-alt"></i>
+              <span>Subir Documentos</span>
+            </Link>
+          </div>
+
+          {/* Búsqueda y Análisis */}
+          <div className="sidebarGroup">
+            <div className="sidebarGroupTitle">Búsqueda y Análisis</div>
+            <Link 
+              to="/search" 
+              className={`sidebarLink ${location.pathname === '/search' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-search"></i>
+              <span>Búsqueda</span>
+            </Link>
+            <Link 
+              to="/scholar" 
+              className={`sidebarLink ${location.pathname === '/scholar' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-graduation-cap"></i>
+              <span>Scholar</span>
             </Link>
           </div>
         </nav>
+
+        {/* Configuración - Footer sin título */}
+        <div className="sidebarFooter">
+          <Link 
+            to="/profile" 
+            className={`sidebarLink ${location.pathname === '/profile' ? 'active' : ''}`}
+            onClick={onClose}
+          >
+            <i className="fas fa-user-cog"></i>
+            <span>Perfil</span>
+          </Link>
+          <Link 
+            to="/settings" 
+            className={`sidebarLink ${location.pathname === '/settings' ? 'active' : ''}`}
+            onClick={onClose}
+          >
+            <i className="fas fa-cog"></i>
+            <span>Ajustes</span>
+          </Link>
+        </div>
       </aside>
     </>
   )

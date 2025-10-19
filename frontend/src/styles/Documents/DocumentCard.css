@@ -30,7 +30,7 @@
 
 .lib-cover:hover {
   transform: scale(1.05);
-  background: linear-gradient(135deg, var(--dark) 0%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
   border-color: var(--dark);
   box-shadow: 0 4px 15px rgba(79, 70, 229, 0.5);
 }

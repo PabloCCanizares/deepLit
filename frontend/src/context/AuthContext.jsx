@@ -74,6 +74,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateProfile = async (name, profileImage) => {
+    const response = await authAPI.updateProfile(name, profileImage);
+    setUser(response.data);
+    return response.data;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    await authAPI.changePassword(currentPassword, newPassword);
+  };
+
   const value = {
     user,
     token,
@@ -82,6 +92,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

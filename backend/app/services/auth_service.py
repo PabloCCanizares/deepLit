@@ -59,6 +59,64 @@ class AuthService:
             "token": access_token,
             "user": {
                 "email": user["email"],
-                "name": user.get("name", "")
+                "name": user.get("name", ""),
+                "profileImage": user.get("profileImage", None)
             }
         }
+
+    async def update_profile(self, email: str, name: str, profile_image: str = None) -> dict:
+        """
+        Actualizar perfil del usuario (nombre e imagen)
+        """
+        # 1. Buscar usuario
+        user = await self.user_repo.find_by_email(email)
+        if not user:
+            raise AuthenticationError("Usuario no encontrado")
+        
+        # 2. Actualizar datos
+        update_data = {
+            "name": name,
+            "updated_at": datetime.utcnow()
+        }
+        
+        if profile_image:
+            update_data["profileImage"] = profile_image
+        
+        # 3. Guardar en BD
+        await self.user_repo.update_by_email(email, update_data)
+        
+        # 4. Obtener usuario actualizado
+        updated_user = await self.user_repo.find_by_email(email)
+        
+        # 5. Devolver datos del usuario
+        return {
+            "email": updated_user["email"],
+            "name": updated_user.get("name", ""),
+            "profileImage": updated_user.get("profileImage", None)
+        }
+    
+    async def change_password(self, email: str, current_password: str, new_password: str) -> dict:
+        """
+        Cambiar contraseña del usuario
+        """
+        # 1. Buscar usuario
+        user = await self.user_repo.find_by_email(email)
+        if not user:
+            raise AuthenticationError("Usuario no encontrado")
+        
+        # 2. Verificar contraseña actual
+        if not verify_password(current_password, user["password_hash"]):
+            raise AuthenticationError("La contraseña actual es incorrecta")
+        
+        # 3. Actualizar contraseña
+        update_data = {
+            "password_hash": hash_password(new_password),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await self.user_repo.update_by_email(email, update_data)
+        
+        return {
+            "message": "Contraseña actualizada exitosamente"
+        }
+

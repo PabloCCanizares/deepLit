@@ -9,7 +9,7 @@ function Settings() {
       paddingBottom: '2rem'
     }}>
       <div className="container">
-        <h1 style={{ color: '#4f46e5', marginBottom: '1rem' }}>Ajustes</h1>
+  <h1 style={{ color: 'var(--dark)', marginBottom: '1rem' }}>Ajustes</h1>
 ¡      </div>
     </div>
   )

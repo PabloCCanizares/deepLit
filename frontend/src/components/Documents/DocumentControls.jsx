@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import '../../styles/documents/documentControls.css'
+import '../../styles/Documents/DocumentControls.css'
 
-function DocumentControls({ onSort, onFilter }) {
+function DocumentControls({ onSort, onFilter, viewMode, onViewModeChange }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const sortRef = useRef(null)
@@ -35,15 +35,16 @@ function DocumentControls({ onSort, onFilter }) {
 
   return (
     <div className="doc-controls">
-      <div className="control-group" ref={sortRef}>
-        <button 
-          type="button" 
-          className="control-btn"
-          onClick={() => setShowSortMenu(!showSortMenu)}
-        >
-          <i className="fas fa-sort"></i>
-          Ordenar por
-        </button>
+      <div className="control-left">
+        <div className="control-group" ref={sortRef}>
+          <button 
+            type="button" 
+            className="control-btn"
+            onClick={() => setShowSortMenu(!showSortMenu)}
+          >
+            <i className="fas fa-sort"></i>
+            Ordenar por
+          </button>
         {showSortMenu && (
           <div className="control-dropdown">
             <button onClick={() => handleSort('year-asc')}>Año (Ascendente)</button>
@@ -54,22 +55,44 @@ function DocumentControls({ onSort, onFilter }) {
         )}
       </div>
 
-      <div className="control-group" ref={filterRef}>
-        <button 
-          type="button" 
-          className="control-btn"
-          onClick={() => setShowFilterMenu(!showFilterMenu)}
-        >
-          <i className="fas fa-filter"></i>
-          Filtrar por
-        </button>
-        {showFilterMenu && (
-          <div className="control-dropdown">
-            <button onClick={() => handleFilter('all')}>Todos</button>
-            <button onClick={() => handleFilter('complete')}>Completos</button>
-            <button onClick={() => handleFilter('incomplete')}>Incompletos</button>
-          </div>
-        )}
+        <div className="control-group" ref={filterRef}>
+          <button 
+            type="button" 
+            className="control-btn"
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+          >
+            <i className="fas fa-filter"></i>
+            Filtrar por
+          </button>
+          {showFilterMenu && (
+            <div className="control-dropdown">
+              <button onClick={() => handleFilter('all')}>Todos</button>
+              <button onClick={() => handleFilter('complete')}>Completos</button>
+              <button onClick={() => handleFilter('incomplete')}>Incompletos</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="control-right">
+        <div className="view-toggle">
+          <button
+            type="button"
+            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('grid')}
+            title="Vista mosaico"
+          >
+            <i className="fas fa-th"></i>
+          </button>
+          <button
+            type="button"
+            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('list')}
+            title="Vista lista"
+          >
+            <i className="fas fa-list"></i>
+          </button>
+        </div>
       </div>
     </div>
   )
