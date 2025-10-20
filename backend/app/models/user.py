@@ -12,6 +12,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# FIXME no se si es el lugar correcto
 class UserProfileUpdate(BaseModel):
     """Schema para actualizar perfil"""
     name: str = Field(..., min_length=1, description="Nombre no puede estar vacío")

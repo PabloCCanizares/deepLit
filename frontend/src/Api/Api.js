@@ -107,11 +107,25 @@ export const uploadAPI = {
   },
 };
 
+export const articlesAPI = {
+  getArticles: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
+    return apiFetch('/user/articles', {
+      method: 'POST',
+      body: JSON.stringify({
+        pagination: { limit, offset },
+        filters,
+      }),
+    });
+  },
+};
+
+
 // Exportar por defecto para import por defecto
 export default {
   auth: authAPI,
   stats: statsAPI,
   upload: uploadAPI,
+  articles: articlesAPI,
 };
 
 

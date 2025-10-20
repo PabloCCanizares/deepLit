@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { articlesAPI } from '../api/api'
 import SearchBar from '../components/documents/SearchBar'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
@@ -27,19 +28,19 @@ function Documents() {
     try {
       setLoading(true)
       // TODO: Llamar a la API real cuando esté disponible
-      // const response = await documentsAPI.getAll()
-      // setDocuments(response.data)
+      const response = await articlesAPI.getArticles({ limit: 10, offset: 0 , filters: {} });
+      setDocuments(response.data)
       
       // Datos de prueba
-      const mockDocuments = [
-        { _id: '1', Title: 'Systematic Literature Review on Machine Learning', Category: 'Computer Science', Pag: '350', Year: '2023' },
-        { _id: '2', Title: 'Deep Learning Applications in Medical Imaging', Category: 'Healthcare', Pag: '450', Year: '2022' },
-        { _id: '3', Title: 'Natural Language Processing: A Survey', Category: 'Artificial Intelligence', Pag: '520', Year: '2024' },
-        { _id: '4', Title: 'Software Testing Automation Techniques', Category: 'Software Engineering', Pag: '380', Year: '2023' },
-        { _id: '5', Title: 'Blockchain Technology in Supply Chain', Category: 'Information Systems', Pag: '280', Year: '2022' },
-        { _id: '6', Title: 'Quantum Computing: Current State and Future', Category: 'Computer Science', Pag: '410', Year: '2024' },
-      ]
-      setDocuments(mockDocuments)
+      // const mockDocuments = [
+      //   { _id: '1', Title: 'Systematic Literature Review on Machine Learning', Category: 'Computer Science', Pag: '350', Year: '2023' },
+      //   { _id: '2', Title: 'Deep Learning Applications in Medical Imaging', Category: 'Healthcare', Pag: '450', Year: '2022' },
+      //   { _id: '3', Title: 'Natural Language Processing: A Survey', Category: 'Artificial Intelligence', Pag: '520', Year: '2024' },
+      //   { _id: '4', Title: 'Software Testing Automation Techniques', Category: 'Software Engineering', Pag: '380', Year: '2023' },
+      //   { _id: '5', Title: 'Blockchain Technology in Supply Chain', Category: 'Information Systems', Pag: '280', Year: '2022' },
+      //   { _id: '6', Title: 'Quantum Computing: Current State and Future', Category: 'Computer Science', Pag: '410', Year: '2024' },
+      // ]
+      // setDocuments(mockDocuments)
     } catch (err) {
       setError(err.message || 'Error al cargar documentos')
     } finally {

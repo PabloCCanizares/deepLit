@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom'
 import '../../styles/Documents/DocumentCard.css'
 
 function DocumentCard({ document }) {
-  const title = document.Title || document.title || '-'
-  const category = document.Category || '-'
-  const pages = document.Pag || '-'
-  const year = document.Year || '-'
+  const title = document.title || '-'
+  const category = document.category || '-'
+  const pages = document.pages || '-'
+  const year = document.year || '-'
   const id = document._id || document.id
 
   return (

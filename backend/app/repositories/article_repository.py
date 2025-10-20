@@ -3,6 +3,8 @@ Repositorio de usuarios
 """
 from typing import Optional
 from app.database import get_database
+from app.models import ArticlesQuery
+from typing import List
 
 class ArticleRepository:
     
@@ -21,4 +23,32 @@ class ArticleRepository:
         return count
     
 
-    
+    async def get_user_articles(self, query: ArticlesQuery, current_user: dict) -> List[dict]:
+        """Recuperar artículos del usuario actual con paginación y filtros"""
+        filter_criteria = {"id_user": current_user["_id"]}
+
+        limit = query.pagination.limit
+        offset = query.pagination.offset
+
+        filters = query.filters or {}
+        # 🧩 Agregar filtros opcionales (ej. category, language, etc.)
+        if filters:
+            for key, value in filters.items():
+                # Si quieres permitir búsquedas parciales para campos de texto:
+                if isinstance(value, str):
+                    filter_criteria[key] = {"$regex": value, "$options": "i"}
+                else:
+                    filter_criteria[key] = value
+
+        cursor = (
+            self.collection
+            .find(filter_criteria)
+            .skip(offset)
+            .limit(limit)
+        )
+        
+        results = await cursor.to_list(length=limit)
+        return results
+
+
+

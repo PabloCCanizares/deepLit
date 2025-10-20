@@ -5,7 +5,9 @@ import PyPDF2
 from datetime import datetime
 from app.core import AuthenticationError, ConflictError
 from app.repositories import ArticleRepository
-from app.models import PdfUpload
+from app.models import ArticlesQuery
+from typing import List
+
 
 
 class ArticleService:
@@ -46,12 +48,13 @@ class ArticleService:
         citations = "extract_citations" #extract_citations(text)
 
         year = "extract_year" #extract_year(text)
-
+        category = "extract_category" #extract_category(text)
+        pages = "extract_pages" #extract_pages(text) FIXME seguramente en la funcion de extract_text se pueden obtener las paginas
         """
         category = "" #extract_category(text)
         type = ""#extract_type(text)
         acronym = ""#extract_acronym(text)
-        pages = ""#extract_pages(text)  FIXME seguramente en la funcion de extract_text se pueden obtener las paginas
+        pages = ""#extract_pages(text)  
         obs = ""#extract_obs(text)
         summary = ""#extract_summary(text)
         link = ""#extract_link(text)
@@ -64,7 +67,9 @@ class ArticleService:
             "keywords": keywords,
             "bibliography": bibliography,
             "citations": citations,
-            "year": year     
+            "year": year,
+            "category": category,
+            "pages": pages  
         }
     
     """
@@ -102,6 +107,15 @@ class ArticleService:
                     full_text += text + "\n"
         return full_text
     
+
+    async def get_user_articles(self, query: ArticlesQuery,current_user: dict) -> List[dict]:
+        """
+        Recuperar artículos del usuario actual.
+        """
+        # Lógica para obtener los artículos del usuario desde la base de datos
+        # Aplicar paginación y filtros según los parámetros en 'query'
+        articles = await self.article_repo.get_user_articles(query, current_user)
+        return articles
 
     
 
