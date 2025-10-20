@@ -18,7 +18,7 @@ class UserController:
         user = await self.service.get_dashboard_stats(current_user)
         return StandardResponse(
             success=True,
-            message="Usuario registrado exitosamente",
+            message="Dashboard stats recuperadas exitosamente",
             data=user
         )
     

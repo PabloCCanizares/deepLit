@@ -16,3 +16,7 @@ python-dotenv==1.0.0
 pydantic==2.5.3
 pydantic-settings==2.1.0
 email-validator==2.1.0
+
+
+# Procesamiento de PDFs
+PyPDF2==3.0.1

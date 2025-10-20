@@ -3,16 +3,19 @@ Servicio de upload de PDFs
 """
 import base64
 from datetime import datetime
-from app.repositories import PdfRepository
+from app.repositories import PdfRepository, ArticleRepository
 from app.models import PdfUpload
 from app.services import StorageService
+from app.services.article_service import ArticleService
 
 
 class PdfService:
     
     def __init__(self):
         self.pdf_repo = PdfRepository()
+        self.article_repo = ArticleRepository()
         self.storage = StorageService()
+        self.article_service = ArticleService()
     
     async def upload_pdf(self, pdf_data: PdfUpload, current_user: dict) -> dict:
         """
@@ -31,10 +34,12 @@ class PdfService:
         unique_id = f"{original_filename}_{timestamp}"
         unique_filename = f"{unique_id}.pdf"
         
+        id_user = current_user.get('_id')
+
         #FIXME Crear un objeto ODM
         pdf_dict = {
             "_id": unique_id,
-            "id_user": current_user.get('_id'),
+            "id_user": id_user,
             "filename": unique_filename
         }
        
@@ -52,14 +57,31 @@ class PdfService:
         )
          
         #TODO Analizar el PDF y extraer el artículo (servicio externo que trabaja para este)
+        article_features = await self.article_service.extract_pdf_features(decoded_content)
 
 
-        #TODO Crear objeto del artículo y llamar a repo_articles.create()
+            #FIXME decidir si es la mejor forma de crear el id del artículo
+        id_articulo = f"article_{unique_id}"
 
+
+            #FIXME Asignar temática real - Por parametro o llamando al user de alguna manera
+        #id_tematica = "default_topic"  
+
+        #FIXME Crear objeto del artículo y llamar a repo_articles.create()
+        article_dict_ids = {
+            "_id": id_articulo,
+            "id_user": id_user,
+            "id_pdf": id_pdf,
+        }
+        #FIXME "id_tematica": id_tematica,
+
+        article_dict = {**article_dict_ids, **article_features}
+
+        id_article = await self.article_repo.create(article_dict)
 
         return {
             "id_pdf": id_pdf,
-            #"article": article,
+            "article": article_dict,
         }
     
 
@@ -72,7 +94,5 @@ class PdfService:
         document_count = await self.pdf_repo.count_documents(current_user.get('_id')) #FIXME ¿Pasar todo el user o solo el id?
         
         # 3. Devolver info del usuario (sin password)
-        return {
-            "document_count": document_count,
-        }
+        return document_count
     

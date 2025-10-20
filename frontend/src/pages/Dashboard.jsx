@@ -114,8 +114,8 @@ function Dashboard() {
           icon="fa-book"
         />
         <StatCard 
-          title="Referencias Totales"
-          value={stats?.total_references || 0}
+          title="Artículos Guardados" // FIXME Referencias Totales
+          value={stats?.article_count || 0}
           icon="fa-quote-right"
         />
         <StatCard 

@@ -2,21 +2,20 @@
 Rutas de autenticación
 """
 from fastapi import APIRouter, Depends
-from app.controllers import PdfController
-from app.models import PdfUpload
+from app.controllers import ArticleController
 from app.core import StandardResponse, create_response_examples
 from app.core import get_current_user
 
-router = APIRouter(prefix="/pdf", tags=["Pdfs"])
+router = APIRouter(prefix="/article", tags=["Artículos"])
 
 # ============================================
 # RUTAS PÚBLICAS (sin token)
 # ============================================
 
 
-#FIXME modificar success_example y error_example
+# #FIXME modificar success_example y error_example
 @router.post(
-    "/upload",
+    "/get",
     response_model=StandardResponse,
     responses=create_response_examples(
         success_example={ 
@@ -33,15 +32,13 @@ router = APIRouter(prefix="/pdf", tags=["Pdfs"])
         }
     )
 )
-async def upload_pdf(
-    pdf_data: PdfUpload,
+async def get_article(
+    article_id: str,
     current_user: dict = Depends(get_current_user),
-    controller: PdfController = Depends()
+    controller: ArticleController = Depends()
 ):
     """
-    Registrar un nuevo usuario
-    
-    No requiere token. Cualquiera puede registrarse.
+    Obtener artículo por ID    
     """
-    return await controller.upload_pdf(pdf_data, current_user)
+    return await controller.get_article(current_user, article_id)
 

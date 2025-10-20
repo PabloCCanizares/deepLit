@@ -84,7 +84,7 @@ export const authAPI = {
 
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
-  getStats: () => apiFetch('/stats/stats'),
+  getStats: () => apiFetch('/user/stats'),
 };
 
 // Upload API - Subida de documentos
@@ -95,7 +95,7 @@ export const uploadAPI = {
       
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1];
-        apiFetch('/upload/pdf', {
+        apiFetch('/pdf/upload', {
           method: 'POST',
           body: JSON.stringify({ filename: file.name, content: base64String }),
         }).then(resolve).catch(reject);
