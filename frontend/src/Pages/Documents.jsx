@@ -9,6 +9,11 @@ import '../styles/App.css'
 function Documents() {
   const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
+  const [pagination, setPagination] = useState({
+    total: 0,
+    limit: 10,
+    offset: 0
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortCriteria, setSortCriteria] = useState('year-desc')
@@ -18,7 +23,7 @@ function Documents() {
 
   useEffect(() => {
     loadDocuments()
-  }, [])
+  }, [pagination.offset])
 
   useEffect(() => {
     applyFiltersAndSort()
@@ -27,9 +32,17 @@ function Documents() {
   const loadDocuments = async () => {
     try {
       setLoading(true)
-      // TODO: Llamar a la API real cuando esté disponible
-      const response = await articlesAPI.getArticles({ limit: 10, offset: 0 , filters: {} });
-      setDocuments(response.data)
+      const response = await articlesAPI.getArticles({ 
+        limit: pagination.limit, 
+        offset: pagination.offset,
+        filters: {} 
+      });
+      
+      setDocuments(response.data.articles)
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.total
+      }))
       
       // Datos de prueba
       // const mockDocuments = [

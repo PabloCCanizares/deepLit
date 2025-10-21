@@ -62,7 +62,7 @@ export const authAPI = {
     method: 'POST',
     body: JSON.stringify({ email, password, name }),
   }),
-  getMe: () => apiFetch('/auth/me'),
+  getMe: () => apiFetch('/user/me'),
   logout: () => apiFetch('/auth/logout', {
     method: 'POST',
   }),
@@ -71,20 +71,20 @@ export const authAPI = {
     if (profileImage) {
       body.profileImage = profileImage;
     }
-    return apiFetch('/auth/profile', {
+    return apiFetch('/user/me/profile', {
       method: 'PUT',
       body: JSON.stringify(body),
     });
   },
-  changePassword: (currentPassword, newPassword) => apiFetch('/auth/change-password', {
-    method: 'POST',
+  changePassword: (currentPassword, newPassword) => apiFetch('/user/me/password', {
+    method: 'PUT',
     body: JSON.stringify({ currentPassword, newPassword }),
   }),
 };
 
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
-  getStats: () => apiFetch('/user/stats'),
+  getStats: () => apiFetch('/stats/dashboard'),
 };
 
 // Upload API - Subida de documentos
@@ -95,7 +95,7 @@ export const uploadAPI = {
       
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1];
-        apiFetch('/pdf/upload', {
+        apiFetch('/pdfs', {
           method: 'POST',
           body: JSON.stringify({ filename: file.name, content: base64String }),
         }).then(resolve).catch(reject);
@@ -109,12 +109,16 @@ export const uploadAPI = {
 
 export const articlesAPI = {
   getArticles: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
-    return apiFetch('/user/articles', {
+    // ✅ POST /articles/search con body
+    return apiFetch('/articles/search', {
       method: 'POST',
       body: JSON.stringify({
-        pagination: { limit, offset },
-        filters,
-      }),
+        pagination: {
+          limit,
+          offset
+        },
+        filters: Object.keys(filters).length > 0 ? filters : null
+      })
     });
   },
 };
