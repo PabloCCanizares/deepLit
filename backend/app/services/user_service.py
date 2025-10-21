@@ -1,44 +1,77 @@
 """
-Servicio de autenticación
+Servicio de Usuario.
+
+Responsabilidad: SOLO operaciones del perfil de usuario.
 """
-from datetime import datetime
-from app.core.auth import hash_password, verify_password, create_access_token
-from app.core import AuthenticationError, ConflictError
-from app.services.stats_service import StatsService
-from app.services.article_service import ArticleService
-from app.models import ArticlesQuery
-from typing import List
+from app.core.auth import hash_password, verify_password
+from app.core import AuthenticationError
+from app.repositories.user_repository import UserRepository
+
 
 class UserService:
     
     def __init__(self):
-        self.stats_service = StatsService()
-        self.article_service = ArticleService()
+        self.user_repo = UserRepository()
     
-    async def get_dashboard_stats(self, current_user: dict) -> dict:
+    async def update_profile(
+        self,
+        email: str,
+        name: str = None,
+        profile_image: str = None
+    ) -> dict:
         """
-        Recuperar estadísticas del dashboard para el usuario actual.
+        Actualizar nombre e/o imagen de perfil del usuario.
         """
-        data = await self.stats_service.get_dashboard_stats(current_user)
-        return data
-
-
+        update_data = {}
+        
+        if name is not None:
+            update_data["name"] = name
+        
+        if profile_image is not None:
+            update_data["profileImage"] = profile_image
+        
+        # Si no se envió nada, no hacer nada
+        if not update_data:
+            # Obtener usuario actual sin modificar
+            user = await self.user_repo.find_by_email(email)
+            return {
+                "email": user.get("email"),
+                "name": user.get("name"),
+                "profileImage": user.get("profileImage")
+            }
+        
+        # Actualizar solo los campos enviados
+        updated_user = await self.user_repo.update_by_email(email, update_data)
+        
+        return {
+            "email": updated_user.get("email"),
+            "name": updated_user.get("name"),
+            "profileImage": updated_user.get("profileImage")
+        }
     
-
-
-    async def get_user_articles(self, query: ArticlesQuery,current_user: dict) -> List[dict]:
+    async def change_password(
+        self,
+        email: str,
+        current_password: str,
+        new_password: str
+    ) -> dict:
         """
-        Recuperar artículos del usuario actual.
+        Cambiar contraseña del usuario.
         """
-        # Lógica para obtener los artículos del usuario desde la base de datos
-        # Aplicar paginación y filtros según los parámetros en 'query'
-        articles = await self.article_service.get_user_articles(query, current_user)
-        return articles
-    
-
-
-
-
-
-    # TODO GET PROFILE INFO, EDIT PROFILE ETC.
-    
+        # Obtener usuario
+        user = await self.user_repo.find_by_email(email)
+        
+        if not user:
+            raise AuthenticationError("Usuario no encontrado")
+        
+        # Verificar contraseña actual
+        if not verify_password(current_password, user.get("password_hash")):
+            raise AuthenticationError("La contraseña actual es incorrecta")
+        
+        # Hashear nueva contraseña
+        hashed_new_password = hash_password(new_password)
+        
+        # Actualizar en BD
+        await self.user_repo.update_by_email(email, {"password_hash": hashed_new_password})
+        
+        return {"message": "Contraseña actualizada correctamente"}

@@ -1,36 +1,71 @@
 """
-Controlador de autenticación
+Controlador de Usuario.
+
+Responsabilidad: Gestionar operaciones de perfil del usuario.
 """
 from fastapi import Depends
-from app.core import StandardResponse
 from app.services.user_service import UserService
-from app.models import ArticlesQuery
+from app.models import UserProfileUpdate, ChangePasswordRequest
+from app.core import StandardResponse
 
 
 class UserController:
+    """
+    Controller para operaciones del perfil de usuario.
+    """
     
     def __init__(self, service: UserService = Depends()):
         self.service = service
     
-    async def get_dashboard_stats(self, current_user: dict) -> StandardResponse:
+    async def get_me(self, current_user: dict) -> StandardResponse:
         """
-¡       Recuperar estadísticas del dashboard para el usuario actual.
+        Obtener información del usuario actual.
         """
-        user_stats = await self.service.get_dashboard_stats(current_user)
         return StandardResponse(
             success=True,
-            message="Dashboard stats recuperadas exitosamente",
-            data=user_stats
+            message="Usuario obtenido exitosamente",
+            data={
+                "_id": str(current_user.get("_id")),
+                "email": current_user.get("email"),
+                "name": current_user.get("name", ""),
+                "profileImage": current_user.get("profileImage", None)
+            }
         )
     
-
-    async def get_user_articles(self, query: ArticlesQuery,current_user: dict) -> StandardResponse:
+    async def update_profile(
+        self,
+        update_data: UserProfileUpdate,
+        current_user: dict
+    ) -> StandardResponse:
         """
-¡       Recuperar estadísticas del dashboard para el usuario actual.
+        Actualizar perfil del usuario (nombre e/o imagen).
         """
-        user_articles = await self.service.get_user_articles(query, current_user)
+        result = await self.service.update_profile(
+            email=current_user["email"],
+            name=update_data.name,
+            profile_image=update_data.profileImage
+        )
         return StandardResponse(
             success=True,
-            message="Artículos del usuario recuperados exitosamente",
-            data=user_articles
+            message="Perfil actualizado exitosamente",
+            data=result
+        )
+    
+    async def change_password(
+        self,
+        pwd_data: ChangePasswordRequest,
+        current_user: dict
+    ) -> StandardResponse:
+        """
+        Cambiar contraseña del usuario.
+        """
+        result = await self.service.change_password(
+            current_user["email"],
+            pwd_data.currentPassword,
+            pwd_data.newPassword
+        )
+        return StandardResponse(
+            success=True,
+            message="Contraseña actualizada exitosamente",
+            data=result
         )

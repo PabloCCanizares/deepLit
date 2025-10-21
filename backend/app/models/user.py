@@ -1,25 +1,22 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 
-class UserRegister(BaseModel):
-    """Schema para registrar usuario"""
-    email: EmailStr
-    password: str = Field(..., min_length=6, description="Mínimo 6 caracteres")
-    name: Optional[str] = None
+# ============================================
+# USER PROFILE REQUEST MODELS (Input)
+# ============================================
 
-class UserLogin(BaseModel):
-    """Schema para login"""
-    email: EmailStr
-    password: str
-
-# FIXME no se si es el lugar correcto
 class UserProfileUpdate(BaseModel):
-    """Schema para actualizar perfil"""
-    name: str = Field(..., min_length=1, description="Nombre no puede estar vacío")
+    """
+    Schema para actualizar perfil.
+    
+    Todos los campos son opcionales para permitir actualizaciones parciales.
+    Por ejemplo: solo actualizar nombre, solo imagen, o ambos.
+    """
+    name: Optional[str] = Field(None, min_length=1, description="Nombre del usuario")
     profileImage: Optional[str] = Field(None, description="Imagen en formato base64")
 
 class ChangePasswordRequest(BaseModel):
-    """Schema para cambiar contraseña"""
+    """Schema para cambiar contraseña del usuario"""
     currentPassword: str = Field(..., description="Contraseña actual")
     newPassword: str = Field(..., min_length=6, description="Nueva contraseña mínimo 6 caracteres")
 

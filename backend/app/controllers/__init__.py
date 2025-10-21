@@ -1,8 +1,15 @@
 # Controllers
 
 from .auth_controller import AuthController
-from .pdf_controller import PdfController
+from .pdfs_controller import PdfsController
 from .user_controller import UserController
-from .article_controller import ArticleController
+from .articles_controller import ArticlesController
+from .stats_controller import StatsController
 
-__all__ = ["AuthController", "PdfController", "UserController", "ArticleController"]
+__all__ = [
+    "AuthController",
+    "PdfsController",
+    "UserController",
+    "ArticlesController",
+    "StatsController",
+]

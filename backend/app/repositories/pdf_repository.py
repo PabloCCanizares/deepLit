@@ -20,3 +20,16 @@ class PdfRepository:
         count = await self.collection.count_documents({"id_user": user_id})
         return count
     
+    async def update(self, pdf_id: str, update_data: dict) -> Optional[dict]:
+        """Actualizar PDF por ID"""
+        result = await self.collection.update_one(
+            {"_id": pdf_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            return None
+        
+        # Devolver el PDF actualizado
+        return await self.collection.find_one({"_id": pdf_id})
+    

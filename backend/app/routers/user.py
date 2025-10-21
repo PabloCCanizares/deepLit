@@ -1,30 +1,31 @@
 """
-Rutas de autenticación
+Rutas de Usuario (Perfil).
+
+Endpoints para gestionar el perfil del usuario autenticado.
 """
 from fastapi import APIRouter, Depends
 from app.controllers import UserController
-from app.core import StandardResponse, create_response_examples
-from app.core import get_current_user
-from app.models import ArticlesQuery
+from app.models import UserProfileUpdate, ChangePasswordRequest
+from app.core import StandardResponse, create_response_examples, get_current_user
 
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/user", tags=["User Profile"])
 
 # ============================================
-# RUTAS PÚBLICAS (sin token)
+# RUTAS PROTEGIDAS (requieren autenticación)
 # ============================================
 
-
-#FIXME modificar success_example
 @router.get(
-    "/stats",
+    "/me",
     response_model=StandardResponse,
+    summary="Obtener mi perfil",
     responses=create_response_examples(
         success_example={
-            "message": "Información del usuario obtenida exitosamente",
+            "message": "Usuario obtenido exitosamente",
             "data": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "_id": "123e4567-e89b-12d3-a456-426614174000",
                 "email": "usuario@example.com",
-                "created_at": "2025-10-12T10:30:00Z"
+                "name": "Juan Pérez",
+                "profileImage": "data:image/png;base64,..."
             }
         },
         error_example={
@@ -34,42 +35,71 @@ router = APIRouter(prefix="/user", tags=["User"])
         }
     )
 )
-async def get_dashboard_stats(
+async def get_me(
     current_user: dict = Depends(get_current_user),
     controller: UserController = Depends()
 ):
     """
-    Recuperar estadísticas del dashboard para el usuario actual.
+    Obtener información del usuario autenticado actual.
     """
-    return await controller.get_dashboard_stats(current_user)
+    return await controller.get_me(current_user)
 
 
-@router.post(
-    "/articles",
+@router.put(
+    "/me/profile",
     response_model=StandardResponse,
+    summary="Actualizar mi perfil",
     responses=create_response_examples(
         success_example={
-            "message": "Información del usuario obtenida exitosamente",
+            "message": "Perfil actualizado exitosamente",
             "data": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
                 "email": "usuario@example.com",
-                "created_at": "2025-10-12T10:30:00Z"
+                "name": "Nuevo Nombre",
+                "profileImage": "data:image/png;base64,iVBORw0KGgo..."
             }
         },
         error_example={
-            "message": "Error al obtener información del usuario",
-            "error": "Token inválido o expirado",
-            "error_code": "INVALID_TOKEN"
+            "message": "Error al actualizar perfil",
+            "error": "Usuario no encontrado",
+            "error_code": "USER_NOT_FOUND"
         }
     )
 )
-async def get_user_articles(
-    query: ArticlesQuery,
+async def update_profile(
+    update_data: UserProfileUpdate,
     current_user: dict = Depends(get_current_user),
     controller: UserController = Depends()
 ):
     """
-    Recuperar estadísticas del dashboard para el usuario actual.
+    Actualizar perfil del usuario autenticado (nombre e imagen).
     """
-    return await controller.get_user_articles(query, current_user)
+    return await controller.update_profile(update_data, current_user)
 
+
+@router.put(
+    "/me/password",
+    response_model=StandardResponse,
+    summary="Cambiar mi contraseña",
+    responses=create_response_examples(
+        success_example={
+            "message": "Contraseña actualizada exitosamente",
+            "data": {
+                "message": "Contraseña actualizada correctamente"
+            }
+        },
+        error_example={
+            "message": "Error al cambiar contraseña",
+            "error": "La contraseña actual es incorrecta",
+            "error_code": "INVALID_PASSWORD"
+        }
+    )
+)
+async def change_password(
+    pwd_data: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+    controller: UserController = Depends()
+):
+    """
+    Cambiar contraseña del usuario autenticado.
+    """
+    return await controller.change_password(pwd_data, current_user)

@@ -28,7 +28,9 @@ class StorageService:
     """
     
     def __init__(self):
-        """Inicializa el servicio y crea los directorios si no existen."""
+        """
+        Inicializa el servicio y crea los directorios si no existen.
+        """
         self.base_dir = Path(settings.STORAGE_BASE_DIR)
         
         # Mapeo de tipos de almacenamiento a sus directorios
@@ -53,11 +55,6 @@ class StorageService:
     ) -> str:
         """
         Guarda un archivo en el almacenamiento.
-        
-        Args:
-            content: Contenido del archivo en bytes
-            filename: Nombre del archivo
-            storage_location: Tipo de almacenamiento (uploads, temp, drafts)
         """
         file_path = self.get_path(filename, storage_location)
         
@@ -69,16 +66,6 @@ class StorageService:
     def read_file(self, filename: str, storage_location: StorageLocation = "uploads") -> bytes:
         """
         Lee un archivo del almacenamiento.
-        
-        Args:
-            filename: Nombre del archivo
-            storage_location: Tipo de almacenamiento
-        
-        Returns:
-            Contenido del archivo en bytes
-        
-        Raises:
-            FileNotFoundError: Si el archivo no existe
         """
         file_path = self.get_path(filename, storage_location)
         
@@ -91,13 +78,6 @@ class StorageService:
     def exists(self, filename: str, storage_location: StorageLocation = "uploads") -> bool:
         """
         Verifica si un archivo existe.
-        
-        Args:
-            filename: Nombre del archivo
-            storage_location: Tipo de almacenamiento
-        
-        Returns:
-            True si existe, False si no
         """
         file_path = self.get_path(filename, storage_location)
         return file_path.exists()
@@ -105,13 +85,6 @@ class StorageService:
     def get_path(self, filename: str, storage_location: StorageLocation = "uploads") -> Path:
         """
         Obtiene la ruta completa de un archivo.
-        
-        Args:
-            filename: Nombre del archivo
-            storage_location: Tipo de almacenamiento
-        
-        Returns:
-            Path object con la ruta completa
         """
         return self.storage_paths[storage_location] / filename
 

@@ -5,27 +5,27 @@ from datetime import datetime
 from app.core.auth import hash_password, verify_password, create_access_token
 from app.core import AuthenticationError, ConflictError
 from app.repositories import UserRepository
-from app.models.user import UserRegister
+from app.models import UserRegister, UserLogin
 
 class AuthService:
     
     def __init__(self):
         self.user_repo = UserRepository()
     
-    async def register(self, user_data: UserRegister) -> dict:
+    async def register(self, register_data: UserRegister) -> dict:
         """
         Registrar un nuevo usuario
         """
         # 1. Verificar si el email ya existe
-        existing_user = await self.user_repo.find_by_email(user_data.email)
+        existing_user = await self.user_repo.find_by_email(register_data.email)
         if existing_user:
             raise ConflictError("El email ya está registrado")
         
         # 2. Crear el usuario
         user_dict = {
-            "email": user_data.email,
-            "password_hash": hash_password(user_data.password),
-            "name": user_data.name or "",
+            "email": register_data.email,
+            "password_hash": hash_password(register_data.password),
+            "name": register_data.name or "",
             "created_at": datetime.utcnow()
         }
         
@@ -33,22 +33,22 @@ class AuthService:
         
         # 3. Devolver info del usuario (sin password)
         return {
-            "email": user_data.email,
-            "name": user_data.name
+            "email": register_data.email,
+            "name": register_data.name
         }
     
-    async def login(self, email: str, password: str) -> dict:
+    async def login(self, login_data: UserLogin) -> dict:
         """
         Iniciar sesión
         """
         # 1. Buscar usuario por email
-        user = await self.user_repo.find_by_email(email)
+        user = await self.user_repo.find_by_email(login_data.email)
         
         if not user:
             raise AuthenticationError("Email o contraseña incorrectos")
         
         # 2. Verificar contraseña
-        if not verify_password(password, user["password_hash"]):
+        if not verify_password(login_data.password, user["password_hash"]):
             raise AuthenticationError("Email o contraseña incorrectos")
         
         # 3. Crear token
@@ -64,59 +64,4 @@ class AuthService:
             }
         }
 
-    async def update_profile(self, email: str, name: str, profile_image: str = None) -> dict:
-        """
-        Actualizar perfil del usuario (nombre e imagen)
-        """
-        # 1. Buscar usuario
-        user = await self.user_repo.find_by_email(email)
-        if not user:
-            raise AuthenticationError("Usuario no encontrado")
-        
-        # 2. Actualizar datos
-        update_data = {
-            "name": name,
-            "updated_at": datetime.utcnow()
-        }
-        
-        if profile_image:
-            update_data["profileImage"] = profile_image
-        
-        # 3. Guardar en BD
-        await self.user_repo.update_by_email(email, update_data)
-        
-        # 4. Obtener usuario actualizado
-        updated_user = await self.user_repo.find_by_email(email)
-        
-        # 5. Devolver datos del usuario
-        return {
-            "email": updated_user["email"],
-            "name": updated_user.get("name", ""),
-            "profileImage": updated_user.get("profileImage", None)
-        }
-    
-    async def change_password(self, email: str, current_password: str, new_password: str) -> dict:
-        """
-        Cambiar contraseña del usuario
-        """
-        # 1. Buscar usuario
-        user = await self.user_repo.find_by_email(email)
-        if not user:
-            raise AuthenticationError("Usuario no encontrado")
-        
-        # 2. Verificar contraseña actual
-        if not verify_password(current_password, user["password_hash"]):
-            raise AuthenticationError("La contraseña actual es incorrecta")
-        
-        # 3. Actualizar contraseña
-        update_data = {
-            "password_hash": hash_password(new_password),
-            "updated_at": datetime.utcnow()
-        }
-        
-        await self.user_repo.update_by_email(email, update_data)
-        
-        return {
-            "message": "Contraseña actualizada exitosamente"
-        }
 
