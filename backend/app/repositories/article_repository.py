@@ -3,7 +3,7 @@ Repositorio de usuarios
 """
 from typing import Optional
 from app.database import get_database
-from app.models import ArticlesQuery
+from app.models import QueryBody
 from typing import List
 
 class ArticleRepository:
@@ -23,7 +23,7 @@ class ArticleRepository:
         return count
     
 
-    async def get_user_articles(self, query: ArticlesQuery, current_user: dict) -> List[dict]:
+    async def get_user_articles(self, query: QueryBody, current_user: dict) -> List[dict]:
         """Recuperar artículos del usuario actual con paginación y filtros"""
         filter_criteria = {"id_user": current_user["_id"]}
 

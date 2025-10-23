@@ -5,6 +5,7 @@ from .pdfs_controller import PdfsController
 from .user_controller import UserController
 from .articles_controller import ArticlesController
 from .stats_controller import StatsController
+from .openalex_controller import OpenAlexController
 
 __all__ = [
     "AuthController",
@@ -12,4 +13,5 @@ __all__ = [
     "UserController",
     "ArticlesController",
     "StatsController",
+    "OpenAlexController",
 ]

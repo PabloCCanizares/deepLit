@@ -4,32 +4,32 @@ Controlador de Artículos.
 Responsabilidad: Gestionar operaciones de artículos.
 """
 from fastapi import Depends
-from app.services.article_service import ArticleService
+from app.services.openalex_service import OpenAlexService
 from app.models import QueryBody
 from app.core import StandardResponse
 
 
-class ArticlesController:
+class OpenAlexController:
     
-    def __init__(self, service: ArticleService = Depends()):
+    def __init__(self, service: OpenAlexService = Depends()):
         self.service = service
     
-    async def get_user_articles(
+    async def get_openalex_articles(
         self,
-        query: QueryBody,
-        current_user: dict
+        query: QueryBody
     ) -> StandardResponse:
         """
         Obtener artículos del usuario actual con filtros y paginación.
         """
-        articles_data = await self.service.get_user_articles(query, current_user)
-     
+        print("ENTRO EN CONTROLLER OPENALEX")
+        articles_data = await self.service.get_openalex_articles(query)
+        print("ARTICLES DATA EN CONTROLLER OPENALEX:", articles_data)
         return StandardResponse(
             success=True,
             message="Artículos recuperados exitosamente",
             data={
                 "articles": articles_data["articles"],
-                "total": articles_data["total"]
+                "total": 0
             }
         )
 

@@ -64,12 +64,12 @@ function Sidebar({ isOpen, onClose }) {
               <span>Búsqueda</span>
             </Link>
             <Link 
-              to="/scholar" 
-              className={`sidebarLink ${location.pathname === '/scholar' ? 'active' : ''}`}
+              to="/openalex" 
+              className={`sidebarLink ${location.pathname === '/openalex' ? 'active' : ''}`}
               onClick={onClose}
             >
               <i className="fas fa-graduation-cap"></i>
-              <span>Scholar</span>
+              <span>OpenAlex</span>
             </Link>
           </div>
         </nav>

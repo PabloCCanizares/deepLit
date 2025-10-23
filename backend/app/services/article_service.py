@@ -3,7 +3,7 @@ Servicio de Artículos.
 """
 from datetime import datetime
 from app.repositories import ArticleRepository
-from app.models import ArticlesQuery
+from app.models import QueryBody
 from typing import List, Dict
 
 
@@ -44,7 +44,7 @@ class ArticleService:
         """
         return await self.article_repo.count_documents(user_id)
     
-    async def get_user_articles(self, query: ArticlesQuery, current_user: dict) -> Dict:
+    async def get_user_articles(self, query: QueryBody, current_user: dict) -> Dict:
         """
         Recuperar artículos del usuario actual.
         """

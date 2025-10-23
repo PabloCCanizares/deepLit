@@ -30,7 +30,7 @@ from app.models.pdf import (
 # Article models
 from app.models.article import (
     Pagination,
-    ArticlesQuery
+    QueryBody
 )
 
 __all__ = [
@@ -47,6 +47,6 @@ __all__ = [
     
     # Article
     "Pagination",
-    "ArticlesQuery",
+    "QueryBody",
 ]
 

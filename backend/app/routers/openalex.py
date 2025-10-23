@@ -1,21 +1,19 @@
 """
-Rutas de Artículos.
-
-Endpoints para gestionar artículos.
+OpenAlex.
 """
 from fastapi import APIRouter, Depends
-from app.controllers import ArticlesController
+from app.controllers import OpenAlexController
 from app.models import QueryBody, Pagination
 from app.core import StandardResponse, create_response_examples, get_current_user
 
-router = APIRouter(prefix="/articles", tags=["Articles"])
+router = APIRouter(prefix="/openalex", tags=["OpenAlex"])
 
 # ============================================
 # RUTAS PROTEGIDAS (requieren autenticación)
 # ============================================
 
 @router.post(
-    "/search",  # POST /articles/search
+    "/search",  # POST /openalex/search
     response_model=StandardResponse,
     summary="Buscar artículos del usuario",
     responses=create_response_examples(
@@ -40,11 +38,8 @@ router = APIRouter(prefix="/articles", tags=["Articles"])
 async def get_user_articles(
     query: QueryBody,
     current_user: dict = Depends(get_current_user),
-    controller: ArticlesController = Depends()
+    controller: OpenAlexController = Depends()
 ):
-    """
-    Obtener lista de artículos del usuario autenticado.
-    **TODO:** Añadir más filtros cuando sea necesario (year, category, etc.)
-    """
-    return await controller.get_user_articles(query, current_user)
+    print("ENTRO EN ROUTER OPENALEX")
+    return await controller.get_openalex_articles(query)
 

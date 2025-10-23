@@ -124,12 +124,28 @@ export const articlesAPI = {
 };
 
 
+export const openalexAPI = {
+  getWorks: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
+    console.log("API OPENALEX - getWorks called");
+    return apiFetch('/openalex/search', {
+      method: 'POST',
+      body: JSON.stringify({
+        pagination: { limit, offset },
+        filters: Object.keys(filters).length > 0 ? filters : null
+      })
+    });
+  },
+};
+
+
 // Exportar por defecto para import por defecto
 export default {
   auth: authAPI,
   stats: statsAPI,
   upload: uploadAPI,
   articles: articlesAPI,
+  openalex: openalexAPI,
+
 };
 
 

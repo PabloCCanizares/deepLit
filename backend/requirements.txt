@@ -20,3 +20,6 @@ email-validator==2.1.0
 
 # Procesamiento de PDFs
 PyPDF2==3.0.1
+
+#PyAlex
+pyalex==0.18.0

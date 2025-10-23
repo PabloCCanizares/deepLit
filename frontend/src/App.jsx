@@ -1,17 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import PrivateRoute from './components/auth/privateRoute'
-import Layout from './components/layout/layout'
-import Login from './pages/login'
-import Register from './pages/register'
-import Dashboard from './pages/dashboard'
-import Home from './pages/home'
-import Documents from './pages/documents'
-import Collections from './pages/collections'
-import History from './pages/history'
-import Profile from './pages/profile'
-import Settings from './pages/settings'
-import Explore from './pages/explore'
+import PrivateRoute from './components/auth/PrivateRoute'
+import Layout from './components/layout/Layout'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
+import Documents from './pages/Documents'
+import Collections from './pages/Collections'
+import History from './pages/History'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import Explore from './pages/Explore'
+import OpenAlex from './pages/OpenAlex'
 
 
 function App() {
@@ -35,7 +36,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Documents />} />
-            <Route path="scholar" element={<Documents />} />
+            <Route path="openalex" element={<OpenAlex />} />
             <Route path="upload" element={<Documents />} />
             {/* Legacy routes - redirect to new ones */}
             <Route path="inicio" element={<Navigate to="/dashboard" replace />} />
