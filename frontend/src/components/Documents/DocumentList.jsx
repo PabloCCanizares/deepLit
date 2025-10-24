@@ -40,10 +40,10 @@ function DocumentList({ documents, loading, error }) {
       </div>
       
       {documents.map((doc) => {
-        const title = doc.Title || doc.title || '-'
-        const category = doc.Category || '-'
-        const pages = doc.Pag || '-'
-        const year = doc.Year || '-'
+        const title = doc.title || '-'
+        const category = doc.category || '-'
+        const pages = doc.page || '-'
+        const year = doc.year || '-'
         const id = doc._id || doc.id
 
         return (

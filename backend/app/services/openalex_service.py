@@ -19,7 +19,6 @@ class OpenAlexService:
     
     
     async def get_openalex_articles(self, body: QueryBody) -> Dict:
-        print("ENTRO EN SERVICE OPENALEX")
         limit = body.pagination.limit
         offset = body.pagination.offset
         filters = body.filters or {}
@@ -27,14 +26,16 @@ class OpenAlexService:
         # Calculate the page number from offset and limit
         page = (offset // limit) + 1 if limit > 0 else 1
 
-        # Create the paginated query
-        query = Works()["W2741809807"]
+        filters = filters or {}
 
-        # if filters:
-        #     query = query.filter(**filters)
+        filters["title.search"] = "chatgpt"
 
-        # Get results from the paginator
-        # openalex_articles = list(query)  # Convert Paginator to list to get results for the current page
+        # Construimos y ejecutamos la query
+        works_query = Works().filter(**filters)
+        results = works_query.get(per_page=limit, page=page)
         
-        print("OPENALEX ARTICLES:", query)
-        return {"articles": list(query)}
+        for result in results:
+            print(result["primary_topic"]["display_name"])
+            result["category"] = result["primary_topic"]["display_name"]
+            result["year"] = result["publication_year"]
+        return {"articles": results}

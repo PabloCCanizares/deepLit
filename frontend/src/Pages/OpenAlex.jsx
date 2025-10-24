@@ -67,18 +67,18 @@ function OpenAlex() {
     // 1. Aplicar búsqueda primero
     if (searchQuery.trim()) {
       filtered = filtered.filter(doc =>
-        (doc.Title || doc.title || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (doc.title || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
     // 2. Aplicar filtros
     if (filterCriteria === 'complete') {
       filtered = filtered.filter(doc => 
-        doc.Title && doc.Category && doc.Pag && doc.Year
+        doc.title && doc.category && doc.pages && doc.year
       )
     } else if (filterCriteria === 'incomplete') {
       filtered = filtered.filter(doc => 
-        !doc.Title || !doc.Category || !doc.Pag || !doc.Year
+        !doc.title || !doc.category || !doc.pages || !doc.year
       )
     }
 
@@ -86,13 +86,13 @@ function OpenAlex() {
     filtered.sort((a, b) => {
       switch (sortCriteria) {
         case 'year-asc':
-          return (parseInt(a.Year) || 0) - (parseInt(b.Year) || 0)
+          return (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
         case 'year-desc':
-          return (parseInt(b.Year) || 0) - (parseInt(a.Year) || 0)
+          return (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
         case 'title-asc':
-          return (a.Title || '').localeCompare(b.Title || '')
+          return (a.title || '').localeCompare(b.title || '')
         case 'title-desc':
-          return (b.Title || '').localeCompare(a.Title || '')
+          return (b.title || '').localeCompare(a.title || '')
         default:
           return 0
       }

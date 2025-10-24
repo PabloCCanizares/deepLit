@@ -21,9 +21,7 @@ class OpenAlexController:
         """
         Obtener artículos del usuario actual con filtros y paginación.
         """
-        print("ENTRO EN CONTROLLER OPENALEX")
         articles_data = await self.service.get_openalex_articles(query)
-        print("ARTICLES DATA EN CONTROLLER OPENALEX:", articles_data)
         return StandardResponse(
             success=True,
             message="Artículos recuperados exitosamente",

@@ -40,6 +40,5 @@ async def get_user_articles(
     current_user: dict = Depends(get_current_user),
     controller: OpenAlexController = Depends()
 ):
-    print("ENTRO EN ROUTER OPENALEX")
     return await controller.get_openalex_articles(query)
 
