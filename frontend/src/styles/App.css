@@ -11,7 +11,9 @@
 @import './Documents/DocumentCard.css';
 @import './Documents/DocumentControls.css';
 @import './Documents/DocumentGrid.css';
+@import './Documents/DocumentList.css';
 @import './Documents/SearchBar.css';
+@import './Documents/DocumentViewEdit.css';
 
 /* ======= IMPORTAR ESTILOS DE AUTH ======= */
 @import './Auth.css';

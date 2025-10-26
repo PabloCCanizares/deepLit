@@ -2,17 +2,19 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext'
 import PrivateRoute from './components/auth/PrivateRoute'
 import Layout from './components/layout/Layout'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Home from './pages/Home'
-import Documents from './pages/Documents'
-import Collections from './pages/Collections'
-import History from './pages/History'
-import Profile from './pages/Profile'
-import Settings from './pages/Settings'
-import Explore from './pages/Explore'
-import OpenAlex from './pages/OpenAlex'
+import Login from './Pages/Login'
+import Register from './Pages/Register'
+import Dashboard from './Pages/Dashboard'
+import Home from './Pages/Home'
+import Documents from './Pages/Documents'
+import DocumentView from './Pages/DocumentView'
+import DocumentEdit from './Pages/DocumentEdit'
+import Collections from './Pages/Collections'
+import History from './Pages/History'
+import Profile from './Pages/Profile'
+import Settings from './Pages/Settings'
+import Explore from './Pages/Explore'
+import OpenAlex from './Pages/OpenAlex'
 
 
 function App() {
@@ -33,6 +35,8 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="documents" element={<Documents />} />
+            <Route path="documents/:id" element={<DocumentView />} />
+            <Route path="documents/:id/edit" element={<DocumentEdit />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Documents />} />
