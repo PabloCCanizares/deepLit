@@ -13,7 +13,7 @@ class UserProfileUpdate(BaseModel):
     Por ejemplo: solo actualizar nombre, solo imagen, o ambos.
     """
     name: Optional[str] = Field(None, min_length=1, description="Nombre del usuario")
-    profileImage: Optional[str] = Field(None, description="Imagen en formato base64")
+    profile_image: Optional[str] = Field(None, description="Imagen en formato base64")
 
 class ChangePasswordRequest(BaseModel):
     """Schema para cambiar contraseña del usuario"""

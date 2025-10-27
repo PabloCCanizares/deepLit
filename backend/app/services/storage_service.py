@@ -82,6 +82,22 @@ class StorageService:
         file_path = self.get_path(filename, storage_location)
         return file_path.exists()
     
+    def delete_file(self, filename: str, storage_location: StorageLocation = "uploads") -> bool:
+        """
+        Elimina un archivo del almacenamiento.
+        """
+        file_path = self.get_path(filename, storage_location)
+        
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                print(f"Archivo {filename} eliminado correctamente")
+                return True
+            return False
+        except Exception as e:
+            print(f"Error al eliminar archivo {filename}: {e}")
+            return False
+    
     def get_path(self, filename: str, storage_location: StorageLocation = "uploads") -> Path:
         """
         Obtiene la ruta completa de un archivo.

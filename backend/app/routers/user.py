@@ -4,6 +4,7 @@ Rutas de Usuario (Perfil).
 Endpoints para gestionar el perfil del usuario autenticado.
 """
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from app.controllers import UserController
 from app.models import UserProfileUpdate, ChangePasswordRequest
 from app.core import StandardResponse, create_response_examples, get_current_user
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/user", tags=["User Profile"])
                 "_id": "123e4567-e89b-12d3-a456-426614174000",
                 "email": "usuario@example.com",
                 "name": "Juan Pérez",
-                "profileImage": "data:image/png;base64,..."
+                "profile_image": "usuario_at_example_com_20241027.jpg"
             }
         },
         error_example={
@@ -55,7 +56,7 @@ async def get_me(
             "data": {
                 "email": "usuario@example.com",
                 "name": "Nuevo Nombre",
-                "profileImage": "data:image/png;base64,iVBORw0KGgo..."
+                "profile_image": "usuario_at_example_com_20241027.jpg"
             }
         },
         error_example={
@@ -103,3 +104,18 @@ async def change_password(
     Cambiar contraseña del usuario autenticado.
     """
     return await controller.change_password(pwd_data, current_user)
+
+@router.get(
+    "/me/profile-image",
+    response_class=FileResponse,
+    summary="Obtener mi imagen de perfil",
+    description="Devuelve la imagen de perfil del usuario autenticado. Requiere token de autenticación."
+)
+async def get_my_profile_image(
+    current_user: dict = Depends(get_current_user),
+    controller: UserController = Depends()
+):
+    """
+    Obtener la imagen de perfil del usuario autenticado.
+    """
+    return await controller.get_profile_image(current_user)

@@ -60,7 +60,7 @@ class AuthService:
             "user": {
                 "email": user["email"],
                 "name": user.get("name", ""),
-                "profileImage": user.get("profileImage", None)
+                "profile_image": user.get("profile_image", None)
             }
         }
 

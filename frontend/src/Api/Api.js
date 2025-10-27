@@ -52,6 +52,41 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
+// Helper genérico para descargar archivos binarios (imágenes, PDFs, etc.)
+async function fetchFile(endpoint) {
+  const url = `${API_BASE}${endpoint}`;
+  
+  // Agregar token si existe (igual que apiFetch)
+  const token = getAuthToken();
+  const headers = {};
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(url, { headers });
+    
+    // Si es 404, devolver null (archivo no existe)
+    if (response.status === 404) {
+      return null;
+    }
+    
+    // Para otros errores, lanzar (igual que apiFetch)
+    if (!response.ok) {
+      const error = new Error(`Error al cargar archivo: ${response.statusText}`);
+      error.status = response.status;
+      throw error;
+    }
+    
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    console.error('File fetch error:', error);
+    throw error;
+  }
+}
+
 // Auth API - Autenticación y gestión de sesiones
 export const authAPI = {
   login: (email, password) => apiFetch('/auth/login', {
@@ -69,7 +104,7 @@ export const authAPI = {
   updateProfile: (name, profileImage) => {
     const body = { name };
     if (profileImage) {
-      body.profileImage = profileImage;
+      body.profile_image = profileImage;
     }
     return apiFetch('/user/me/profile', {
       method: 'PUT',
@@ -80,6 +115,8 @@ export const authAPI = {
     method: 'PUT',
     body: JSON.stringify({ currentPassword, newPassword }),
   }),
+  // Obtener imagen de perfil
+  getProfileImage: () => fetchFile('/user/me/profile-image'),
 };
 
 // Stats API - Estadísticas y analytics

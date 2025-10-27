@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../api/api';
+import { authAPI } from '../Api/Api';
 
 const AuthContext = createContext(null);
 
@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
 
   // Verificar token al cargar la app
   useEffect(() => {
@@ -27,12 +28,23 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // Verificar token con /auth/me
+        // Verificar token con /user/me
         const response = await authAPI.getMe();
         
         // Si llega aquí, token válido
         setUser(response.data);
         setToken(storedToken);
+        
+        // Cargar imagen de perfil si existe
+        if (response.data?.profile_image) {
+          try {
+            const imageUrl = await authAPI.getProfileImage();
+            setProfileImageUrl(imageUrl);
+          } catch {
+            // Si falla, simplemente no cargar imagen (silencioso)
+            setProfileImageUrl(null);
+          }
+        }
       } catch (error) {
         console.error('Error verificando token:', error);
         
@@ -40,6 +52,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
+        setProfileImageUrl(null);
       } finally {
         setLoading(false);
       }
@@ -58,6 +71,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', token);
     setToken(token);
     setUser(userData);
+    
+    // Cargar imagen de perfil si existe
+    if (userData?.profile_image) {
+      try {
+        const imageUrl = await authAPI.getProfileImage();
+        setProfileImageUrl(imageUrl);
+      } catch {
+        // Si falla, simplemente no cargar imagen (silencioso)
+        setProfileImageUrl(null);
+      }
+    }
   };
 
   const register = async (email, password, name = '') => {
@@ -72,11 +96,24 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setProfileImageUrl(null);
   };
 
   const updateProfile = async (name, profileImage) => {
     const response = await authAPI.updateProfile(name, profileImage);
     setUser(response.data);
+    
+    // Si se actualizó la imagen, recargarla
+    if (profileImage) {
+      try {
+        const imageUrl = await authAPI.getProfileImage();
+        setProfileImageUrl(imageUrl);
+      } catch {
+        // Si falla, simplemente no cargar imagen (silencioso)
+        setProfileImageUrl(null);
+      }
+    }
+    
     return response.data;
   };
 
@@ -89,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAuthenticated: !!user,
+    profileImageUrl,
     login,
     register,
     logout,

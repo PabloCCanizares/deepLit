@@ -3,15 +3,21 @@ Servicio de Usuario.
 
 Responsabilidad: SOLO operaciones del perfil de usuario.
 """
+import base64
+import re
+from datetime import datetime
+from pathlib import Path
 from app.core.auth import hash_password, verify_password
 from app.core import AuthenticationError
 from app.repositories.user_repository import UserRepository
+from app.services.storage_service import StorageService
 
 
 class UserService:
     
     def __init__(self):
         self.user_repo = UserRepository()
+        self.storage = StorageService()
     
     async def update_profile(
         self,
@@ -28,7 +34,17 @@ class UserService:
             update_data["name"] = name
         
         if profile_image is not None:
-            update_data["profileImage"] = profile_image
+            # Obtener usuario para eliminar imagen antigua
+            user = await self.user_repo.find_by_email(email)
+            old_image = user.get("profile_image")
+            
+            # Eliminar imagen antigua si existe
+            if old_image:
+                self.storage.delete_file(old_image, storage_location="profiles")
+            
+            # Procesar imagen: guardar archivo y almacenar solo el nombre
+            filename = await self._save_profile_image(email, profile_image)
+            update_data["profile_image"] = filename
         
         # Si no se envió nada, no hacer nada
         if not update_data:
@@ -37,7 +53,7 @@ class UserService:
             return {
                 "email": user.get("email"),
                 "name": user.get("name"),
-                "profileImage": user.get("profileImage")
+                "profile_image": user.get("profile_image")
             }
         
         # Actualizar solo los campos enviados
@@ -46,8 +62,55 @@ class UserService:
         return {
             "email": updated_user.get("email"),
             "name": updated_user.get("name"),
-            "profileImage": updated_user.get("profileImage")
+            "profile_image": updated_user.get("profile_image")
         }
+    
+    async def _save_profile_image(self, email: str, base64_data: str) -> str:
+        """
+        Guarda la imagen de perfil en disco y retorna el nombre del archivo.
+        
+        Args:
+            email: Email del usuario
+            base64_data: Imagen en formato base64 (con o sin prefijo data:image/...)
+        
+        Returns:
+            Nombre del archivo guardado
+        """
+        # Extraer el tipo de imagen y el contenido base64
+        # Formato esperado: data:image/png;base64,iVBORw0KGgo...
+        if ',' in base64_data:
+            header, base64_content = base64_data.split(',', 1)
+            # Extraer extensión del header (image/png -> png, image/jpeg -> jpg)
+            match = re.search(r'image/(\w+)', header)
+            extension = match.group(1) if match else 'jpg'
+            # Normalizar jpeg a jpg
+            if extension == 'jpeg':
+                extension = 'jpg'
+        else:
+            # Si no tiene header, asumir que es base64 puro
+            base64_content = base64_data
+            extension = 'jpg'
+        
+        # Generar nombre único: email_timestamp.extension
+        # Limpiar email para usar en nombre de archivo
+        safe_email = email.replace('@', '_at_').replace('.', '_')
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{safe_email}_{timestamp}.{extension}"
+        
+        # Decodificar base64
+        try:
+            image_content = base64.b64decode(base64_content)
+        except Exception as e:
+            raise ValueError(f"Error al decodificar imagen base64: {str(e)}")
+        
+        # Guardar archivo en storage/profiles/
+        self.storage.save_file(
+            content=image_content,
+            filename=filename,
+            storage_location="profiles"
+        )
+        
+        return filename
     
     async def change_password(
         self,

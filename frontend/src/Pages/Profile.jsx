@@ -4,7 +4,7 @@ import '../styles/App.css'
 import '../styles/Profile/Profile.css'
 
 function Profile() {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, changePassword, profileImageUrl } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showMessage, setShowMessage] = useState(false);
@@ -22,9 +22,12 @@ function Profile() {
   });
 
   // Estado para imagen de perfil
-  const [profileImage, setProfileImage] = useState(user?.profileImage || null);
-  const [previewImage, setPreviewImage] = useState(user?.profileImage || null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [newImageBase64, setNewImageBase64] = useState(null);
   const [imageChanged, setImageChanged] = useState(false);
+  
+  // Usar la imagen del servidor o el preview local
+  const displayImage = previewImage || profileImageUrl;
 
   // Auto-cerrar mensajes después de 3.5 segundos
   useEffect(() => {
@@ -55,11 +58,13 @@ function Profile() {
       }
 
       try {
-        setLoading(true);
         const reader = new FileReader();
         
-        reader.onload = async (e) => {
+        reader.onload = (e) => {
           const base64String = e.target.result;
+          // Guardar base64 para enviar al servidor
+          setNewImageBase64(base64String);
+          // Crear preview local
           setPreviewImage(base64String);
           setImageChanged(true);
           setMessage({ type: '', text: '' });
@@ -68,8 +73,6 @@ function Profile() {
         reader.readAsDataURL(file);
       } catch (error) {
         setMessage({ type: 'error', text: error.message || 'Error al seleccionar la imagen' });
-      } finally {
-        setLoading(false);
       }
     }
   };
@@ -77,9 +80,10 @@ function Profile() {
   const handleSaveImage = async () => {
     try {
       setLoading(true);
-      await updateProfile(newName, previewImage);
-      setProfileImage(previewImage);
+      await updateProfile(newName, newImageBase64);
       setImageChanged(false);
+      setPreviewImage(null);
+      setNewImageBase64(null);
       setMessage({ type: 'success', text: 'Imagen de perfil actualizada' });
     } catch (error) {
       setMessage({ type: 'error', text: error.message || 'Error al actualizar la imagen' });
@@ -96,7 +100,7 @@ function Profile() {
 
     try {
       setLoading(true);
-      await updateProfile(newName, profileImage);
+      await updateProfile(newName, null);
       setEditingName(false);
       setMessage({ type: 'success', text: 'Nombre actualizado correctamente' });
     } catch (error) {
@@ -171,8 +175,8 @@ function Profile() {
         <div className="profileCard">
           <div className="profileImageSection">
             <div className="profileImageContainer">
-              {previewImage ? (
-                <img src={previewImage} alt="Perfil" className="profileImage" />
+              {displayImage ? (
+                <img src={displayImage} alt="Perfil" className="profileImage" />
               ) : (
                 <div className="profileImagePlaceholder">
                   <i className="fas fa-user"></i>
@@ -203,7 +207,8 @@ function Profile() {
                   <button 
                     className="profileButtonSecondary"
                     onClick={() => {
-                      setPreviewImage(profileImage);
+                      setPreviewImage(null);
+                      setNewImageBase64(null);
                       setImageChanged(false);
                     }}
                     disabled={loading}

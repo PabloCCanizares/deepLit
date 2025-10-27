@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import '../../styles/App.css'
 
 function Navbar({ toggleSidebar }) {
-  const { user, logout } = useAuth();
+  const { user, logout, profileImageUrl } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -51,9 +51,9 @@ function Navbar({ toggleSidebar }) {
               className="userButton"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              {user?.profileImage ? (
+              {profileImageUrl ? (
                 <img 
-                  src={user.profileImage} 
+                  src={profileImageUrl} 
                   alt="Perfil"
                   className="userProfileImage"
                 />
@@ -66,9 +66,9 @@ function Navbar({ toggleSidebar }) {
             {showUserMenu && (
               <div className="userDropdown">
                 <div className="userInfo">
-                  {user?.profileImage && (
+                  {profileImageUrl && (
                     <img 
-                      src={user.profileImage} 
+                      src={profileImageUrl} 
                       alt="Perfil"
                       className="userDropdownImage"
                     />
