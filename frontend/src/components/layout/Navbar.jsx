@@ -40,7 +40,7 @@ function Navbar({ toggleSidebar }) {
           </button>
 
           <Link to="/" className="navbarBrand">
-            deepLit
+            <span className="deepLit-d">deep</span><span className="deepLit-lit">Lit</span>
           </Link>
         </div>
 

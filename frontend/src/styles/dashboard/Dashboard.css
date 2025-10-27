@@ -16,8 +16,30 @@
   box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
 }
 
+/* Título principal del Dashboard */
+.dashboard-main-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Título de secciones (Documentos Subidos, etc.) */
+.dashboard-section-title {
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Clase legacy para compatibilidad */
 .title {
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -54,6 +76,7 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  font-size: 0.5rem;
 }
 
 .section {
@@ -71,6 +94,7 @@
   box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.2);
 }
 
+/* Usar la nueva clase para secciones */
 .sectionTitle {
   font-size: 1.2rem;
   background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '../../styles/documents/DocumentList.css'
+import '../../styles/Documents/DocumentList.css'
 
 function DocumentList({ documents, loading, error }) {
   if (loading) {
@@ -36,7 +36,7 @@ function DocumentList({ documents, loading, error }) {
         <div className="list-col-category">Categoría</div>
         <div className="list-col-pages">Páginas</div>
         <div className="list-col-year">Año</div>
-        <div className="list-col-actions"></div>
+        <div className="list-col-actions">Opciones</div>
       </div>
       
       {documents.map((doc) => {

@@ -116,37 +116,44 @@
 }
 
 @media (max-width: 768px) {
-  .list-header {
-    display: none;
-  }
-
+  .list-header,
   .list-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-    padding: 1rem;
+    grid-template-columns: 2fr 1fr 80px 80px 80px;
+    gap: 0.3rem;
+    padding: 0.8rem 0.5rem;
+    font-size: 0.9rem;
   }
 
-  .list-col-title,
-  .list-col-category,
-  .list-col-pages,
-  .list-col-year {
-    display: flex;
-    justify-content: space-between;
+  .list-header > div {
+    font-size: 0.8rem;
   }
 
-  .list-col-title::before,
-  .list-col-category::before,
-  .list-col-pages::before,
-  .list-col-year::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: var(--main_color);
+  .list-action-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-header,
+  .list-row {
+    grid-template-columns: 1.5fr 1fr 60px 60px 80px;
+    gap: 0.2rem;
+    padding: 0.6rem 0.3rem;
+    font-size: 0.8rem;
   }
 
-  .list-col-actions {
-    justify-content: center;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #e0e0e0;
+  .list-header > div {
+    font-size: 0.7rem;
+  }
+
+  .list-action-btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .list-col-title {
+    white-space: normal;
+    line-height: 1.2;
   }
 }

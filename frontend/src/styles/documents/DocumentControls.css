@@ -1,8 +1,8 @@
 .doc-controls {
-  text-align: center;
+  text-align: left;
   margin: 1.5rem 0;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 2rem;
 }
@@ -10,8 +10,10 @@
 .control-left {
   display: flex;
   gap: 2rem;
+  justify-content: flex-start;
+  align-items: center;
   flex: 1;
-  justify-content: center;
+  padding-left: 0;
 }
 
 .control-right {
@@ -144,14 +146,18 @@
 /* Responsive */
 @media (max-width: 768px) {
   .doc-controls {
+    display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
+    text-align: center;
   }
 
   .control-left {
-    flex-direction: column;
-    gap: 1rem;
+    /* Mantener los botones uno al lado del otro */
+    flex-direction: row;
+    gap: 1.5rem;
     width: 100%;
+    justify-content: center;
   }
 
   .control-right {
@@ -159,8 +165,15 @@
     justify-content: center;
   }
 
-  .view-toggle {
-    width: 100%;
-    max-width: 200px;
+  /* Reducir gap solo en pantallas muy pequeñas */
+  @media (max-width: 480px) {
+    .control-left {
+      gap: 1rem;
+    }
+    
+    .control-btn {
+      font-size: 0.9rem;
+      padding: 6px 10px;
+    }
   }
 }

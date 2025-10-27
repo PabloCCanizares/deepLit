@@ -86,7 +86,7 @@ function Dashboard() {
   return (
     <div className="dashboardContainer">
       <div className="header">
-        <h1 className="title">Panel de Control</h1>
+        <h1 className="dashboard-main-title">Panel de Control</h1>
         <div>
           <input
             ref={fileInputRef}

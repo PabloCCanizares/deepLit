@@ -5,6 +5,8 @@ import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
 import DocumentList from '../components/documents/DocumentList'
 import '../styles/App.css'
+import '../styles/documents/UploadDocuments.css' // Para reutilizar los estilos del header panel
+
 
 function Documents() {
   const [documents, setDocuments] = useState([])
@@ -117,9 +119,35 @@ function Documents() {
       paddingBottom: '2rem'
     }}>
       <div className="container">
-        <SearchBar onSearch={handleSearch} placeholder="Buscar por título" />
+              
+        {/* Header Panel - Mismo formato que UploadDocuments */}
+        <div className="documents-header-panel">
+          <div className="documents-header-content">
+            <div className="documents-header-info">
+              <h1 className="documents-title">Mis Documentos</h1>
+              <p className="documents-subtitle">
+                Gestiona y organiza tu biblioteca de documentos
+              </p>
+            </div>
+            <div className="documents-stats">
+              <div className="stat-item">
+                <span className="stat-number">{filteredDocuments.length}</span>
+                <span className="stat-label">Filtrados</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <span className="stat-number">{documents.length}</span>
+                <span className="stat-label">Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         
-        <DocumentControls 
+        <div style={{ marginTop: '2rem' }}>
+          <SearchBar onSearch={handleSearch} placeholder="Buscar por título" />
+        </div>        <DocumentControls 
+
           onSort={handleSort} 
           onFilter={handleFilter}
           viewMode={viewMode}

@@ -69,7 +69,7 @@ function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>deepLit</h1>
+          <h1><span className="deepLit-d">deep</span><span className="deepLit-lit">Lit</span></h1>
           <p>Iniciar Sesión</p>
         </div>
 
