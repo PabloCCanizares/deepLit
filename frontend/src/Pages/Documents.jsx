@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { articlesAPI } from '../Api/articlesAPI'
+import { articlesAPI } from '../Api/Api'
 import SearchBar from '../components/documents/SearchBar'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
@@ -33,14 +33,12 @@ function Documents() {
     try {
       setLoading(true)
       
-      // Usar datos mock temporalmente para pruebas
       const response = await articlesAPI.getArticles({ 
         limit: pagination.limit, 
         offset: pagination.offset,
         filters: {} 
       });
       
-      console.log('Documents response:', response);
       setDocuments(response.data.articles)
       setPagination(prev => ({
         ...prev,

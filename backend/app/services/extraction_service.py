@@ -28,20 +28,10 @@ class ExtractionService:
         year = "extract_year"  # extract_year(text)
         category = "extract_category"  # extract_category(text)
         pages = "extract_pages"  # extract_pages(text) 
-        # FIXME: seguramente en la funcion de extract_text se pueden obtener las paginas
-        
-        """
-        # TODO: Implementar estas extracciones adicionales
-        category = ""  # extract_category(text)
-        type = ""  # extract_type(text)
-        acronym = ""  # extract_acronym(text)
-        pages = ""  # extract_pages(text)  
-        obs = ""  # extract_obs(text)
-        summary = ""  # extract_summary(text)
-        link = ""  # extract_link(text)
-        quote = ""  # extract_quote(text)
-        authors = ""  # extract_authors(text)
-        """
+        link = "extract_link"  # extract_link(text)
+        observations = "extract_observations"  # extract_observations(text)
+        type = "extract_type"  # extract_type(text)
+        #FIXME: seguramente en la funcion de extract_text se pueden obtener las paginas
         
         return {
             "title": title,

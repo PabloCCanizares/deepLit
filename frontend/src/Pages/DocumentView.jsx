@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { articlesAPI } from '../Api/articlesAPI.js'
+import { articlesAPI } from '../Api/Api'
 import '../styles/Documents/DocumentViewEdit.css'
 
 const DocumentView = () => {
@@ -15,27 +15,8 @@ const DocumentView = () => {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching document with ID:', id)
-        console.log('articlesAPI available methods:', Object.keys(articlesAPI))
-        
-        // Verificar si la función existe
-        if (!articlesAPI.getById) {
-          throw new Error('articlesAPI.getById no está disponible')
-        }
-
-        // También obtener la lista de documentos disponibles para debug
-        if (articlesAPI.getMockDocuments) {
-          const availableDocs = articlesAPI.getMockDocuments();
-          console.log('Available document IDs:', availableDocs.map(doc => ({ id: doc.id, title: doc.title })));
-        }
         
         const response = await articlesAPI.getById(id)
-        console.log('Response received:', response)
-        
-        if (!response || !response.data) {
-          throw new Error('Respuesta inválida del servidor')
-        }
-        
         setDocument(response.data)
       } catch (err) {
         console.error('Error fetching document:', err)
@@ -118,15 +99,52 @@ const DocumentView = () => {
             <span>{document.year || 'No especificado'}</span>
           </div>
           <div className="documentField">
-            <label>Revista/Fuente:</label>
-            <span>{document.journal || 'No especificado'}</span>
+            <label>Categoría:</label>
+            <span>{document.category || 'No especificado'}</span>
           </div>
+          <div className="documentField">
+            <label>Páginas:</label>
+            <span>{document.pages || 'No especificado'}</span>
+          </div>
+          {document.type && (
+            <div className="documentField">
+              <label>Tipo:</label>
+              <span>{document.type}</span>
+            </div>
+          )}
+          {document.acronym && (
+            <div className="documentField">
+              <label>Acrónimo:</label>
+              <span>{document.acronym}</span>
+            </div>
+          )}
+          {document.citations && (
+            <div className="documentField">
+              <label>Citas:</label>
+              <span>{document.citations}</span>
+            </div>
+          )}
+          {document.link && (
+            <div className="documentField">
+              <label>Enlace:</label>
+              <a href={document.link} target="_blank" rel="noopener noreferrer">
+                {document.link}
+              </a>
+            </div>
+          )}
         </div>
 
         {document.abstract && (
           <div className="documentSection">
             <h3>Resumen</h3>
             <p className="documentAbstract">{document.abstract}</p>
+          </div>
+        )}
+
+        {document.observations && (
+          <div className="documentSection">
+            <h3>Observaciones</h3>
+            <p className="documentAbstract">{document.observations}</p>
           </div>
         )}
 
@@ -143,11 +161,11 @@ const DocumentView = () => {
           </div>
         )}
 
-        {document.references && (
+        {document.bibliography && (
           <div className="documentSection">
-            <h3>Referencias</h3>
+            <h3>Bibliografía</h3>
             <div className="documentReferences">
-              <p>{document.references}</p>
+              <p>{document.bibliography}</p>
             </div>
           </div>
         )}

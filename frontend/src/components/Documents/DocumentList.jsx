@@ -42,7 +42,7 @@ function DocumentList({ documents, loading, error }) {
       {documents.map((doc) => {
         const title = doc.title || '-'
         const category = doc.category || '-'
-        const pages = doc.page || '-'
+        const pages = doc.pages || '-'
         const year = doc.year || '-'
         const id = doc._id || doc.id
 

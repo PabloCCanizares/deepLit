@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { articlesAPI } from '../Api/articlesAPI.js'
+import { articlesAPI } from '../Api/Api'
 import '../styles/Documents/DocumentViewEdit.css'
 
 const DocumentEdit = () => {
@@ -11,20 +11,16 @@ const DocumentEdit = () => {
   const [error, setError] = useState(null)
   
   const [formData, setFormData] = useState({
-    Title: '',
-    Year: '',
-    Category: '',
-    Type: '',
-    Acronym: '',
-    Cites: '',
-    Pag: '',
-    Obs: '',
-    Summary: '',
+    title: '',
+    year: '',
+    category: '',
+    type: '',
+    citations: '',
+    pages: '',
+    observations: '',
     link: '',
-    citation: '',
     abstract: '',
-    autores: '',
-    filename: ''
+    authors: '',
   })
 
   useEffect(() => {
@@ -32,28 +28,21 @@ const DocumentEdit = () => {
       try {
         setLoading(true)
         setError(null)
-        console.log('Fetching document for edit with ID:', id)
-        console.log('articlesAPI:', articlesAPI)
         
         const response = await articlesAPI.getById(id)
-        console.log('Edit Response:', response)
         const document = response.data
         
         setFormData({
-          Title: document.Title || document.title || '',
-          Year: document.Year || document.year || '',
-          Category: document.Category || document.category || '',
-          Type: document.Type || '',
-          Acronym: document.Acronym || '',
-          Cites: document.Cites || '',
-          Pag: document.Pag || document.pages || '',
-          Obs: document.Obs || '',
-          Summary: document.Summary || '',
+          title: document.title || '',
+          year: document.year || '',
+          category: document.category || '',
+          type: document.type || '',
+          citations: document.citations || '',
+          pages: document.pages || '',
+          observations: document.observations || '',
           link: document.link || '',
-          citation: document.citation || '',
           abstract: document.abstract || '',
-          autores: document.autores || document.authors || '',
-          filename: document.filename || ''
+          authors: document.authors || '',
         })
       } catch (err) {
         console.error('Error fetching document:', err)
@@ -142,24 +131,24 @@ const DocumentEdit = () => {
           <h3>Información Básica</h3>
           
           <div className="formField">
-            <label htmlFor="Title">Título *</label>
+            <label htmlFor="title">Título *</label>
             <input
               type="text"
-              id="Title"
-              name="Title"
-              value={formData.Title}
+              id="title"
+              name="title"
+              value={formData.title}
               onChange={handleInputChange}
               required
             />
           </div>
 
           <div className="formField">
-            <label htmlFor="autores">Autor(es)</label>
+            <label htmlFor="authors">Autor(es)</label>
             <input
               type="text"
-              id="autores"
-              name="autores"
-              value={formData.autores}
+              id="authors"
+              name="authors"
+              value={formData.authors}
               onChange={handleInputChange}
               placeholder="Separar múltiples autores con comas"
             />
@@ -167,12 +156,12 @@ const DocumentEdit = () => {
 
           <div className="formRow">
             <div className="formField">
-              <label htmlFor="Year">Año</label>
+              <label htmlFor="year">Año</label>
               <input
                 type="number"
-                id="Year"
-                name="Year"
-                value={formData.Year}
+                id="year"
+                name="year"
+                value={formData.year}
                 onChange={handleInputChange}
                 min="1900"
                 max="2030"
@@ -180,12 +169,12 @@ const DocumentEdit = () => {
             </div>
 
             <div className="formField">
-              <label htmlFor="Category">Categoría</label>
+              <label htmlFor="category">Categoría</label>
               <input
                 type="text"
-                id="Category"
-                name="Category"
-                value={formData.Category}
+                id="category"
+                name="category"
+                value={formData.category}
                 onChange={handleInputChange}
                 placeholder="Ej: Technology, Healthcare"
               />
@@ -197,48 +186,38 @@ const DocumentEdit = () => {
           <h3>Detalles de Publicación</h3>
           
           <div className="formField">
-            <label htmlFor="Type">Tipo</label>
+            <label htmlFor="type">Tipo</label>
             <input
               type="text"
-              id="Type"
-              name="Type"
-              value={formData.Type}
+              id="type"
+              name="type"
+              value={formData.type}
               onChange={handleInputChange}
               placeholder="Ej: Research Article, Conference Paper"
             />
           </div>
 
           <div className="formRow">
-            <div className="formField">
-              <label htmlFor="Acronym">Acrónimo</label>
-              <input
-                type="text"
-                id="Acronym"
-                name="Acronym"
-                value={formData.Acronym}
-                onChange={handleInputChange}
-              />
-            </div>
 
             <div className="formField">
-              <label htmlFor="Cites">Citas</label>
+              <label htmlFor="citations">Citas</label>
               <input
                 type="number"
-                id="Cites"
-                name="Cites"
-                value={formData.Cites}
+                id="citations"
+                name="citations"
+                value={formData.citations}
                 onChange={handleInputChange}
                 min="0"
               />
             </div>
 
             <div className="formField">
-              <label htmlFor="Pag">Páginas</label>
+              <label htmlFor="pages">Páginas</label>
               <input
                 type="text"
-                id="Pag"
-                name="Pag"
-                value={formData.Pag}
+                id="pages"
+                name="pages"
+                value={formData.pages}
                 onChange={handleInputChange}
                 placeholder="Ej: 123-145"
               />
@@ -246,11 +225,11 @@ const DocumentEdit = () => {
           </div>
 
           <div className="formField">
-            <label htmlFor="Obs">Observaciones</label>
+            <label htmlFor="observations">Observaciones</label>
             <textarea
-              id="Obs"
-              name="Obs"
-              value={formData.Obs}
+              id="observations"
+              name="observations"
+              value={formData.observations}
               onChange={handleInputChange}
               rows="3"
               placeholder="Observaciones adicionales..."
@@ -268,37 +247,13 @@ const DocumentEdit = () => {
               placeholder="https://..."
             />
           </div>
-
-          <div className="formField">
-            <label htmlFor="filename">Nombre del archivo</label>
-            <input
-              type="text"
-              id="filename"
-              name="filename"
-              value={formData.filename}
-              onChange={handleInputChange}
-              placeholder="nombre_archivo.pdf"
-            />
-          </div>
         </div>
 
         <div className="formSection">
           <h3>Contenido</h3>
-          
-          <div className="formField">
-            <label htmlFor="Summary">Resumen</label>
-            <textarea
-              id="Summary"
-              name="Summary"
-              value={formData.Summary}
-              onChange={handleInputChange}
-              rows="4"
-              placeholder="Resumen del documento..."
-            />
-          </div>
 
           <div className="formField">
-            <label htmlFor="abstract">Abstract</label>
+            <label htmlFor="abstract">Resumen</label>
             <textarea
               id="abstract"
               name="abstract"
@@ -309,17 +264,6 @@ const DocumentEdit = () => {
             />
           </div>
 
-          <div className="formField">
-            <label htmlFor="citation">Citación</label>
-            <textarea
-              id="citation"
-              name="citation"
-              value={formData.citation}
-              onChange={handleInputChange}
-              rows="3"
-              placeholder="Formato de citación..."
-            />
-          </div>
         </div>
       </form>
     </div>

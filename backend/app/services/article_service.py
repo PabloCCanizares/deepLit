@@ -4,6 +4,7 @@ Servicio de Artículos.
 from datetime import datetime
 from app.repositories import ArticleRepository
 from app.models import QueryBody
+from app.core import NotFoundError, AuthorizationError
 from typing import List, Dict
 
 
@@ -58,3 +59,55 @@ class ArticleService:
             "articles": articles,
             "total": total
         }
+    
+    async def get_by_id(self, article_id: str, user_id: str) -> Dict:
+        """
+        Obtener artículo por ID.
+        Verifica que el artículo pertenezca al usuario.
+        """
+        article = await self.article_repo.find_by_id(article_id)
+        
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        
+        # Verificar que el artículo pertenece al usuario
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para acceder a este artículo")
+        
+        return article
+    
+    async def update(self, article_id: str, user_id: str, update_data: Dict) -> Dict:
+        """
+        Actualizar artículo por ID.
+        Verifica que el artículo pertenezca al usuario.
+        """
+        # Verificar que el artículo existe y pertenece al usuario
+        article = await self.article_repo.find_by_id(article_id)
+        
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para modificar este artículo")
+        
+        # Actualizar
+        updated_article = await self.article_repo.update(article_id, update_data)
+        return updated_article
+    
+    async def delete(self, article_id: str, user_id: str) -> bool:
+        """
+        Eliminar artículo por ID.
+        Verifica que el artículo pertenezca al usuario.
+        """
+        # Verificar que el artículo existe y pertenece al usuario
+        article = await self.article_repo.find_by_id(article_id)
+        
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para eliminar este artículo")
+        
+        # Eliminar
+        deleted = await self.article_repo.delete(article_id)
+        return deleted

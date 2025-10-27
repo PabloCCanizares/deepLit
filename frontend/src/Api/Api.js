@@ -145,8 +145,8 @@ export const uploadAPI = {
 };
 
 export const articlesAPI = {
+  // Get articles with pagination
   getArticles: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
-    // ✅ POST /articles/search con body
     return apiFetch('/articles/search', {
       method: 'POST',
       body: JSON.stringify({
@@ -158,6 +158,30 @@ export const articlesAPI = {
       })
     });
   },
+
+  // Get single article by ID
+  getById: async (id) => {
+    return apiFetch(`/articles/${id}`, {
+      method: 'GET'
+    });
+  },
+
+  // Update article by ID
+  update: async (id, data) => {
+    return apiFetch(`/articles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  // Delete article by ID
+  delete: async (id) => {
+    return apiFetch(`/articles/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+
 };
 
 
