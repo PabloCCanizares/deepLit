@@ -103,15 +103,9 @@ export const AuthProvider = ({ children }) => {
     const response = await authAPI.updateProfile(name, profileImage);
     setUser(response.data);
     
-    // Si se actualizó la imagen, recargarla
+    // Si se actualizó la imagen, usar el base64 directamente
     if (profileImage) {
-      try {
-        const imageUrl = await authAPI.getProfileImage();
-        setProfileImageUrl(imageUrl);
-      } catch {
-        // Si falla, simplemente no cargar imagen (silencioso)
-        setProfileImageUrl(null);
-      }
+      setProfileImageUrl(profileImage);
     }
     
     return response.data;
