@@ -5,7 +5,6 @@ import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
 import DocumentList from '../components/documents/DocumentList'
 import '../styles/App.css'
-import '../styles/documents/UploadDocuments.css' // Para reutilizar los estilos del header panel
 
 
 function Documents() {
@@ -120,16 +119,16 @@ function Documents() {
     }}>
       <div className="container">
               
-        {/* Header Panel - Mismo formato que UploadDocuments */}
-        <div className="documents-header-panel">
-          <div className="documents-header-content">
-            <div className="documents-header-info">
-              <h1 className="documents-title">Mis Documentos</h1>
-              <p className="documents-subtitle">
+        {/* Header Panel - Formato común */}
+        <div className="header-panel">
+          <div className="header-content">
+            <div className="header-info">
+              <h1 className="header-title">Mis Documentos</h1>
+              <p className="header-subtitle">
                 Gestiona y organiza tu biblioteca de documentos
               </p>
             </div>
-            <div className="documents-stats">
+            <div className="header-stats">
               <div className="stat-item">
                 <span className="stat-number">{filteredDocuments.length}</span>
                 <span className="stat-label">Filtrados</span>

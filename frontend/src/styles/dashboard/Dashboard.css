@@ -37,46 +37,13 @@
   display: inline-block;
 }
 
-/* Clase legacy para compatibilidad */
-.title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: white;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.uploadButton {
-  background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: none;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
-}
-
-.uploadButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.3);
-}
-
-.uploadButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
+/* El botón de upload usa .btn-primary de common.css */
 
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
-  font-size: 0.5rem;
 }
 
 .section {
@@ -94,7 +61,7 @@
   box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.2);
 }
 
-/* Usar la nueva clase para secciones */
+/* Títulos de secciones de gráficos (formato anterior) */
 .sectionTitle {
   font-size: 1.2rem;
   background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
@@ -105,6 +72,8 @@
   font-weight: 600;
   display: inline-block;
 }
+
+
 
 .gridLayout {
   display: grid;
@@ -172,23 +141,5 @@
   font-weight: 500;
 }
 
-.loadingContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  color: var(--dark);
-  gap: 1rem;
-}
-
-.errorContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  color: #dc2626;
-  gap: 1rem;
-}
+/* Los contenedores de loading y error usan las clases comunes de common.css */
 

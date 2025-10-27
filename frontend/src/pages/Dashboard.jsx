@@ -61,8 +61,8 @@ function Dashboard() {
   if (loading) {
     return (
       <div className="dashboardContainer">
-        <div className="loadingContainer">
-          <i className="fas fa-spinner fa-spin fa-3x"></i>
+        <div className="loading-container">
+          <div className="spinner" style={{width: '48px', height: '48px'}}></div>
           <p>Cargando dashboard...</p>
         </div>
       </div>
@@ -72,10 +72,10 @@ function Dashboard() {
   if (error) {
     return (
       <div className="dashboardContainer">
-        <div className="errorContainer">
+        <div className="error-container">
           <i className="fas fa-exclamation-circle fa-3x"></i>
           <p>Error: {error}</p>
-          <button onClick={loadDashboard} className="retryButton">
+          <button onClick={loadDashboard} className="btn-primary">
             Reintentar
           </button>
         </div>
@@ -98,7 +98,7 @@ function Dashboard() {
           <button
             onClick={handleUploadClick}
             disabled={uploading}
-            className="uploadButton"
+            className="btn-primary"
           >
             <i className={uploading ? "fas fa-spinner fa-spin" : "fas fa-upload"}></i>
             {uploading ? 'Subiendo...' : 'Subir PDF'}

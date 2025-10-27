@@ -86,7 +86,7 @@ frontend/
 ├── public/
 │   └── favicon.svg         # Favicon personalizado
 ├── src/
-│   ├── main.jsx            # Punto de entrada de React
+│   ├── Main.jsx            # Punto de entrada de React
 │   ├── App.jsx             # Componente principal con rutas
 │   │
 │   ├── api/
@@ -95,26 +95,62 @@ frontend/
 │   ├── context/
 │   │   └── AuthContext.jsx # Estado global de autenticación
 │   │
-│   ├── pages/
+│   ├── Pages/              # Páginas principales
 │   │   ├── Login.jsx       # Página de login
 │   │   ├── Register.jsx    # Página de registro
-│   │   └── Dashboard.jsx   # Dashboard principal
+│   │   ├── Dashboard.jsx   # Dashboard principal
+│   │   ├── Documents.jsx   # Gestión de documentos
+│   │   ├── UploadDocuments.jsx # Subida de documentos
+│   │   ├── DocumentView.jsx    # Visualización de documentos
+│   │   ├── DocumentEdit.jsx    # Edición de documentos
+│   │   ├── OpenAlex.jsx    # Integración OpenAlex
+│   │   ├── Profile.jsx     # Perfil de usuario
+│   │   ├── Settings.jsx    # Configuración
+│   │   ├── Collections.jsx # Colecciones
+│   │   ├── History.jsx     # Historial
+│   │   ├── Explore.jsx     # Explorar
+│   │   └── Home.jsx        # Página de inicio
 │   │
 │   ├── components/
-│   │   ├── Auth/
+│   │   ├── auth/
 │   │   │   └── PrivateRoute.jsx  # Protección de rutas
 │   │   ├── layout/
 │   │   │   ├── Layout.jsx        # Layout con Navbar + Sidebar
 │   │   │   ├── Navbar.jsx        # Barra de navegación superior
 │   │   │   └── Sidebar.jsx       # Menú lateral
-│   │   └── dashboard/
-│   │       ├── StatCard.jsx      # Tarjeta de estadística
-│   │       ├── YearChart.jsx     # Gráfico de años
-│   │       └── KeywordRanking.jsx # Ranking de keywords
+│   │   ├── dashboard/
+│   │   │   ├── StatCard.jsx      # Tarjeta de estadística
+│   │   │   ├── YearChart.jsx     # Gráfico de años
+│   │   │   └── KeywordRanking.jsx # Ranking de keywords
+│   │   └── documents/
+│   │       ├── DocumentCard.jsx   # Tarjeta de documento
+│   │       ├── DocumentControls.jsx # Controles de documento
+│   │       ├── DocumentGrid.jsx   # Vista en cuadrícula
+│   │       ├── DocumentList.jsx   # Vista en lista
+│   │       └── SearchBar.jsx      # Barra de búsqueda
 │   │
-│   └── styles/
-│       ├── App.css         # Estilos globales y del dashboard
-│       └── Auth.css        # Estilos de login/register
+│   └── styles/             # Estilos organizados por módulos
+│       ├── App.css         # Importa todos los estilos
+│       ├── Auth.css        # Estilos de autenticación
+│       ├── components/
+│       │   └── common.css  # Estilos comunes reutilizables
+│       ├── dashboard/
+│       │   ├── Dashboard.css    # Estilos del dashboard
+│       │   └── StatCard.css     # Estilos de tarjetas
+│       ├── documents/
+│       │   ├── DocumentCard.css # Estilos de tarjetas
+│       │   ├── DocumentControls.css
+│       │   ├── DocumentGrid.css
+│       │   ├── DocumentList.css
+│       │   ├── DocumentViewEdit.css
+│       │   ├── SearchBar.css
+│       │   └── UploadDocuments.css
+│       ├── layout/
+│       │   ├── Layout.css
+│       │   ├── Navbar.css
+│       │   └── Sidebar.css
+│       └── profile/
+│           └── Profile.css
 │
 ├── vite.config.js          # Configuración de Vite
 ├── package.json            # Dependencias y scripts
@@ -150,11 +186,30 @@ proxy: {
 const API_BASE = '/api';  // En desarrollo usa el proxy de Vite
 
 // Endpoints
+// Autenticación
 authAPI.login(email, password)      // POST /api/auth/login
 authAPI.register(email, pass, name) // POST /api/auth/register
 authAPI.getMe()                      // GET /api/auth/me
 authAPI.logout()                     // POST /api/auth/logout
+authAPI.updateProfile(data)          // PUT /api/user/profile
+
+// Estadísticas
 statsAPI.getStats()                  // GET /api/stats
+
+// Documentos/Artículos
+articlesAPI.getArticles(params)      // GET /api/articles
+articlesAPI.getArticle(id)          // GET /api/articles/{id}
+articlesAPI.updateArticle(id, data) // PUT /api/articles/{id}
+articlesAPI.deleteArticle(id)       // DELETE /api/articles/{id}
+
+// Subida de archivos
+uploadAPI.uploadPDF(file)           // POST /api/pdfs/upload
+uploadAPI.uploadFolder(files)       // POST /api/pdfs/upload (múltiples)
+uploadAPI.uploadExcel(file)         // POST /api/pdfs/upload_excel
+
+// OpenAlex
+openalexAPI.search(query)           // GET /api/openalex/search
+openalexAPI.getWork(id)            // GET /api/openalex/works/{id}
 ```
 
 ---
@@ -208,22 +263,22 @@ Protege rutas que requieren autenticación:
 
 ```css
 :root {
-  --color-black: #0f0817;
-  --color-violet-dark: #1e1232;
-  --color-violet-light: #dcc2ff;
-  --color-violet-medium: #8a5cf6;
-  --color-white: #ffffff;
-  --color-gray: #6b7280;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --dark: #4f46e5;
+  --main_color: #6366f1;
+  --white: #f8fafc;
+  --black: #000000;
 }
 ```
 
 ### **Archivos de estilos:**
 
-- **`App.css`** - Estilos globales, layout, dashboard, navbar, sidebar
+- **`App.css`** - Importa todos los estilos de manera organizada
+- **`components/common.css`** - Estilos comunes reutilizables (botones, headers, spinners)
 - **`Auth.css`** - Estilos específicos de login y register
+- **`dashboard/*.css`** - Estilos del dashboard y componentes
+- **`documents/*.css`** - Estilos de gestión de documentos
+- **`layout/*.css`** - Estilos de navegación y layout
+- **`profile/*.css`** - Estilos del perfil de usuario
 
 ---
 

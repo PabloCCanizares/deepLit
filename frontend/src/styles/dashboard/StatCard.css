@@ -16,7 +16,7 @@
   box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.4);
 }
 
-.icon {
+.statCard .icon {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   width: 3.5rem;
@@ -27,11 +27,11 @@
   font-size: 1.5rem;
 }
 
-.content {
+.statCard .content {
   flex: 1;
 }
 
-.value {
+.statCard .value {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
@@ -39,7 +39,7 @@
 }
 
 .statCard .title {
-  font-size: 1.2rem;
+  font-size: 1rem;
   opacity: 0.9;
   margin: 0.25rem 0 0 0;
   font-weight: 500;

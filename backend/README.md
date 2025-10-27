@@ -49,20 +49,41 @@ backend/
 │   │   └── responses.py     # StandardResponse
 │   │
 │   ├── models/              # 📋 Modelos Pydantic
-│   │   └── user.py          # UserRegister, UserLogin
+│   │   ├── auth.py          # UserRegister, UserLogin, UserResponse
+│   │   ├── user.py          # User, UserProfile
+│   │   ├── article.py       # Article, ArticleCreate, ArticleUpdate
+│   │   └── pdf.py           # PDF upload models
 │   │
 │   ├── repositories/        # 💾 Acceso a datos
-│   │   └── user_repository.py
+│   │   ├── user_repository.py      # CRUD usuarios
+│   │   ├── article_repository.py   # CRUD artículos
+│   │   └── pdf_repository.py       # Manejo de archivos PDF
 │   │
 │   ├── services/            # 🧠 Lógica de negocio
-│   │   └── auth_service.py
+│   │   ├── auth_service.py         # Autenticación y autorización
+│   │   ├── user_service.py         # Gestión de usuarios
+│   │   ├── article_service.py      # Gestión de artículos
+│   │   ├── pdf_service.py          # Procesamiento de PDFs
+│   │   ├── extraction_service.py   # Extracción de metadatos
+│   │   ├── openalex_service.py     # Integración OpenAlex
+│   │   └── storage_service.py      # Almacenamiento de archivos
 │   │
 │   ├── controllers/         # 🎛️ Formateo
-│   │   └── auth_controller.py
+│   │   ├── auth_controller.py      # Endpoints de autenticación
+│   │   ├── user_controller.py      # Endpoints de usuarios
+│   │   ├── articles_controller.py  # Endpoints de artículos
+│   │   ├── pdfs_controller.py      # Endpoints de PDFs
+│   │   ├── stats_controller.py     # Endpoints de estadísticas
+│   │   └── openalex_controller.py  # Endpoints de OpenAlex
 │   │
 │   └── routers/             # 🛣️ Endpoints
-│       ├── auth.py          # /auth/*
-│       └── health.py        # /
+│       ├── auth.py          # /auth/* - Autenticación
+│       ├── health.py        # / - Health check
+│       ├── articles.py      # /articles/* - Gestión de artículos
+│       ├── pdfs.py          # /pdfs/* - Subida y gestión de PDFs
+│       ├── stats.py         # /stats/* - Estadísticas del dashboard
+│       ├── user.py          # /user/* - Perfil y configuración de usuario
+│       └── openalex.py      # /openalex/* - Integración con OpenAlex
 │
 ├── .env                     # 🔐 Variables de entorno (NO subir a git)
 ├── requirements.txt         # 📦 Dependencias

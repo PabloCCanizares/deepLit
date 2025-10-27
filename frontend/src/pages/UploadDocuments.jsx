@@ -194,15 +194,15 @@ const UploadDocuments = () => {
       />
 
       {/* Header Panel */}
-      <div className="documents-header-panel">
-        <div className="documents-header-content">
-          <div className="documents-header-info">
-            <h1 className="documents-title">Subir Documentos</h1>
-            <p className="documents-subtitle">
+      <div className="header-panel">
+        <div className="header-content">
+          <div className="header-info">
+            <h1 className="header-title">Subir Documentos</h1>
+            <p className="header-subtitle">
               Selecciona el método de carga que prefieras
             </p>
           </div>
-          <div className="documents-stats">
+          <div className="header-stats">
             <div className="stat-item">
               <span className="stat-number">{stats.totalDocuments}</span>
               <span className="stat-label">Total documentos</span>
@@ -216,7 +216,7 @@ const UploadDocuments = () => {
         <div className="upload-status">
           {uploading && (
             <div className="upload-progress">
-              <div className="upload-spinner"></div>
+              <div className="spinner"></div>
             </div>
           )}
           <p className={`upload-message ${uploadStatus.includes('Error') ? 'error' : 'success'}`}>

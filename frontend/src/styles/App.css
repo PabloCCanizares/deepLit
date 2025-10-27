@@ -1,3 +1,6 @@
+/* ======= IMPORTAR ESTILOS COMUNES ======= */
+@import './components/common.css';
+
 /* ======= IMPORTAR ESTILOS DE LAYOUT ======= */
 @import './layout/Layout.css';
 @import './layout/Navbar.css';
