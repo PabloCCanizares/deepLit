@@ -1,19 +1,19 @@
 /* ======= IMPORTAR ESTILOS DE LAYOUT ======= */
-@import './Layout/Layout.css';
-@import './Layout/Navbar.css';
-@import './Layout/Sidebar.css';
+@import './layout/Layout.css';
+@import './layout/Navbar.css';
+@import './layout/Sidebar.css';
 
 /* ======= IMPORTAR ESTILOS DE DASHBOARD ======= */
-@import './Dashboard/Dashboard.css';
-@import './Dashboard/StatCard.css';
+@import './dashboard/Dashboard.css';
+@import './dashboard/StatCard.css';
 
 /* ======= IMPORTAR ESTILOS DE DOCUMENTS ======= */
-@import './Documents/DocumentCard.css';
-@import './Documents/DocumentControls.css';
-@import './Documents/DocumentGrid.css';
-@import './Documents/DocumentList.css';
-@import './Documents/SearchBar.css';
-@import './Documents/DocumentViewEdit.css';
+@import './documents/DocumentCard.css';
+@import './documents/DocumentControls.css';
+@import './documents/DocumentGrid.css';
+@import './documents/DocumentList.css';
+@import './documents/SearchBar.css';
+@import './documents/DocumentViewEdit.css';
 
 /* ======= IMPORTAR ESTILOS DE AUTH ======= */
 @import './Auth.css';

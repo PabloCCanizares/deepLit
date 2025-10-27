@@ -4,7 +4,7 @@ import StatCard from '../components/dashboard/StatCard'
 import YearChart from '../components/dashboard/YearChart'
 import KeywordRanking from '../components/dashboard/KeywordRanking'
 import '../styles/App.css'
-import '../styles/Dashboard/Dashboard.css'
+import '../styles/dashboard/Dashboard.css'
 
 
 function Dashboard() {

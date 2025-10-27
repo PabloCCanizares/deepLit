@@ -1,5 +1,5 @@
 import DocumentCard from './DocumentCard'
-import '../../styles/Documents/DocumentGrid.css'
+import '../../styles/documents/DocumentGrid.css'
 
 function DocumentGrid({ documents, loading, error }) {
   if (loading) {

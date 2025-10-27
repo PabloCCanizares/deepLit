@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import '../../styles/Documents/DocumentControls.css'
+import '../../styles/documents/DocumentControls.css'
 
 function DocumentControls({ onSort, onFilter, viewMode, onViewModeChange }) {
   const [showSortMenu, setShowSortMenu] = useState(false)

@@ -103,11 +103,11 @@ frontend/
 │   ├── components/
 │   │   ├── Auth/
 │   │   │   └── PrivateRoute.jsx  # Protección de rutas
-│   │   ├── Layout/
+│   │   ├── layout/
 │   │   │   ├── Layout.jsx        # Layout con Navbar + Sidebar
 │   │   │   ├── Navbar.jsx        # Barra de navegación superior
 │   │   │   └── Sidebar.jsx       # Menú lateral
-│   │   └── Dashboard/
+│   │   └── dashboard/
 │   │       ├── StatCard.jsx      # Tarjeta de estadística
 │   │       ├── YearChart.jsx     # Gráfico de años
 │   │       └── KeywordRanking.jsx # Ranking de keywords
@@ -376,7 +376,7 @@ import Documents from './pages/Documents';
 
 **3. Añadir a Sidebar:**
 ```javascript
-// src/components/Layout/Sidebar.jsx
+// src/components/layout/Sidebar.jsx
 <Link to="/documents" className="sidebar-link">
   <i className="fas fa-book"></i>
   <span>Documentos</span>

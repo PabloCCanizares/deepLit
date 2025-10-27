@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { openalexAPI } from '../Api/Api'
+import { openalexAPI } from '../api/api'
 import SearchBar from '../components/documents/SearchBar'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
-import DocumentList from '../components/Documents/DocumentList'
+import DocumentList from '../components/documents/DocumentList'
 import '../styles/App.css'
 
 function OpenAlex() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { articlesAPI } from '../Api/Api'
-import '../styles/Documents/DocumentViewEdit.css'
+import { articlesAPI } from '../api/api'
+import '../styles/documents/DocumentViewEdit.css'
 
 const DocumentView = () => {
   const { id } = useParams()
