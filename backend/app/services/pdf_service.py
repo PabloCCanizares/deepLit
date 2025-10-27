@@ -1,0 +1,60 @@
+"""
+Servicio de PDFs.
+"""
+import base64
+from datetime import datetime
+from app.repositories import PdfRepository
+from app.models import PdfUpload
+from app.services import StorageService
+
+
+class PdfService:
+    
+    def __init__(self):
+        self.pdf_repo = PdfRepository()
+        self.storage = StorageService()
+        # ✅ SOLO su repository, NO tiene article_repo ni article_service
+    
+    async def save_pdf(self, pdf_data: PdfUpload, user_id: str) -> str:
+        """
+        Guardar PDF en disco y crear registro en base de datos.
+        """
+        # Generar ID único
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        # Quitar extensión .pdf del filename
+        original_filename = pdf_data.filename
+        if original_filename.lower().endswith('.pdf'):
+            original_filename = original_filename[:-4]
+        
+        # ID único: filename_timestamp
+        unique_id = f"{original_filename}_{timestamp}"
+        unique_filename = f"{unique_id}.pdf"
+        
+        # Decodificar contenido base64
+        decoded_content = base64.b64decode(pdf_data.content)
+        
+        # Guardar archivo en disco
+        save_path = self.storage.save_file(
+            content=decoded_content,
+            filename=unique_filename,
+            storage_location="uploads"
+        )
+        
+        # Crear registro en BD
+        pdf_dict = {
+            "_id": unique_id,
+            "id_user": user_id,
+            "filename": unique_filename
+        }
+        
+        await self.pdf_repo.create(pdf_dict)
+        
+        return unique_id
+    
+    async def get_document_count(self, user_id: str) -> int:
+        """
+        Contar PDFs del usuario.
+        """
+        return await self.pdf_repo.count_documents(user_id)
+    
