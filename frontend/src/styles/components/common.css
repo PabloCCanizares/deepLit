@@ -103,6 +103,28 @@
   transform: none;
 }
 
+.btn-secondary {
+  background: var(--white);
+  color: var(--dark);
+  border: 2px solid var(--main_color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: var(--main_color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.3);
+}
+
 /* Estados de carga comunes */
 .loading-container {
   display: flex;
@@ -122,6 +144,17 @@
   min-height: 50vh;
   color: #dc2626;
   gap: 1rem;
+}
+
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--dark);
+  gap: 1rem;
+  text-align: center;
 }
 
 /* Spinner común */

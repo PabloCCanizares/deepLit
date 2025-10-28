@@ -48,17 +48,7 @@
   transition: all 0.2s ease;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
-  color: white;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
-}
+/* .btn-primary ahora se usa desde common.css */
 
 .btn-secondary {
   background: var(--white);
@@ -352,16 +342,7 @@
 }
 
 /* Documents Header Panel */
-.documents-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 2rem 0;
-  padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
-}
+/* .documents-header eliminado - no se usa */
 
 .documents-title {
   font-size: 1.5rem;
@@ -402,8 +383,4 @@
   }
 }
 
-/* Loading spinner animation */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* Animación spin ahora en common.css */

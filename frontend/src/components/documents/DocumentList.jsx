@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '../../styles/Documents/DocumentList.css'
+import '../../styles/documents/DocumentList.css'
 
 function DocumentList({ documents, loading, error }) {
   if (loading) {
