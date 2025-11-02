@@ -42,13 +42,26 @@ class ArticleRepository:
     
     async def count_documents(self, user_id: str) -> int:
         """Contar documentos asociados a un usuario"""
+        print("Contando documentos para el usuario:", user_id)
         count = await self.collection.count_documents({"id_user": user_id})
         return count
+    
+    async def count_documents_by_year(self, user_id: str) -> List[dict]:
+        """Contar artículos agrupados por año para un usuario"""
+        pipeline = [
+            {"$match": {"id_user": user_id}},
+            {"$group": {"_id": "$year", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]
+        
+        cursor = self.collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        return results
     
 
     async def get_user_articles(self, query: QueryBody, current_user: dict) -> List[dict]:
         """Recuperar artículos del usuario actual con paginación y filtros"""
-        filter_criteria = {"id_user": current_user["_id"]}
+        filter_criteria = {"id_user": current_user}
 
         limit = query.pagination.limit
         offset = query.pagination.offset
@@ -79,6 +92,7 @@ class ArticleRepository:
             .limit(limit)
         )
         
+
         results = await cursor.to_list(length=limit)
         return results
 

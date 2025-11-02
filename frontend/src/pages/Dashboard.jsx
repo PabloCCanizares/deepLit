@@ -131,8 +131,8 @@ function Dashboard() {
           <div className="section">
             <h3 className="sectionTitle">Documentos por Año</h3>
             <YearChart 
-              labels={stats?.chart_labels || []}
-              values={stats?.chart_values || []}
+              labels={stats?.labels_by_year || []}
+              values={stats?.values_by_year || []}
             />
           </div>
 

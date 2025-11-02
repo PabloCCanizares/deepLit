@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { openalexAPI } from '../api/api'
-import SearchBar from '../components/documents/SearchBar'
+import SearchBarDebounced from '../components/documents/SearchBarDebounced'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
 import DocumentList from '../components/documents/DocumentList'
@@ -19,15 +19,15 @@ function OpenAlex() {
   const [sortCriteria, setSortCriteria] = useState('year-desc')
   const [filterCriteria, setFilterCriteria] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState('grid')
+  const [viewMode, setViewMode] = useState('list')
 
   useEffect(() => {
     loadDocuments()
-  }, [pagination.offset])
+  }, [pagination.offset, pagination.limit, searchQuery])
 
   useEffect(() => {
     applyFiltersAndSort()
-  }, [documents, sortCriteria, filterCriteria, searchQuery])
+  }, [documents, sortCriteria, filterCriteria])
 
   const loadDocuments = async () => {
     try {
@@ -35,8 +35,10 @@ function OpenAlex() {
       const response = await openalexAPI.getWorks({ 
         limit: pagination.limit, 
         offset: pagination.offset,
-        filters: {} 
+        filters: {"title.search": searchQuery} 
       });
+
+      console.log("Respuesta de OpenAlex:", response);
       
       setDocuments(response.data.articles)
       setPagination(prev => ({
@@ -53,12 +55,6 @@ function OpenAlex() {
   const applyFiltersAndSort = () => {
     let filtered = [...documents]
 
-    // 1. Aplicar búsqueda primero
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(doc =>
-        (doc.title || '').toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
 
     // 2. Aplicar filtros
     if (filterCriteria === 'complete') {
@@ -100,6 +96,8 @@ function OpenAlex() {
 
   const handleSearch = (query) => {
     setSearchQuery(query)
+    // Reiniciar a la primera página al hacer una búsqueda
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleViewModeChange = (mode) => {
@@ -114,23 +112,25 @@ function OpenAlex() {
       paddingBottom: '2rem'
     }}>
       <div className="container">
-        <SearchBar onSearch={handleSearch} placeholder="Buscar por título" />
+        <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         
         <DocumentControls 
           onSort={handleSort} 
           onFilter={handleFilter}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
+          pagination={pagination}
+          onChangePagination={setPagination}
         />
         
-        {viewMode === 'grid' ? (
-          <DocumentGrid 
+        {viewMode === 'list' ? (
+          <DocumentList 
             documents={filteredDocuments} 
             loading={loading} 
             error={error} 
           />
         ) : (
-          <DocumentList 
+          <DocumentGrid 
             documents={filteredDocuments} 
             loading={loading} 
             error={error} 

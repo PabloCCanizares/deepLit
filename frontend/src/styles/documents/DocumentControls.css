@@ -1,34 +1,44 @@
+/* =======================
+   DOCUMENT CONTROLS CSS
+   ======================= */
+
 .doc-controls {
+  display: flex;           /* flex en lugar de grid */
+  align-items: center;     /* centrar verticalmente */
+  gap: 2rem;               /* espacio entre secciones */
+  flex-wrap: wrap;         /* permite que se adapte en móvil */
   text-align: left;
   margin: 1.5rem 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 2rem;
 }
 
-.control-left {
-  display: flex;
-  gap: 2rem;
-  justify-content: flex-start;
-  align-items: center;
-  flex: 1;
-  padding-left: 0;
-}
-
+/* ===== Bloques internos ===== */
+.control-left,
+.pagination-controls,
 .control-right {
   display: flex;
   align-items: center;
+  gap: 1rem;
 }
 
+/* Botones ordenar + filtrar */
+.control-left {
+  flex: 1;                 /* ocupa todo el espacio disponible */
+  gap: 2rem;
+}
+
+/* View toggle al final */
+.control-right {
+  margin-left: auto;
+}
+
+/* ===== Botones y dropdown ===== */
 .control-group {
   position: relative;
   display: inline-block;
 }
 
 .control-btn {
-  background: none !important;
-  background-color: transparent !important;
+  background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   color: var(--dark);
@@ -106,7 +116,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* View Toggle Buttons */
+/* ===== View Toggle ===== */
 .view-toggle {
   display: flex;
   gap: 0.5rem;
@@ -143,37 +153,122 @@
   font-size: 1rem;
 }
 
-/* Responsive */
+/* ===== PAGINACIÓN ===== */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--dark);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pagination-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.pagination-controls select {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-controls select:hover {
+  border-color: var(--main_color);
+  box-shadow: 0 0 4px rgba(79, 70, 229, 0.3);
+}
+
+.page-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 0.25rem 0.6rem;
+}
+
+.page-nav button {
+  background: var(--dark);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-nav button:hover:not(:disabled) {
+  background: var(--main_color);
+  transform: translateY(-1px);
+}
+
+.page-nav button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.page-nav span {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.pagination-controls small {
+  color: #666;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .doc-controls {
-    display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    text-align: center;
+    align-items: center;
+    gap: 1rem;
   }
 
-  .control-left {
-    /* Mantener los botones uno al lado del otro */
-    flex-direction: row;
-    gap: 1.5rem;
-    width: 100%;
-    justify-content: center;
-  }
-
+  .control-left,
+  .pagination-controls,
   .control-right {
-    width: 100%;
     justify-content: center;
+    width: 100%;
   }
 
-  /* Reducir gap solo en pantallas muy pequeñas */
-  @media (max-width: 480px) {
-    .control-left {
-      gap: 1rem;
-    }
-    
-    .control-btn {
-      font-size: 0.9rem;
-      padding: 6px 10px;
-    }
+  .pagination-controls {
+    flex-wrap: wrap;
+  }
+
+  .page-nav {
+    padding: 0.2rem 0.4rem;
+  }
+
+  .page-nav button {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .control-left {
+    gap: 1rem;
+  }
+
+  .control-btn {
+    font-size: 0.9rem;
+    padding: 6px 10px;
   }
 }

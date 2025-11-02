@@ -45,6 +45,24 @@ class ArticleService:
         """
         return await self.article_repo.count_documents(user_id)
     
+    async def get_article_count_grouped_by_year(self, user_id: str) -> Dict[int, int]:
+        """
+        Obtener conteo de artículos agrupados por año.
+        """
+        results = await self.article_repo.count_documents_by_year(user_id)
+        
+        labels = []
+        values = []
+        for item in results:
+            if item["_id"] is not None:
+                labels.append(str(item["_id"]))
+                values.append(item["count"])
+        
+        return {
+            "labels": labels,
+            "values": values
+        }
+    
     async def get_user_articles(self, query: QueryBody, current_user: dict) -> Dict:
         """
         Recuperar artículos del usuario actual.
@@ -53,7 +71,7 @@ class ArticleService:
         articles = await self.article_repo.get_user_articles(query, current_user)
         
         # Obtener total de artículos del usuario (para metadatos de paginación)
-        total = await self.article_repo.count_documents(current_user.get("_id"))
+        total = await self.article_repo.count_documents(current_user)
         
         return {
             "articles": articles,

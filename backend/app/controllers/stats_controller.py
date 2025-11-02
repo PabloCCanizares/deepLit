@@ -31,6 +31,9 @@ class StatsController:
         
         # PASO 2: Contar artículos (ArticleService)
         article_count = await self.article_service.get_article_count(user_id)
+
+
+        articles_by_year = await self.article_service.get_article_count_grouped_by_year(user_id)
         
         # TODO: Añadir más estadísticas cuando estén implementadas
         # - Referencias totales
@@ -41,7 +44,9 @@ class StatsController:
             message="Estadísticas obtenidas exitosamente",
             data={
                 "document_count": document_count,
-                "article_count": article_count
+                "article_count": article_count,
+                "labels_by_year": articles_by_year["labels"],
+                "values_by_year": articles_by_year["values"]
             }
         )
 
