@@ -25,9 +25,6 @@ class OpenAlexController:
         return StandardResponse(
             success=True,
             message="Artículos recuperados exitosamente",
-            data={
-                "articles": articles_data["articles"],
-                "total": 0
-            }
+            data= articles_data
         )
 

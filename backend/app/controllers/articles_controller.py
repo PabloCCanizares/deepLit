@@ -22,7 +22,7 @@ class ArticlesController:
         """
         Obtener artículos del usuario actual con filtros y paginación.
         """
-        articles_data = await self.service.get_user_articles(query, current_user)
+        articles_data = await self.service.get_user_articles(query, current_user["_id"])
      
         return StandardResponse(
             success=True,

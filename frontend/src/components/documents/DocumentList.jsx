@@ -40,7 +40,7 @@ function DocumentList({ documents, loading, error }) {
       </div>
       
       {documents.map((doc) => {
-        const title = doc.title || '-'
+        const title = doc.title || '-' //FIXME Cambiar por Untitled?
         const category = doc.category || '-'
         const pages = doc.pages || '-'
         const year = doc.year || '-'

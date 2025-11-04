@@ -85,9 +85,9 @@ const UploadDocuments = () => {
       // Actualizar estadísticas después de subir
       fetchStats();
       // Redirigir a documentos después de un breve delay
-      setTimeout(() => {
-        navigate('/documents');
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate('/documents');
+      // }, 2000);
     } catch (error) {
       setUploadStatus(`Error: ${error.message}`);
     } finally {
@@ -124,9 +124,9 @@ const UploadDocuments = () => {
       // Actualizar estadísticas después de subir
       fetchStats();
       // Redirigir a documentos después de un breve delay
-      setTimeout(() => {
-        navigate('/documents');
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate('/documents');
+      // }, 2000);
     } catch (error) {
       setUploadStatus(`Error: ${error.message}`);
     } finally {

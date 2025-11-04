@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import '../../styles/documents/DocumentCard.css'
 
 function DocumentCard({ document }) {
-  const title = document.title || '-'
+  const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
   const year = document.year || '-'
