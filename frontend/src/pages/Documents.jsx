@@ -4,11 +4,13 @@ import { articlesAPI } from '../api/api'
 import DocumentControls from '../components/documents/DocumentControls'
 import DocumentGrid from '../components/documents/DocumentGrid'
 import DocumentList from '../components/documents/DocumentList'
+import UploadOverlay from '../components/documents/UploadOverlay'
 import '../styles/App.css'
 import SearchBarDebounced from '../components/documents/SearchBarDebounced'
 
 
 function Documents() {
+  const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
   const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
   const [pagination, setPagination] = useState({
@@ -22,6 +24,7 @@ function Documents() {
   const [filterCriteria, setFilterCriteria] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
+  const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
 
   useEffect(() => {
     loadDocuments()
@@ -107,6 +110,24 @@ function Documents() {
     setViewMode(mode)
   }
 
+  const handleUploadSuccess = (message) => {
+    // Cerrar el overlay inmediatamente
+    setIsUploadOverlayOpen(false)
+    
+    // Mostrar mensaje de éxito
+    setUploadSuccessMessage(message || 'Archivo(s) subido(s) correctamente')
+    
+    // Recargar documentos después de subir (solo si no es un error)
+    if (!message || !message.toLowerCase().includes('error')) {
+      loadDocuments()
+    }
+    
+    // Limpiar el mensaje después de 4 segundos
+    setTimeout(() => {
+      setUploadSuccessMessage('')
+    }, 4000)
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -165,6 +186,29 @@ function Documents() {
             loading={loading} 
             error={error} 
           />
+        )}
+
+        {/* Botón flotante para subir documentos */}
+        <button 
+          className="floating-upload-button"
+          onClick={() => setIsUploadOverlayOpen(true)}
+          title="Subir documentos"
+        >
+          <i className="fas fa-cloud-upload-alt"></i>
+        </button>
+
+        {/* Overlay de subida */}
+        <UploadOverlay
+          isOpen={isUploadOverlayOpen}
+          onClose={() => setIsUploadOverlayOpen(false)}
+          onUploadSuccess={handleUploadSuccess}
+        />
+
+        {/* Mensaje de éxito de carga */}
+        {uploadSuccessMessage && (
+          <div className={`upload-success-notification ${uploadSuccessMessage.toLowerCase().includes('error') ? 'error' : ''}`}>
+            <span>{uploadSuccessMessage}</span>
+          </div>
         )}
       </div>
     </div>
