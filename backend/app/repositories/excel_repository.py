@@ -8,7 +8,7 @@ class ExcelRepository:
     
     def __init__(self):
         self.db = get_database()
-        self.collection = self.db.pdfs
+        self.collection = self.db.excels
     
     async def create(self, excel_data: dict) -> str:
         """Crear un nuevo excel"""
