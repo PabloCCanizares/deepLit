@@ -35,9 +35,9 @@ class ArticleService:
         }
         
         # Guardar en base de datos
-        await self.article_repo.create(article_dict)
-        
-        return article_id
+        result_id = await self.article_repo.create(article_dict)
+                
+        return result_id
     
     async def get_article_count(self, user_id: str) -> int:
         """

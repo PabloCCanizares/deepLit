@@ -27,6 +27,11 @@ from app.models.pdf import (
     PdfUpload
 )
 
+# Excel models
+from app.models.excel import (
+    ExcelUpload
+)
+
 # Article models
 from app.models.article import (
     Pagination,
@@ -44,6 +49,7 @@ __all__ = [
     
     # PDF
     "PdfUpload",
+    "ExcelUpload",
     
     # Article
     "Pagination",

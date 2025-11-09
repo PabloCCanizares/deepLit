@@ -9,7 +9,6 @@ import Home from './Pages/Home'
 import Documents from './Pages/Documents'
 import DocumentView from './Pages/DocumentView'
 import DocumentEdit from './Pages/DocumentEdit'
-import UploadDocuments from './Pages/UploadDocuments'
 import Collections from './Pages/Collections'
 import History from './Pages/History'
 import Profile from './Pages/Profile'
@@ -38,7 +37,6 @@ function App() {
             <Route path="documents" element={<Documents />} />
             <Route path="documents/:id" element={<DocumentView />} />
             <Route path="documents/:id/edit" element={<DocumentEdit />} />
-            <Route path="upload" element={<UploadDocuments />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Documents />} />

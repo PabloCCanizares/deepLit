@@ -42,14 +42,6 @@ function Sidebar({ isOpen, onClose }) {
               <i className="fas fa-file-alt"></i>
               <span>Mis Documentos</span>
             </Link>
-            <Link 
-              to="/upload" 
-              className={`sidebarLink ${location.pathname === '/upload' ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <i className="fas fa-cloud-upload-alt"></i>
-              <span>Subir Documentos</span>
-            </Link>
           </div>
 
           {/* Búsqueda y Análisis */}

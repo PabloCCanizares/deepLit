@@ -13,7 +13,9 @@ class PdfRepository:
     async def create(self, pdf_data: dict) -> str:
         """Crear un nuevo pdf"""
         result = await self.collection.insert_one(pdf_data)
-        return str(result.inserted_id)
+        # Si usamos _id personalizado, inserted_id será ese _id
+        # Si MongoDB genera el _id, usamos result.inserted_id
+        return pdf_data.get("_id") or str(result.inserted_id)
 
     async def count_documents(self, user_id: str) -> int:
         """Contar documentos asociados a un usuario"""

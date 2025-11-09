@@ -15,7 +15,9 @@ class ArticleRepository:
     async def create(self, article_data: dict) -> str:
         """Crear un nuevo artículo"""
         result = await self.collection.insert_one(article_data)
-        return str(result.inserted_id)
+        # Si usamos _id personalizado, inserted_id será ese _id
+        # Si MongoDB genera el _id, usamos result.inserted_id
+        return article_data.get("_id") or str(result.inserted_id)
     
     async def find_by_id(self, article_id: str) -> Optional[dict]:
         """Buscar artículo por ID"""

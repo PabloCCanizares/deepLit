@@ -19,6 +19,7 @@ const DocumentEdit = () => {
     pages: '',
     observations: '',
     link: '',
+    summary: '',
     abstract: '',
     authors: '',
   })
@@ -41,6 +42,7 @@ const DocumentEdit = () => {
           pages: document.pages || '',
           observations: document.observations || '',
           link: document.link || '',
+          summary: document.summary || '',
           abstract: document.abstract || '',
           authors: document.authors || '',
         })
@@ -253,7 +255,19 @@ const DocumentEdit = () => {
           <h3>Contenido</h3>
 
           <div className="formField">
-            <label htmlFor="abstract">Resumen</label>
+            <label htmlFor="summary">Resumen (Español)</label>
+            <textarea
+              id="summary"
+              name="summary"
+              value={formData.summary}
+              onChange={handleInputChange}
+              rows="6"
+              placeholder="Resumen en español..."
+            />
+          </div>
+
+          <div className="formField">
+            <label htmlFor="abstract">Abstract (Inglés)</label>
             <textarea
               id="abstract"
               name="abstract"

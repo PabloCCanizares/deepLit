@@ -134,9 +134,16 @@ const DocumentView = () => {
           )}
         </div>
 
-        {document.abstract && (
+        {(document.summary || document.abstract) && (
           <div className="documentSection">
             <h3>Resumen</h3>
+            <p className="documentAbstract">{document.summary || document.abstract}</p>
+          </div>
+        )}
+
+        {document.abstract && document.summary && (
+          <div className="documentSection">
+            <h3>Abstract</h3>
             <p className="documentAbstract">{document.abstract}</p>
           </div>
         )}
