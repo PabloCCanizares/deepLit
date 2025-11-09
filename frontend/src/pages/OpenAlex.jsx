@@ -127,13 +127,15 @@ function OpenAlex() {
           <DocumentList 
             documents={filteredDocuments} 
             loading={loading} 
-            error={error} 
+            error={error}
+            baseRoute="/openalex"
           />
         ) : (
           <DocumentGrid 
             documents={filteredDocuments} 
             loading={loading} 
-            error={error} 
+            error={error}
+            baseRoute="/openalex"
           />
         )}
       </div>

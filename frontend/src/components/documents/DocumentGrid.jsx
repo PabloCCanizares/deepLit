@@ -1,7 +1,7 @@
 import DocumentCard from './DocumentCard'
 import '../../styles/documents/DocumentGrid.css'
 
-function DocumentGrid({ documents, loading, error }) {
+function DocumentGrid({ documents, loading, error, baseRoute = '/documents' }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -32,7 +32,7 @@ function DocumentGrid({ documents, loading, error }) {
   return (
     <div className="library">
       {documents.map((doc) => (
-        <DocumentCard key={doc._id || doc.id} document={doc} />
+        <DocumentCard key={doc._id || doc.id} document={doc} baseRoute={baseRoute} />
       ))}
     </div>
   )

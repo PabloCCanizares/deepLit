@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import '../../styles/documents/DocumentList.css'
 
-function DocumentList({ documents, loading, error }) {
+function DocumentList({ documents, loading, error, baseRoute = '/documents' }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -45,12 +45,15 @@ function DocumentList({ documents, loading, error }) {
         const pages = doc.pages || '-'
         const year = doc.year || '-'
         const id = doc._id || doc.id
+        
+        // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
+        const encodedId = encodeURIComponent(id)
 
         return (
           <div key={id} className="list-row">
             <div className="list-col-title" title={title}>
               <i className="fas fa-file-alt list-icon"></i>
-              <Link to={`/documents/${id}`} className="list-title-link">
+              <Link to={`${baseRoute}/${encodedId}`} className="list-title-link">
                 {title}
               </Link>
             </div>
@@ -58,10 +61,10 @@ function DocumentList({ documents, loading, error }) {
             <div className="list-col-pages">{pages}</div>
             <div className="list-col-year">{year}</div>
             <div className="list-col-actions">
-              <Link to={`/documents/${id}`} className="list-action-btn" title="Ver">
+              <Link to={`${baseRoute}/${encodedId}`} className="list-action-btn" title="Ver">
                 <i className="fas fa-eye"></i>
               </Link>
-              <Link to={`/documents/${id}/edit`} className="list-action-btn" title="Editar">
+              <Link to={`${baseRoute}/${encodedId}/edit`} className="list-action-btn" title="Editar">
                 <i className="fas fa-edit"></i>
               </Link>
             </div>

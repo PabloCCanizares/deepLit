@@ -15,6 +15,7 @@ import Profile from './Pages/Profile'
 import Settings from './Pages/Settings'
 import Explore from './Pages/Explore'
 import OpenAlex from './Pages/OpenAlex'
+import OpenAlexView from './Pages/OpenAlexView'
 
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Documents />} />
             <Route path="openalex" element={<OpenAlex />} />
+            <Route path="openalex/:id" element={<OpenAlexView />} />
             {/* Legacy routes - redirect to new ones */}
             <Route path="inicio" element={<Navigate to="/dashboard" replace />} />
             <Route path="explorar" element={<Navigate to="/" replace />} />
