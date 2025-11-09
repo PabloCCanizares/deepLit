@@ -160,12 +160,7 @@ function Profile() {
 
   if (!user) {
     return (
-      <div style={{ 
-        minHeight: '100vh',
-        background: 'white',
-        paddingTop: '2rem',
-        paddingBottom: '2rem'
-      }}>
+      <div className="page-container">
         <div className="container">
           <p>Cargando...</p>
         </div>
@@ -174,12 +169,7 @@ function Profile() {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: 'white',
-      paddingTop: '1rem',
-      paddingBottom: '2rem'
-    }}>
+    <div className="page-container">
       <div className="container">
         {/* Mensaje de feedback */}
         {message.text && (

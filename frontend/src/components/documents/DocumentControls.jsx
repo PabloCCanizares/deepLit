@@ -84,14 +84,22 @@ function DocumentControls({
             onClick={() => setShowSortMenu(!showSortMenu)}
           >
             <i className="fas fa-sort"></i>
-            Ordenar por
+            <span>Ordenar por</span>
           </button>
           {showSortMenu && (
             <div className="control-dropdown">
-              <button onClick={() => handleSort('year-asc')}>Año (Ascendente)</button>
-              <button onClick={() => handleSort('year-desc')}>Año (Descendente)</button>
-              <button onClick={() => handleSort('title-asc')}>Título (A-Z)</button>
-              <button onClick={() => handleSort('title-desc')}>Título (Z-A)</button>
+              <button onClick={() => handleSort('year-asc')}>
+                <i className="fas fa-calendar-alt"></i> Año (Ascendente)
+              </button>
+              <button onClick={() => handleSort('year-desc')}>
+                <i className="fas fa-calendar-alt"></i> Año (Descendente)
+              </button>
+              <button onClick={() => handleSort('title-asc')}>
+                <i className="fas fa-sort-alpha-down"></i> Título (A-Z)
+              </button>
+              <button onClick={() => handleSort('title-desc')}>
+                <i className="fas fa-sort-alpha-up"></i> Título (Z-A)
+              </button>
             </div>
           )}
         </div>
@@ -104,48 +112,68 @@ function DocumentControls({
             onClick={() => setShowFilterMenu(!showFilterMenu)}
           >
             <i className="fas fa-filter"></i>
-            Filtrar por
+            <span>Filtrar por</span>
           </button>
           {showFilterMenu && (
             <div className="control-dropdown">
-              <button onClick={() => handleFilter('all')}>Todos</button>
-              <button onClick={() => handleFilter('complete')}>Completos</button>
-              <button onClick={() => handleFilter('incomplete')}>Incompletos</button>
+              <button onClick={() => handleFilter('all')}>
+                <i className="fas fa-folder-open"></i> Todos
+              </button>
+              <button onClick={() => handleFilter('complete')}>
+                <i className="fas fa-check-circle"></i> Completos
+              </button>
+              <button onClick={() => handleFilter('incomplete')}>
+                <i className="fas fa-exclamation-circle"></i> Incompletos
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* 🔹 Paginación */}
+      {/* 🔹 Paginación mejorada */}
       <div className="pagination-controls">
-        <label>
-          Mostrar:&nbsp;
-          <select value={pagination.limit} onChange={handleLimitChange}>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          &nbsp;por página
-        </label>
-
-        <div className="page-nav">
-          <button onClick={goToPrevious} disabled={currentPage <= 1}>
-            ⟵
-          </button>
-          <span>
-            Página {currentPage} de {totalPages || 1}
-          </span>
-          <button onClick={goToNext} disabled={currentPage >= totalPages}>
-            ⟶
-          </button>
+        <div className="items-per-page">
+          <label>
+            <span className="label-text">Mostrar</span>
+            <select value={pagination.limit} onChange={handleLimitChange} className="pagination-select">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            <span className="label-text">elementos</span>
+          </label>
         </div>
 
+        <div className="page-navigation">
+          <button 
+            className="nav-arrow" 
+            onClick={goToPrevious} 
+            disabled={currentPage <= 1}
+            title="Página anterior"
+          >
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          
+          <div className="page-info">
+            <span className="page-current">{currentPage}</span>
+            <span className="page-separator">/</span>
+            <span className="page-total">{totalPages || 1}</span>
+          </div>
+          
+          <button 
+            className="nav-arrow" 
+            onClick={goToNext} 
+            disabled={currentPage >= totalPages}
+            title="Página siguiente"
+          >
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
 
       <div className="control-right">
         <div className="view-toggle">
-
           <button
             type="button"
             className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}

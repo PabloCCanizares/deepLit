@@ -5,7 +5,7 @@ function DocumentGrid({ documents, loading, error, baseRoute = '/documents' }) {
   if (loading) {
     return (
       <div className="loading-container">
-        <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--color-violet-light)' }}></i>
+        <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
         <p>Cargando documentos...</p>
       </div>
     )

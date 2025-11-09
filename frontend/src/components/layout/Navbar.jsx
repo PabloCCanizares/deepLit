@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
 import '../../styles/App.css'
 
 function Navbar({ toggleSidebar }) {
   const { user, logout, profileImageUrl } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -45,6 +47,24 @@ function Navbar({ toggleSidebar }) {
         </div>
 
         <div className="navbarMenu">
+          {/* Theme toggle buttons */}
+          <div className="themeToggle">
+            <button 
+              className={`themeButton ${theme === 'light' ? 'active' : ''}`}
+              onClick={() => theme !== 'light' && toggleTheme()}
+              title="Modo claro"
+            >
+              <i className="fas fa-sun"></i>
+            </button>
+            <button 
+              className={`themeButton ${theme === 'dark' ? 'active' : ''}`}
+              onClick={() => theme !== 'dark' && toggleTheme()}
+              title="Modo oscuro"
+            >
+              <i className="fas fa-moon"></i>
+            </button>
+          </div>
+
           {/* User menu */}
           <div className="userMenu" ref={userMenuRef}>
             <button 

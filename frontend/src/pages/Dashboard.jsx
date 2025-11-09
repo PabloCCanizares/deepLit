@@ -62,7 +62,7 @@ function Dashboard() {
     return (
       <div className="dashboardContainer">
         <div className="loading-container">
-          <div className="spinner" style={{width: '48px', height: '48px'}}></div>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
           <p>Cargando dashboard...</p>
         </div>
       </div>

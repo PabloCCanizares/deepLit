@@ -26,8 +26,8 @@ function YearChart({ labels, values }) {
       {
         label: 'Documentos',
         data: values,
-        backgroundColor: 'rgba(138, 92, 246, 0.8)',
-        borderColor: 'rgba(138, 92, 246, 1)',
+        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+        borderColor: 'rgba(79, 70, 229, 1)',
         borderWidth: 1,
       },
     ],

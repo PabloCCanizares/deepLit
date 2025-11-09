@@ -129,12 +129,7 @@ function Documents() {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: 'white',
-      paddingTop: '2rem',
-      paddingBottom: '2rem'
-    }}>
+    <div className="page-container">
       <div className="container">
               
         {/* Header Panel - Formato común */}

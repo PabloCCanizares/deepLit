@@ -88,7 +88,7 @@ const DocumentEdit = () => {
     return (
       <div className="documentEditContainer">
         <div className="loading">
-          <i className="fas fa-spinner"></i>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
           <p>Cargando documento...</p>
         </div>
       </div>

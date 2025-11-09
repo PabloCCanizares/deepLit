@@ -56,6 +56,43 @@
 .navbarMenu {
   display: flex;
   align-items: center;
+  gap: 1rem;
+}
+
+.themeToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.themeButton {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.themeButton:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.themeButton.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .userMenu {

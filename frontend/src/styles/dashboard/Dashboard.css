@@ -143,3 +143,48 @@
 
 /* Los contenedores de loading y error usan las clases comunes de common.css */
 
+/* ======= DARK MODE ======= */
+body[data-theme='dark'] .dashboardContainer {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+body[data-theme='dark'] .header {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.5);
+}
+
+body[data-theme='dark'] .section {
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-secondary) 100%);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme='dark'] .section:hover {
+  box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme='dark'] .wordcloudContainer {
+  background: var(--bg-tertiary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme='dark'] .recentDocItem {
+  border-bottom-color: var(--border-color);
+}
+
+body[data-theme='dark'] .recentDocItem:hover {
+  background-color: var(--bg-tertiary);
+}
+
+body[data-theme='dark'] .recentDocTitle {
+  color: var(--text-primary);
+}
+
+body[data-theme='dark'] .recentDocDate {
+  color: var(--text-secondary);
+}
+
+body[data-theme='dark'] .notification {
+  background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.5);
+}
