@@ -7,7 +7,12 @@ function ArticleControls({
   viewMode, 
   onViewModeChange,
   pagination,            // 🔹 { total, limit, offset }
-  onChangePagination     // 🔹 función para actualizar offset/limit
+  onChangePagination,    // 🔹 función para actualizar offset/limit
+  selectedCount = 0,     // 🔹 cantidad de artículos seleccionados
+  totalCount = 0,        // 🔹 total de artículos en la página
+  onSelectAll,           // 🔹 función para seleccionar todos
+  onDeleteSelected,      // 🔹 función para eliminar seleccionados (solo en Articles)
+  onAddToMyArticles      // 🔹 función para añadir a mis artículos (solo en OpenAlex)
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -74,9 +79,38 @@ function ArticleControls({
   }
 
   return (
-    <div className="doc-controls">
-      <div className="control-left">
-        {/* Ordenar */}
+    <>
+      <div className="doc-controls">
+        <div className="control-left">
+          {/* Ordenar */}
+          <div className="control-group" ref={sortRef}>
+            <button 
+              type="button" 
+              className="control-btn"
+              onClick={() => setShowSortMenu(!showSortMenu)}
+            >
+              <i className="fas fa-sort"></i>
+              <span>Ordenar por</span>
+            </button>
+            {showSortMenu && (
+              <div className="control-dropdown">
+                <button onClick={() => handleSort('year-asc')}>
+                  <i className="fas fa-calendar-alt"></i> Año (Ascendente)
+                </button>
+                <button onClick={() => handleSort('year-desc')}>
+                  <i className="fas fa-calendar-alt"></i> Año (Descendente)
+                </button>
+                <button onClick={() => handleSort('title-asc')}>
+                  <i className="fas fa-sort-alpha-down"></i> Título (A-Z)
+                </button>
+                <button onClick={() => handleSort('title-desc')}>
+                  <i className="fas fa-sort-alpha-up"></i> Título (Z-A)
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Filtro */}
         <div className="control-group" ref={sortRef}>
           <button 
             type="button" 
@@ -193,6 +227,39 @@ function ArticleControls({
         </div>
       </div>
     </div>
+
+    {/* Barra de selección - Solo aparece cuando hay artículos seleccionados */}
+    {selectedCount > 0 && (
+      <div className="selection-controls">
+        <div className="selection-left">
+          <span className="selection-count">
+            <i className="fas fa-check-circle"></i>
+            {selectedCount} artículo(s) seleccionado(s)
+          </span>
+        </div>
+        <div className="selection-actions">
+          {onDeleteSelected && (
+            <button 
+              className="btn-danger"
+              onClick={onDeleteSelected}
+            >
+              <i className="fas fa-trash"></i>
+              Eliminar seleccionados
+            </button>
+          )}
+          {onAddToMyArticles && (
+            <button 
+              className="btn-primary"
+              onClick={onAddToMyArticles}
+            >
+              <i className="fas fa-plus"></i>
+              Añadir a Mis Artículos
+            </button>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 

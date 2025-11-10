@@ -1,18 +1,32 @@
 import { Link } from 'react-router-dom'
 import '../../styles/articles/ArticleCard.css'
 
-function ArticleCard({ document, baseRoute = '/articles' }) {
+function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [], onSelectArticle }) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
   const year = document.year || '-'
   const id = document._id || document.id
+  const isSelected = selectedArticles.includes(id)
   
   // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
   const encodedId = encodeURIComponent(id)
 
+  const handleCheckboxClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (onSelectArticle) {
+      onSelectArticle(id)
+    }
+  }
+
   return (
-    <div className="lib-item">
+    <div className={`lib-item ${isSelected ? 'selected' : ''}`}>
+      {onSelectArticle && (
+        <div className="article-checkbox" onClick={handleCheckboxClick}>
+          <i className={`fas ${isSelected ? 'fa-check-square' : 'fa-square'}`}></i>
+        </div>
+      )}
       <Link to={`${baseRoute}/${encodedId}`} className="lib-cover-link">
         <div className="lib-cover">
           <div className="lib-cover-overlay">

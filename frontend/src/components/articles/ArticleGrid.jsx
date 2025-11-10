@@ -1,7 +1,7 @@
 import ArticleCard from './ArticleCard'
 import '../../styles/articles/ArticleGrid.css'
 
-function ArticleGrid({ documents, loading, error, baseRoute = '/articles' }) {
+function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -32,7 +32,13 @@ function ArticleGrid({ documents, loading, error, baseRoute = '/articles' }) {
   return (
     <div className="library">
       {documents.map((doc) => (
-        <ArticleCard key={doc._id || doc.id} document={doc} baseRoute={baseRoute} />
+        <ArticleCard 
+          key={doc._id || doc.id} 
+          document={doc} 
+          baseRoute={baseRoute}
+          selectedArticles={selectedArticles}
+          onSelectArticle={onSelectArticle}
+        />
       ))}
     </div>
   )
