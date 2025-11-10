@@ -1,12 +1,12 @@
-import DocumentCard from './DocumentCard'
-import '../../styles/documents/DocumentGrid.css'
+import ArticleCard from './ArticleCard'
+import '../../styles/articles/ArticleGrid.css'
 
-function DocumentGrid({ documents, loading, error, baseRoute = '/documents' }) {
+function ArticleGrid({ documents, loading, error, baseRoute = '/articles' }) {
   if (loading) {
     return (
       <div className="loading-container">
         <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-        <p>Cargando documentos...</p>
+        <p>Cargando artículos...</p>
       </div>
     )
   }
@@ -24,7 +24,7 @@ function DocumentGrid({ documents, loading, error, baseRoute = '/documents' }) {
     return (
       <div className="empty-container">
         <i className="fas fa-folder-open" style={{ fontSize: '2rem', color: 'var(--color-violet-light)' }}></i>
-        <p>No hay documentos disponibles</p>
+        <p>No hay artículos disponibles</p>
       </div>
     )
   }
@@ -32,10 +32,10 @@ function DocumentGrid({ documents, loading, error, baseRoute = '/documents' }) {
   return (
     <div className="library">
       {documents.map((doc) => (
-        <DocumentCard key={doc._id || doc.id} document={doc} baseRoute={baseRoute} />
+        <ArticleCard key={doc._id || doc.id} document={doc} baseRoute={baseRoute} />
       ))}
     </div>
   )
 }
 
-export default DocumentGrid
+export default ArticleGrid

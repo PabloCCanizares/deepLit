@@ -31,16 +31,16 @@ function Sidebar({ isOpen, onClose }) {
             <span>Dashboard</span>
           </Link>
 
-          {/* Documentos */}
+          {/* Artículos */}
           <div className="sidebarGroup">
-            <div className="sidebarGroupTitle">Documentos</div>
+            <div className="sidebarGroupTitle">Artículos</div>
             <Link 
-              to="/documents" 
-              className={`sidebarLink ${location.pathname === '/documents' ? 'active' : ''}`}
+              to="/articles" 
+              className={`sidebarLink ${location.pathname === '/articles' ? 'active' : ''}`}
               onClick={onClose}
             >
               <i className="fas fa-file-alt"></i>
-              <span>Mis Documentos</span>
+              <span>Mis Artículos</span>
             </Link>
           </div>
 

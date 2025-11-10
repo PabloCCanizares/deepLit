@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { uploadAPI } from '../../api/api';
-import '../../styles/documents/UploadOverlay.css';
+import '../../styles/articles/UploadOverlay.css';
 
 const UploadOverlay = ({ isOpen, onClose, onUploadSuccess }) => {
   // Referencias para los inputs de archivo

@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
-import '../../styles/documents/DocumentList.css'
+import '../../styles/articles/ArticleList.css'
 
-function DocumentList({ documents, loading, error, baseRoute = '/documents' }) {
+function ArticleList({ documents, loading, error, baseRoute = '/articles' }) {
   if (loading) {
     return (
       <div className="loading-container">
         <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-        <p>Cargando documentos...</p>
+        <p>Cargando artículos...</p>
       </div>
     )
   }
@@ -24,7 +24,7 @@ function DocumentList({ documents, loading, error, baseRoute = '/documents' }) {
     return (
       <div className="empty-container">
         <i className="fas fa-folder-open" style={{ fontSize: '2rem', color: 'var(--color-violet-light)' }}></i>
-        <p>No hay documentos disponibles</p>
+        <p>No hay artículos disponibles</p>
       </div>
     )
   }
@@ -75,4 +75,4 @@ function DocumentList({ documents, loading, error, baseRoute = '/documents' }) {
   )
 }
 
-export default DocumentList
+export default ArticleList

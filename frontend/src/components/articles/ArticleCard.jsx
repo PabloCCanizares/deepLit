@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import '../../styles/documents/DocumentCard.css'
+import '../../styles/articles/ArticleCard.css'
 
-function DocumentCard({ document, baseRoute = '/documents' }) {
+function ArticleCard({ document, baseRoute = '/articles' }) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
@@ -37,4 +37,4 @@ function DocumentCard({ document, baseRoute = '/documents' }) {
   )
 }
 
-export default DocumentCard
+export default ArticleCard

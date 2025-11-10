@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import '../../styles/documents/DocumentControls.css'
+import '../../styles/articles/ArticleControls.css'
 
-function DocumentControls({ 
+function ArticleControls({ 
   onSort, 
   onFilter, 
   viewMode, 
@@ -196,4 +196,4 @@ function DocumentControls({
   )
 }
 
-export default DocumentControls
+export default ArticleControls

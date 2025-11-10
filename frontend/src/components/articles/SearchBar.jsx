@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import '../../styles/documents/SearchBar.css'
+import '../../styles/articles/SearchBar.css'
 
 function SearchBar({ onSearch, placeholder = "Buscar por título" }) {
   const [query, setQuery] = useState('')

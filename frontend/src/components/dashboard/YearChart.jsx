@@ -24,7 +24,7 @@ function YearChart({ labels, values }) {
     labels: labels,
     datasets: [
       {
-        label: 'Documentos',
+        label: 'Artículos',
         data: values,
         backgroundColor: 'rgba(79, 70, 229, 0.8)',
         borderColor: 'rgba(79, 70, 229, 1)',
