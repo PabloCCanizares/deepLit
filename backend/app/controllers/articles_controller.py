@@ -5,7 +5,7 @@ Responsabilidad: Gestionar operaciones de artículos.
 """
 from fastapi import Depends
 from app.services.article_service import ArticleService
-from app.models import QueryBody
+from app.models import QueryBody, ArticleUpdate
 from app.core import StandardResponse
 
 
@@ -45,14 +45,17 @@ class ArticlesController:
             data=article
         )
     
-    async def update(self, article_id: str, update_data: dict, current_user: dict) -> StandardResponse:
+    async def update(self, article_id: str, update_data: ArticleUpdate, current_user: dict) -> StandardResponse:
         """
         Actualizar artículo por ID.
         """
+        # Convertir modelo Pydantic a dict, excluyendo campos no establecidos
+        update_dict = update_data.model_dump(exclude_unset=True)
+        
         updated_article = await self.service.update(
             article_id, 
             current_user["_id"], 
-            update_data
+            update_dict
         )
         
         return StandardResponse(

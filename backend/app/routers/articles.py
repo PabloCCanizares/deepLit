@@ -5,7 +5,7 @@ Endpoints para gestionar artículos.
 """
 from fastapi import APIRouter, Depends
 from app.controllers import ArticlesController
-from app.models import QueryBody, Pagination
+from app.models import QueryBody, Pagination, ArticleUpdate
 from app.core import StandardResponse, create_response_examples, get_current_user
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
@@ -105,7 +105,7 @@ async def get_article_by_id(
 )
 async def update_article(
     article_id: str,
-    update_data: dict,
+    update_data: ArticleUpdate,
     current_user: dict = Depends(get_current_user),
     controller: ArticlesController = Depends()
 ):
