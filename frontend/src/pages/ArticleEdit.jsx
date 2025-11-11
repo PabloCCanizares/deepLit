@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
-import '../styles/documents/DocumentViewEdit.css'
+import '../styles/articles/ArticleViewEdit.css'
 
 const DocumentEdit = () => {
   const { id } = useParams()
@@ -71,7 +71,7 @@ const DocumentEdit = () => {
     try {
       setSaving(true)
       await articlesAPI.update(id, formData)
-      navigate(`/documents/${id}`)
+      navigate(`/articles/${id}`)
     } catch (err) {
       console.error('Error saving document:', err)
       setError('Error al guardar el documento')
@@ -81,7 +81,7 @@ const DocumentEdit = () => {
   }
 
   const handleCancel = () => {
-    navigate(`/documents/${id}`)
+    navigate(`/articles/${id}`)
   }
 
   if (loading) {

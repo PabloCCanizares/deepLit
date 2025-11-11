@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { openalexAPI } from '../api/api'
-import SearchBarDebounced from '../components/documents/SearchBarDebounced'
-import DocumentControls from '../components/documents/DocumentControls'
-import DocumentGrid from '../components/documents/DocumentGrid'
-import DocumentList from '../components/documents/DocumentList'
+import SearchBarDebounced from '../components/articles/SearchBarDebounced'
+import ArticleControls from '../components/articles/ArticleControls'
+import ArticleGrid from '../components/articles/ArticleGrid'
+import ArticleList from '../components/articles/ArticleList'
 import '../styles/App.css'
 
 function OpenAlex() {
@@ -109,7 +109,7 @@ function OpenAlex() {
       <div className="container">
         <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         
-        <DocumentControls 
+        <ArticleControls 
           onSort={handleSort} 
           onFilter={handleFilter}
           viewMode={viewMode}
@@ -119,14 +119,14 @@ function OpenAlex() {
         />
         
         {viewMode === 'list' ? (
-          <DocumentList 
+          <ArticleList 
             documents={filteredDocuments} 
             loading={loading} 
             error={error}
             baseRoute="/openalex"
           />
         ) : (
-          <DocumentGrid 
+          <ArticleGrid 
             documents={filteredDocuments} 
             loading={loading} 
             error={error}

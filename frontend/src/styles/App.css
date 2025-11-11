@@ -11,12 +11,12 @@
 @import './dashboard/StatCard.css';
 
 /* ======= IMPORTAR ESTILOS DE DOCUMENTS ======= */
-@import './documents/DocumentCard.css';
-@import './documents/DocumentControls.css';
-@import './documents/DocumentGrid.css';
-@import './documents/DocumentList.css';
-@import './documents/SearchBar.css';
-@import './documents/DocumentViewEdit.css';
+@import './articles/ArticleCard.css';
+@import './articles/ArticleControls.css';
+@import './articles/ArticleGrid.css';
+@import './articles/ArticleList.css';
+@import './articles/SearchBar.css';
+@import './articles/ArticleViewEdit.css';
 
 /* ======= IMPORTAR ESTILOS DE AUTH ======= */
 @import './Auth.css';

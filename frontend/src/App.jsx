@@ -6,9 +6,9 @@ import Login from './Pages/Login'
 import Register from './Pages/Register'
 import Dashboard from './Pages/Dashboard'
 import Home from './Pages/Home'
-import Documents from './Pages/Documents'
-import DocumentView from './Pages/DocumentView'
-import DocumentEdit from './Pages/DocumentEdit'
+import Articles from './Pages/Articles'
+import ArticleView from './Pages/ArticleView'
+import ArticleEdit from './Pages/ArticleEdit'
 import Collections from './Pages/Collections'
 import History from './Pages/History'
 import Profile from './Pages/Profile'
@@ -35,19 +35,19 @@ function App() {
           }>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="documents" element={<Documents />} />
-            <Route path="documents/:id" element={<DocumentView />} />
-            <Route path="documents/:id/edit" element={<DocumentEdit />} />
+            <Route path="articles" element={<Articles />} />
+            <Route path="articles/:id" element={<ArticleView />} />
+            <Route path="articles/:id/edit" element={<ArticleEdit />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="search" element={<Documents />} />
+            <Route path="search" element={<Articles />} />
             <Route path="openalex" element={<OpenAlex />} />
             <Route path="openalex/:id" element={<OpenAlexView />} />
             {/* Legacy routes - redirect to new ones */}
             <Route path="inicio" element={<Navigate to="/dashboard" replace />} />
             <Route path="explorar" element={<Navigate to="/" replace />} />
             <Route path="colecciones" element={<Navigate to="/" replace />} />
-            <Route path="historial" element={<Navigate to="/documents" replace />} />
+            <Route path="historial" element={<Navigate to="/articles" replace />} />
             <Route path="perfil" element={<Navigate to="/profile" replace />} />
             <Route path="configuracion" element={<Navigate to="/settings" replace />} />
           </Route>

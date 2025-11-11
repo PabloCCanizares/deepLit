@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
-import '../styles/documents/DocumentViewEdit.css'
+import '../styles/articles/ArticleViewEdit.css'
 
 const DocumentView = () => {
   const { id } = useParams()
@@ -35,11 +35,11 @@ const DocumentView = () => {
   }, [id])
 
   const handleEdit = () => {
-    navigate(`/documents/${id}/edit`)
+    navigate(`/articles/${id}/edit`)
   }
 
   const handleBack = () => {
-    navigate('/documents')
+    navigate('/articles')
   }
 
   if (loading) {

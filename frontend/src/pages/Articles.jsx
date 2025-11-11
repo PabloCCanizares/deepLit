@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react'
 import { articlesAPI } from '../api/api'
-// import SearchBar from '../components/documents/SearchBar'
-import DocumentControls from '../components/documents/DocumentControls'
-import DocumentGrid from '../components/documents/DocumentGrid'
-import DocumentList from '../components/documents/DocumentList'
-import UploadOverlay from '../components/documents/UploadOverlay'
+import ArticleControls from '../components/articles/ArticleControls'
+import ArticleGrid from '../components/articles/ArticleGrid'
+import ArticleList from '../components/articles/ArticleList'
+import UploadOverlay from '../components/articles/UploadOverlay'
 import '../styles/App.css'
-import SearchBarDebounced from '../components/documents/SearchBarDebounced'
+import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 
 
-function Documents() {
+function Articles() {
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
   const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
@@ -160,7 +159,7 @@ function Documents() {
           <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         </div>
 
-        <DocumentControls 
+        <ArticleControls 
           onSort={handleSort} 
           onFilter={handleFilter}
           viewMode={viewMode}
@@ -170,13 +169,13 @@ function Documents() {
         />
         
         {viewMode === 'list' ? (
-          <DocumentList 
+          <ArticleList 
             documents={filteredDocuments} 
             loading={loading} 
             error={error} 
           />
         ) : (
-          <DocumentGrid 
+          <ArticleGrid 
             documents={filteredDocuments} 
             loading={loading} 
             error={error} 
@@ -210,4 +209,4 @@ function Documents() {
   )
 }
 
-export default Documents
+export default Articles
