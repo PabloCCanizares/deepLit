@@ -35,7 +35,14 @@ from app.models.excel import (
 # Article models
 from app.models.article import (
     Pagination,
-    QueryBody
+    QueryBody,
+    ArticleUpdate
+)
+
+# Collection models
+from app.models.collection import (
+    CollectionCreate,
+    AddArticleToCollection
 )
 
 __all__ = [
@@ -54,5 +61,10 @@ __all__ = [
     # Article
     "Pagination",
     "QueryBody",
+    "ArticleUpdate",
+    
+    # Collection
+    "CollectionCreate",
+    "AddArticleToCollection",
 ]
 
