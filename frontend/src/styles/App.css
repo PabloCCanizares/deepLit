@@ -10,7 +10,7 @@
 @import './dashboard/Dashboard.css';
 @import './dashboard/StatCard.css';
 
-/* ======= IMPORTAR ESTILOS DE DOCUMENTS ======= */
+/* ======= IMPORTAR ESTILOS DE ARTICLES ======= */
 @import './articles/ArticleCard.css';
 @import './articles/ArticleControls.css';
 @import './articles/ArticleGrid.css';
@@ -130,17 +130,9 @@ body[data-theme='dark'] .control-btn {
 }
 
 body[data-theme='dark'] .pagination-select {
-  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
-  border-color: var(--main_color);
-  color: white;
-}
-
-body[data-theme='dark'] .pagination-select:hover {
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.6);
-}
-
-body[data-theme='dark'] .pagination-select:focus {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 body[data-theme='dark'] .page-navigation {
@@ -226,80 +218,10 @@ body[data-theme='dark'] .view-toggle {
 }
 
 body[data-theme='dark'] .view-btn {
-  color: var(--text-primary);
-}
-
-body[data-theme='dark'] .view-btn:hover {
-  background: var(--bg-secondary);
-}
-
-body[data-theme='dark'] .view-btn.active {
-  background: var(--main_color);
-  color: white;
-}
-
-/* View and Edit pages */
-body[data-theme='dark'] .documentViewContainer,
-body[data-theme='dark'] .documentEditContainer {
-  background: var(--bg-primary);
-}
-
-body[data-theme='dark'] .documentHeader {
-  background: var(--card-bg);
-  border-color: var(--main_color);
-  box-shadow: 0 4px 16px var(--shadow);
-}
-
-body[data-theme='dark'] .documentHeader h1,
-body[data-theme='dark'] .documentTitle {
-  color: var(--text-primary);
-}
-
-body[data-theme='dark'] .documentSection,
-body[data-theme='dark'] .formSection {
-  background: var(--card-bg);
-  border-left-color: var(--main_color);
-  box-shadow: 0 4px 16px var(--shadow);
-}
-
-body[data-theme='dark'] .documentSection h3,
-body[data-theme='dark'] .formSection h3 {
-  color: var(--text-primary);
-  border-bottom-color: var(--main_color);
-}
-
-body[data-theme='dark'] .documentField label,
-body[data-theme='dark'] .formField label {
-  color: var(--main_color);
-}
-
-body[data-theme='dark'] .documentField span,
-body[data-theme='dark'] .documentAbstract,
-body[data-theme='dark'] .documentReferences p {
   color: var(--text-secondary);
 }
 
-body[data-theme='dark'] .formField input,
-body[data-theme='dark'] .formField textarea {
-  background: var(--bg-tertiary);
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-body[data-theme='dark'] .formField input:focus,
-body[data-theme='dark'] .formField textarea:focus {
-  background: var(--bg-secondary);
-  border-color: var(--main_color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-}
-
-body[data-theme='dark'] .btn-secondary {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-color: var(--main_color);
-}
-
-body[data-theme='dark'] .btn-secondary:hover {
+body[data-theme='dark'] .view-btn.active {
   background: var(--main_color);
   color: white;
 }

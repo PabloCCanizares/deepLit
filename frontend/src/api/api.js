@@ -124,7 +124,7 @@ export const statsAPI = {
   getStats: () => apiFetch('/stats/dashboard'),
 };
 
-// Upload API - Subida de documentos
+// Upload API - Subida de artículos
 export const uploadAPI = {
   uploadPDF: (file) => {
     return new Promise((resolve, reject) => {

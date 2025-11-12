@@ -7,8 +7,9 @@ import ArticleList from '../components/articles/ArticleList'
 import '../styles/App.css'
 
 function OpenAlex() {
-  const [documents, setDocuments] = useState([])
-  const [filteredDocuments, setFilteredDocuments] = useState([])
+  const [articles, setArticles] = useState([])
+  const [filteredArticles, setFilteredArticles] = useState([])
+  const [selectedArticles, setSelectedArticles] = useState([])
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 10,
@@ -22,14 +23,14 @@ function OpenAlex() {
   const [viewMode, setViewMode] = useState('list')
 
   useEffect(() => {
-    loadDocuments()
+    loadArticles()
   }, [pagination.offset, pagination.limit, searchQuery])
 
   useEffect(() => {
     applyFiltersAndSort()
-  }, [documents, sortCriteria, filterCriteria])
+  }, [articles, sortCriteria, filterCriteria])
 
-  const loadDocuments = async () => {
+  const loadArticles = async () => {
     try {
       setLoading(true)
       const response = await openalexAPI.getWorks({ 
@@ -40,30 +41,30 @@ function OpenAlex() {
 
       console.log("Respuesta de OpenAlex:", response);
       
-      setDocuments(response.data.articles)
+      setArticles(response.data.articles)
       setPagination(prev => ({
         ...prev,
         total: response.data.total
       }))
     } catch (err) {
-      setError(err.message || 'Error al cargar documentos')
+      setError(err.message || 'Error al cargar artículos')
     } finally {
       setLoading(false)
     }
   }
 
   const applyFiltersAndSort = () => {
-    let filtered = [...documents]
+    let filtered = [...articles]
 
 
     // 2. Aplicar filtros
     if (filterCriteria === 'complete') {
-      filtered = filtered.filter(doc => 
-        doc.title && doc.category && doc.pages && doc.year
+      filtered = filtered.filter(article => 
+        article.title && article.category && article.pages && article.year
       )
     } else if (filterCriteria === 'incomplete') {
-      filtered = filtered.filter(doc => 
-        !doc.title || !doc.category || !doc.pages || !doc.year
+      filtered = filtered.filter(article => 
+        !article.title || !article.category || !article.pages || !article.year
       )
     }
 
@@ -83,7 +84,7 @@ function OpenAlex() {
       }
     })
 
-    setFilteredDocuments(filtered)
+    setFilteredArticles(filtered)
   }
 
   const handleSort = (criteria) => {
@@ -104,6 +105,31 @@ function OpenAlex() {
     setViewMode(mode)
   }
 
+  const handleSelectArticle = (articleId) => {
+    setSelectedArticles(prev => {
+      if (prev.includes(articleId)) {
+        return prev.filter(id => id !== articleId)
+      } else {
+        return [...prev, articleId]
+      }
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (selectedArticles.length === filteredArticles.length) {
+      setSelectedArticles([])
+    } else {
+      setSelectedArticles(filteredArticles.map(article => article._id || article.id))
+    }
+  }
+
+  const handleAddToMyArticles = () => {
+    if (selectedArticles.length === 0) return
+    
+    // TODO: Implementar funcionalidad de añadir a mis artículos
+    alert(`${selectedArticles.length} artículo(s) seleccionado(s) para añadir (funcionalidad pendiente)`)
+  }
+
   return (
     <div className="page-container">
       <div className="container">
@@ -116,21 +142,30 @@ function OpenAlex() {
           onViewModeChange={handleViewModeChange}
           pagination={pagination}
           onChangePagination={setPagination}
+          selectedCount={selectedArticles.length}
+          totalCount={filteredArticles.length}
+          onSelectAll={handleSelectAll}
+          onAddToMyArticles={handleAddToMyArticles}
         />
         
         {viewMode === 'list' ? (
           <ArticleList 
-            documents={filteredDocuments} 
+            documents={filteredArticles} 
             loading={loading} 
             error={error}
             baseRoute="/openalex"
+            selectedArticles={selectedArticles}
+            onSelectArticle={handleSelectArticle}
+            onSelectAll={handleSelectAll}
           />
         ) : (
           <ArticleGrid 
-            documents={filteredDocuments} 
+            documents={filteredArticles} 
             loading={loading} 
             error={error}
             baseRoute="/openalex"
+            selectedArticles={selectedArticles}
+            onSelectArticle={handleSelectArticle}
           />
         )}
       </div>

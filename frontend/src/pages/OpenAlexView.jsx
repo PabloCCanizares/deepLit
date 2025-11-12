@@ -20,11 +20,11 @@ const OpenAlexView = () => {
         setError(null)
         
         const response = await openalexAPI.getById(decodedId)
-        console.log('Documento OpenAlex recibido:', response.data)
+        console.log('Artículo OpenAlex recibido:', response.data)
         setDocument(response.data)
       } catch (err) {
         console.error('Error fetching document:', err)
-        setError(`Error al cargar el documento: ${err.message}`)
+        setError(`Error al cargar el artículo: ${err.message}`)
       } finally {
         setLoading(false)
       }
@@ -33,7 +33,7 @@ const OpenAlexView = () => {
     if (decodedId) {
       fetchDocument()
     } else {
-      setError('ID de documento no proporcionado')
+      setError('ID de artículo no proporcionado')
       setLoading(false)
     }
   }, [decodedId])
@@ -51,7 +51,7 @@ const OpenAlexView = () => {
       <div className="documentViewContainer">
         <div className="loading">
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-          <p>Cargando documento...</p>
+          <p>Cargando artículo...</p>
         </div>
       </div>
     )
@@ -62,7 +62,7 @@ const OpenAlexView = () => {
       <div className="documentViewContainer">
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
-          <p>{error || 'Documento no encontrado'}</p>
+          <p>{error || 'Artículo no encontrado'}</p>
           <button onClick={handleBack} className="btn-secondary">
             Volver a OpenAlex
           </button>

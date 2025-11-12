@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
 import '../styles/articles/ArticleViewEdit.css'
 
-const DocumentView = () => {
+const ArticleView = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [document, setDocument] = useState(null)
@@ -20,7 +20,7 @@ const DocumentView = () => {
         setDocument(response.data)
       } catch (err) {
         console.error('Error fetching document:', err)
-        setError(`Error al cargar el documento: ${err.message}`)
+        setError(`Error al cargar el artículo: ${err.message}`)
       } finally {
         setLoading(false)
       }
@@ -29,7 +29,7 @@ const DocumentView = () => {
     if (id) {
       fetchDocument()
     } else {
-      setError('ID de documento no proporcionado')
+      setError('ID de artículo no proporcionado')
       setLoading(false)
     }
   }, [id])
@@ -47,7 +47,7 @@ const DocumentView = () => {
       <div className="documentViewContainer">
         <div className="loading">
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-          <p>Cargando documento...</p>
+          <p>Cargando artículo...</p>
         </div>
       </div>
     )
@@ -58,9 +58,9 @@ const DocumentView = () => {
       <div className="documentViewContainer">
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
-          <p>{error || 'Documento no encontrado'}</p>
+          <p>{error || 'Artículo no encontrado'}</p>
           <button onClick={handleBack} className="btn-secondary">
-            Volver a Documentos
+            Volver a Artículos
           </button>
         </div>
       </div>
@@ -181,4 +181,4 @@ const DocumentView = () => {
   )
 }
 
-export default DocumentView
+export default ArticleView

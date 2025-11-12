@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
 import '../styles/articles/ArticleViewEdit.css'
 
-const DocumentEdit = () => {
+const ArticleEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -48,7 +49,7 @@ const DocumentEdit = () => {
         })
       } catch (err) {
         console.error('Error fetching document:', err)
-        setError(`Error al cargar el documento: ${err.message}`)
+        setError(`Error al cargar el artículo: ${err.message}`)
       } finally {
         setLoading(false)
       }
@@ -74,7 +75,7 @@ const DocumentEdit = () => {
       navigate(`/articles/${id}`)
     } catch (err) {
       console.error('Error saving document:', err)
-      setError('Error al guardar el documento')
+      setError('Error al guardar el artículo')
     } finally {
       setSaving(false)
     }
@@ -84,12 +85,23 @@ const DocumentEdit = () => {
     navigate(`/articles/${id}`)
   }
 
+  const handleDelete = async () => {
+    try {
+      await articlesAPI.delete(id)
+      navigate('/articles')
+    } catch (err) {
+      console.error('Error deleting article:', err)
+      setError('Error al eliminar el artículo')
+      setShowDeleteModal(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="documentEditContainer">
         <div className="loading">
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-          <p>Cargando documento...</p>
+          <p>Cargando artículo...</p>
         </div>
       </div>
     )
@@ -109,7 +121,7 @@ const DocumentEdit = () => {
   return (
     <div className="documentEditContainer">
       <div className="documentHeader">
-        <h1 style={{ color: 'var(--main_color)' }}>Editar Documento</h1>
+        <h1 style={{ color: 'var(--main_color)' }}>Editar Artículo</h1>
         <div className="documentActions">
           <button 
             onClick={handleCancel} 
@@ -280,8 +292,67 @@ const DocumentEdit = () => {
 
         </div>
       </form>
+
+      {/* Botón de eliminar */}
+      <div style={{ 
+        marginTop: '1rem', 
+        display: 'flex', 
+        justifyContent: 'center',
+        maxWidth: '1200px',
+        margin: '1rem auto 0',
+        padding: '0 2rem'
+      }}>
+        <button 
+          onClick={() => setShowDeleteModal(true)} 
+          className="btn-primary btn-delete-article"
+          disabled={saving}
+          style={{ 
+            minWidth: '250px',
+            padding: '12px 24px',
+            fontSize: '1rem'
+          }}
+        >
+          <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
+          Eliminar Artículo
+        </button>
+      </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
+                {' '}Confirmar Eliminación
+              </h2>
+            </div>
+            <div className="modal-body">
+              <p>¿Estás seguro de que quieres eliminar este artículo?</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => setShowDeleteModal(false)} 
+                className="btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleDelete} 
+                className="btn-primary"
+              >
+                <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
+                Eliminar Definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-export default DocumentEdit
+export default ArticleEdit

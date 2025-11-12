@@ -109,7 +109,7 @@ function Dashboard() {
       {/* Statistics Cards */}
       <div className="statsGrid">
         <StatCard 
-          title="Documentos Subidos"
+          title="Artículos Subidos"
           value={stats?.document_count || 0}
           icon="fa-book"
         />
@@ -119,7 +119,7 @@ function Dashboard() {
           icon="fa-quote-right"
         />
         <StatCard 
-          title="Referencias por Documento"
+          title="Referencias por Artículo"
           value={stats?.avg_references || 0}
           icon="fa-chart-line"
         />
@@ -129,7 +129,7 @@ function Dashboard() {
         <div>
           {/* Year Chart */}
           <div className="section">
-            <h3 className="sectionTitle">Documentos por Año</h3>
+            <h3 className="sectionTitle">Artículos por Año</h3>
             <YearChart 
               labels={stats?.labels_by_year || []}
               values={stats?.values_by_year || []}
@@ -158,7 +158,7 @@ function Dashboard() {
             </div>
           )}
 
-          {/* Recent Documents */}
+          {/* Recent Articles */}
           {stats?.recent_docs && stats.recent_docs.length > 0 && (
             <div className="section">
               <h3 className="sectionTitle">Actividad Reciente</h3>
@@ -184,7 +184,7 @@ function Dashboard() {
         <div className="notification">
           <i className="fas fa-exclamation-triangle"></i>
           <span>
-            Se encontraron {stats.notif_abstract} documentos sin abstract y {stats.notif_keywords} sin keywords.
+            Se encontraron {stats.notif_abstract} artículos sin abstract y {stats.notif_keywords} sin keywords.
           </span>
         </div>
       )}

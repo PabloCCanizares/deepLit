@@ -9,7 +9,7 @@
   background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
 }
 
-/* Header Panel - Usado en Documents y UploadDocuments */
+/* Header Panel - Usado en Articles y UploadArticles */
 .header-panel {
   background: linear-gradient(135deg, var(--main_color), var(--dark));
   border-radius: 16px;
@@ -230,38 +230,51 @@
   transform: scale(0.95);
 }
 
-/* Notificación de éxito de carga */
+/* Notificación de éxito de carga - Estilo copiado de ArticleViewEdit */
 .upload-success-notification {
   position: fixed;
-  bottom: 6.5rem;
+  bottom: 2rem;
   right: 2rem;
-  padding: 0.75rem 1rem;
-  background: rgba(16, 185, 129, 0.9);
-  border-radius: 8px;
-  color: white;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 950;
-  min-width: 200px;
-  max-width: 300px;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  min-width: 250px;
+  max-width: 400px;
+  color: #10b981;
   font-weight: 500;
-  font-size: 0.875rem;
-  animation: fadeIn 0.6s ease-out, fadeOut 0.8s ease-in 3.2s forwards;
+  border: 2px solid #10b981;
+  animation: slideInRight 0.3s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
 }
 
 .upload-success-notification.error {
-  background: rgba(239, 68, 68, 0.9);
+  color: #dc2626;
+  border-color: #dc2626;
 }
 
-.upload-success-notification svg {
-  display: none;
+.upload-success-notification i {
+  font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 .upload-success-notification span {
   flex: 1;
   line-height: 1.4;
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes fadeIn {
@@ -282,12 +295,19 @@
   }
 }
 
+/* Dark mode para notificaciones */
+body[data-theme='dark'] .upload-success-notification {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
 @media (max-width: 768px) {
   .upload-success-notification {
-    bottom: 5.5rem;
-    right: 1.5rem;
-    min-width: 180px;
-    max-width: calc(100vw - 3rem);
+    bottom: 1.5rem;
+    right: 1rem;
+    left: 1rem;
+    min-width: auto;
+    max-width: none;
     padding: 0.625rem 0.875rem;
     font-size: 0.8125rem;
   }
