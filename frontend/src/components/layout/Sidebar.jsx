@@ -42,6 +42,14 @@ function Sidebar({ isOpen, onClose }) {
               <i className="fas fa-file-alt"></i>
               <span>Mis Artículos</span>
             </Link>
+            <Link 
+              to="/collections" 
+              className={`sidebarLink ${location.pathname === '/collections' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-folder"></i>
+              <span>Colecciones</span>
+            </Link>
           </div>
 
           {/* Búsqueda y Análisis */}

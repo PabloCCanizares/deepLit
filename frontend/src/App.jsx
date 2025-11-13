@@ -2,20 +2,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext'
 import PrivateRoute from './components/auth/PrivateRoute'
 import Layout from './components/layout/Layout'
-import Login from './Pages/Login'
-import Register from './Pages/Register'
-import Dashboard from './Pages/Dashboard'
-import Home from './Pages/Home'
-import Articles from './Pages/Articles'
-import ArticleView from './Pages/ArticleView'
-import ArticleEdit from './Pages/ArticleEdit'
-import Collections from './Pages/Collections'
-import History from './Pages/History'
-import Profile from './Pages/Profile'
-import Settings from './Pages/Settings'
-import Explore from './Pages/Explore'
-import OpenAlex from './Pages/OpenAlex'
-import OpenAlexView from './Pages/OpenAlexView'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
+import Articles from './pages/Articles'
+import ArticleView from './pages/ArticleView'
+import ArticleEdit from './pages/ArticleEdit'
+import Collections from './pages/Collections'
+import History from './pages/History'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import Explore from './pages/Explore'
+import OpenAlex from './pages/OpenAlex'
+import OpenAlexView from './pages/OpenAlexView'
 
 
 function App() {
@@ -38,6 +38,7 @@ function App() {
             <Route path="articles" element={<Articles />} />
             <Route path="articles/:id" element={<ArticleView />} />
             <Route path="articles/:id/edit" element={<ArticleEdit />} />
+            <Route path="collections" element={<Collections />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Articles />} />
