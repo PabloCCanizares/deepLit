@@ -12,7 +12,8 @@ function ArticleControls({
   totalCount = 0,        // 🔹 total de artículos en la página
   onSelectAll,           // 🔹 función para seleccionar todos
   onDeleteSelected,      // 🔹 función para eliminar seleccionados (solo en Articles)
-  onAddToMyArticles      // 🔹 función para añadir a mis artículos (solo en OpenAlex)
+  onAddToMyArticles,     // 🔹 función para añadir a mis artículos (solo en OpenAlex)
+  onAddToCollections     // 🔹 función para añadir a colecciones (solo en Articles)
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -238,6 +239,16 @@ function ArticleControls({
           </span>
         </div>
         <div className="selection-actions">
+          {onAddToCollections && (
+            <button 
+              className="btn-primary"
+              onClick={onAddToCollections}
+              style={{ marginRight: '0.5rem' }}
+            >
+              <i className="fas fa-folder-plus"></i>
+              Añadir a Colección(es)
+            </button>
+          )}
           {onDeleteSelected && (
             <button 
               className="btn-danger"

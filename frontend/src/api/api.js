@@ -235,6 +235,45 @@ export const openalexAPI = {
   },
 };
 
+export const collectionsAPI = {
+  // Get all user collections
+  getAll: async () => {
+    return apiFetch('/collections', {
+      method: 'GET'
+    });
+  },
+
+  // Create new collection
+  create: async (collectionData) => {
+    return apiFetch('/collections', {
+      method: 'POST',
+      body: JSON.stringify(collectionData)
+    });
+  },
+
+  // Get collection with articles
+  getWithArticles: async (collectionId, { limit = 100, offset = 0 } = {}) => {
+    return apiFetch(`/collections/${collectionId}/articles?limit=${limit}&offset=${offset}`, {
+      method: 'GET'
+    });
+  },
+
+  // Add article to collection
+  addArticle: async (collectionId, articleId) => {
+    return apiFetch(`/collections/${collectionId}/articles`, {
+      method: 'POST',
+      body: JSON.stringify({ article_id: articleId })
+    });
+  },
+
+  // Remove article from collection
+  removeArticle: async (collectionId, articleId) => {
+    return apiFetch(`/collections/${collectionId}/articles/${articleId}`, {
+      method: 'DELETE'
+    });
+  },
+};
+
 
 // Exportar por defecto para import por defecto
 export default {
@@ -243,6 +282,7 @@ export default {
   upload: uploadAPI,
   articles: articlesAPI,
   openalex: openalexAPI,
+  collections: collectionsAPI,
 
 };
 

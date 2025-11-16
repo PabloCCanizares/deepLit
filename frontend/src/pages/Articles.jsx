@@ -5,6 +5,7 @@ import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
+import AddToCollectionsModal from '../components/collections/AddToCollectionsModal'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
@@ -16,6 +17,7 @@ function Articles() {
   const [filteredDocuments, setFilteredDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 10,
@@ -154,6 +156,18 @@ function Articles() {
     setShowDeleteModal(true)
   }
 
+  const handleAddToCollections = () => {
+    if (selectedArticles.length === 0) return
+    setShowCollectionsModal(true)
+  }
+
+  const handleCollectionsSuccess = (message) => {
+    setShowCollectionsModal(false)
+    setSelectedArticles([])
+    setUploadSuccessMessage(message || 'Artículos añadidos a colecciones correctamente')
+    setTimeout(() => setUploadSuccessMessage(''), 4000)
+  }
+
   const confirmDeleteSelected = async () => {
     const deletedCount = selectedArticles.length
     
@@ -242,6 +256,7 @@ function Articles() {
           totalCount={filteredDocuments.length}
           onSelectAll={handleSelectAll}
           onDeleteSelected={handleDeleteSelected}
+          onAddToCollections={handleAddToCollections}
         />
         
         {viewMode === 'list' ? (
@@ -321,6 +336,14 @@ function Articles() {
             </div>
           </div>
         )}
+
+        {/* Modal de añadir a colecciones */}
+        <AddToCollectionsModal
+          isOpen={showCollectionsModal}
+          onClose={() => setShowCollectionsModal(false)}
+          selectedArticles={selectedArticles}
+          onSuccess={handleCollectionsSuccess}
+        />
       </div>
     </div>
   )
