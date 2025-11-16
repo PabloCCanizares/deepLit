@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { collectionsAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import CollectionCard from '../components/collections/CollectionCard'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
@@ -11,36 +12,10 @@ function Collections() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
-
-  // Mock data - esto se conectará al backend después
-  const mockCollections = [
-    {
-      id: 1,
-      name: 'Literatura Moderna',
-      category: 'Literatura',
-      articles: [1, 2, 3],
-      image: null
-    },
-    {
-      id: 2,
-      name: 'Ciencias Computacionales',
-      category: 'Tecnología',
-      articles: [1, 2],
-      image: null
-    },
-    {
-      id: 3,
-      name: 'Historia Antigua',
-      category: 'Historia',
-      articles: [1, 2, 3, 4, 5],
-      image: null
-    }
-  ]
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Cargar colecciones (mock por ahora)
-    setCollections(mockCollections)
-    setFilteredCollections(mockCollections)
+    loadCollections()
   }, [])
 
   useEffect(() => {
@@ -55,28 +30,55 @@ function Collections() {
     }
   }, [searchQuery, collections])
 
+  const loadCollections = async () => {
+    try {
+      setLoading(true)
+      const response = await collectionsAPI.getAll()
+      setCollections(response.data.collections || [])
+      setFilteredCollections(response.data.collections || [])
+    } catch (err) {
+      console.error('Error loading collections:', err)
+      setSuccessMessage('Error al cargar colecciones')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSearch = (query) => {
     setSearchQuery(query)
   }
 
-  const handleCreateCollection = (collectionData) => {
-    // Aquí se conectará al backend
-    console.log('Nueva colección:', collectionData)
-    
-    // Por ahora solo agregamos al mock
-    const newCollection = {
-      id: collections.length + 1,
-      name: collectionData.name,
-      category: collectionData.category || 'Sin categoría',
-      articles: collectionData.selectedArticles,
-      image: collectionData.image
+  const handleCreateCollection = async (collectionData) => {
+    try {
+      // Crear la colección en el backend
+      const response = await collectionsAPI.create({
+        name: collectionData.name,
+        description: collectionData.category || '',
+        color: '#3B82F6'
+      })
+
+      const createdCollection = response.data
+
+      // Añadir artículos seleccionados a la colección
+      if (collectionData.selectedArticles && collectionData.selectedArticles.length > 0) {
+        await Promise.all(
+          collectionData.selectedArticles.map(articleId =>
+            collectionsAPI.addArticle(createdCollection._id, articleId)
+          )
+        )
+      }
+
+      // Recargar colecciones para obtener datos actualizados
+      await loadCollections()
+      
+      setSuccessMessage('Colección creada correctamente')
+      setTimeout(() => setSuccessMessage(''), 3000)
+    } catch (err) {
+      console.error('Error creating collection:', err)
+      setSuccessMessage('Error al crear la colección')
+      setTimeout(() => setSuccessMessage(''), 3000)
     }
-    
-    setCollections(prev => [...prev, newCollection])
-    setSuccessMessage('Colección creada correctamente')
-    
-    // Limpiar mensaje después de 3 segundos
-    setTimeout(() => setSuccessMessage(''), 3000)
   }
 
   return (
@@ -123,7 +125,12 @@ function Collections() {
 
         {/* Vista Mosaico de Colecciones */}
         <div className="collections-grid">
-          {filteredCollections.length === 0 ? (
+          {loading ? (
+            <div className="loading-state">
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: '3rem', color: 'var(--main_color)' }}></i>
+              <p>Cargando colecciones...</p>
+            </div>
+          ) : filteredCollections.length === 0 ? (
             <div className="empty-state">
               <i className="fas fa-folder-open"></i>
               <p>No hay colecciones disponibles</p>
@@ -131,13 +138,13 @@ function Collections() {
                 className="btn-create-first"
                 onClick={() => setIsCreateModalOpen(true)}
               >
-                Crear mi primera colección
+                Crear colección
               </button>
             </div>
           ) : (
             filteredCollections.map(collection => (
               <CollectionCard 
-                key={collection.id} 
+                key={collection._id} 
                 collection={collection}
               />
             ))

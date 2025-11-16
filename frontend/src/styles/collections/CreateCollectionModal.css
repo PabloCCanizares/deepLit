@@ -41,6 +41,13 @@
   flex-direction: column;
 }
 
+/* Cuando el selector de artículos está expandido, hacer el modal más grande */
+.create-collection-modal:has(.article-selector-expanded) {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+}
+
 .modal-body {
   padding: 2rem;
   display: flex;
@@ -156,7 +163,357 @@
   color: var(--main_color);
 }
 
-/* Article Selector */
+/* Article Selector Expandido */
+.article-selector-expanded {
+  margin-top: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.article-selector-expanded .article-selector-header {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.article-selector-expanded .header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.article-selector-expanded .header-left h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.collapse-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Buscador dentro del selector */
+.article-search {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Controles mini */
+.article-controls-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.control-left {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.control-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-select:hover {
+  border-color: var(--main_color);
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: var(--main_color);
+}
+
+.control-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--bg-secondary);
+  padding: 0.25rem;
+  border-radius: 6px;
+}
+
+.view-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.view-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.view-btn.active {
+  background: var(--main_color);
+  color: white;
+}
+
+/* Información de paginación */
+.pagination-info {
+  padding: 0.75rem 1rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Contenedor simple de lista de artículos */
+.article-list-container-simple {
+  padding: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+
+.simple-article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.simple-article-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simple-article-item:hover {
+  border-color: var(--main_color);
+  background: var(--hover-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.simple-article-item.selected {
+  border-color: var(--main_color);
+  background: var(--main_color_light);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.simple-article-item .article-checkbox {
+  font-size: 1.5rem;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.simple-article-item.selected .article-checkbox {
+  color: var(--main_color);
+}
+
+.simple-article-item .article-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.article-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.article-row-inline {
+  display: flex;
+  gap: 2rem;
+}
+
+.article-inline-item {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.article-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.article-value {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  word-break: break-word;
+}
+
+.article-row:first-child .article-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--main_color);
+}
+
+/* Estados vacío y cargando */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loading-state i,
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--text-tertiary);
+}
+
+.loading-state p,
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Contenedor de lista de artículos (versión anterior - mantener para referencia) */
+.article-list-container {
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+
+/* Paginación mini mejorada */
+.pagination-controls-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  gap: 1rem;
+}
+
+.pagination-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--main_color);
+  color: white;
+  border-color: var(--main_color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.pagination-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+.pagination-btn i {
+  font-size: 0.875rem;
+}
+
+.pagination-info-center {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  font-weight: 600;
+}
+
+.page-current {
+  font-size: 1.25rem;
+  color: var(--main_color);
+}
+
+.page-separator {
+  color: var(--text-tertiary);
+  font-size: 1rem;
+}
+
+.page-total {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.pagination-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Article Selector (versión colapsada - mantener para compatibilidad) */
 .article-selector {
   margin-top: 1rem;
   border: 2px solid var(--border-color);
@@ -276,23 +633,31 @@
 
 /* Scrollbar */
 .article-list::-webkit-scrollbar,
-.modal-body::-webkit-scrollbar {
+.modal-body::-webkit-scrollbar,
+.article-list-container::-webkit-scrollbar,
+.article-list-container-simple::-webkit-scrollbar {
   width: 8px;
 }
 
 .article-list::-webkit-scrollbar-track,
-.modal-body::-webkit-scrollbar-track {
+.modal-body::-webkit-scrollbar-track,
+.article-list-container::-webkit-scrollbar-track,
+.article-list-container-simple::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
 .article-list::-webkit-scrollbar-thumb,
-.modal-body::-webkit-scrollbar-thumb {
+.modal-body::-webkit-scrollbar-thumb,
+.article-list-container::-webkit-scrollbar-thumb,
+.article-list-container-simple::-webkit-scrollbar-thumb {
   background: var(--main_color);
   border-radius: 4px;
 }
 
 .article-list::-webkit-scrollbar-thumb:hover,
-.modal-body::-webkit-scrollbar-thumb:hover {
+.modal-body::-webkit-scrollbar-thumb:hover,
+.article-list-container::-webkit-scrollbar-thumb:hover,
+.article-list-container-simple::-webkit-scrollbar-thumb:hover {
   background: var(--dark);
 }
 
@@ -301,6 +666,10 @@
   .create-collection-modal {
     max-width: 100%;
     max-height: 90vh;
+  }
+
+  .create-collection-modal:has(.article-selector-expanded) {
+    max-width: 95vw;
   }
 
   .modal-body {
@@ -315,5 +684,43 @@
   .image-selector {
     width: 160px;
     height: 160px;
+  }
+
+  .article-controls-mini {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .control-left,
+  .control-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pagination-controls-mini {
+    flex-direction: row;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .pagination-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.625rem 1rem;
+  }
+
+  .pagination-info-center {
+    padding: 0.625rem 1rem;
+  }
+
+  .simple-article-item {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .article-row-inline {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }

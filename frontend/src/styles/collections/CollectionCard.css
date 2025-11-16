@@ -70,16 +70,24 @@
 }
 
 .collection-name strong,
-.collection-category strong,
+.collection-description strong,
 .collection-articles strong {
   color: var(--dark);
   font-weight: 700;
 }
 
-.collection-category,
+.collection-description,
 .collection-articles {
   font-size: 0.95rem;
   color: var(--text-secondary);
+}
+
+.collection-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .collection-articles {

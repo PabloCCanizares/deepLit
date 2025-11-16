@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { articlesAPI } from '../../api/api'
+import SearchBarDebounced from '../articles/SearchBarDebounced'
 import '../../styles/collections/CreateCollectionModal.css'
 
 function CreateCollectionModal({ isOpen, onClose, onSave }) {
@@ -12,14 +14,22 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
   const [showArticleSelector, setShowArticleSelector] = useState(false)
   const fileInputRef = useRef(null)
 
-  // Mock de artículos disponibles (esto se conectará al backend después)
-  const availableArticles = [
-    { id: 1, title: 'Artículo 1' },
-    { id: 2, title: 'Artículo 2' },
-    { id: 3, title: 'Artículo 3' },
-    { id: 4, title: 'Artículo 4' },
-    { id: 5, title: 'Artículo 5' }
-  ]
+  // Estados para artículos reales
+  const [articles, setArticles] = useState([])
+  const [loadingArticles, setLoadingArticles] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [pagination, setPagination] = useState({
+    total: 0,
+    limit: 20,
+    offset: 0
+  })
+
+  // Cargar artículos cuando se abre el selector
+  useEffect(() => {
+    if (isOpen && showArticleSelector) {
+      loadArticles()
+    }
+  }, [isOpen, showArticleSelector, pagination.offset, pagination.limit, searchQuery])
 
   // Cerrar con ESC
   useEffect(() => {
@@ -32,6 +42,31 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
     return () => window.removeEventListener('keydown', handleEsc)
   }, [isOpen])
 
+  const loadArticles = async () => {
+    try {
+      setLoadingArticles(true)
+      const response = await articlesAPI.getArticles({ 
+        limit: pagination.limit, 
+        offset: pagination.offset,
+        filters: {"title": searchQuery} 
+      })
+      setArticles(response.data.articles)
+      setPagination(prev => ({
+        ...prev,
+        total: response.data.total
+      }))
+    } catch (err) {
+      console.error('Error loading articles:', err)
+    } finally {
+      setLoadingArticles(false)
+    }
+  }
+
+  const handleSearch = (query) => {
+    setSearchQuery(query)
+    setPagination(prev => ({ ...prev, offset: 0 }))
+  }
+
   const handleClose = () => {
     // Reset form
     setFormData({
@@ -42,6 +77,8 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
     })
     setImagePreview(null)
     setShowArticleSelector(false)
+    setSearchQuery('')
+    setArticles([])
     onClose()
   }
 
@@ -86,6 +123,17 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
           : [...prev.selectedArticles, articleId]
       }
     })
+  }
+
+  const handleSelectAll = () => {
+    if (formData.selectedArticles.length === articles.length) {
+      setFormData(prev => ({ ...prev, selectedArticles: [] }))
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        selectedArticles: articles.map(article => article._id || article.id)
+      }))
+    }
   }
 
   const handleSave = () => {
@@ -163,27 +211,114 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
             )}
 
             {showArticleSelector && (
-              <div className="article-selector">
+              <div className="article-selector-expanded">
                 <div className="article-selector-header">
-                  <span>Mis Documentos</span>
-                  <span className="selected-count">
-                    {formData.selectedArticles.length} seleccionados
-                  </span>
+                  <div className="header-left">
+                    <h3>Seleccionar Artículos</h3>
+                    <span className="selected-count">
+                      {formData.selectedArticles.length} seleccionados
+                    </span>
+                  </div>
+                  <button 
+                    className="collapse-btn"
+                    onClick={() => setShowArticleSelector(false)}
+                    title="Colapsar"
+                  >
+                    <i className="fas fa-chevron-up"></i>
+                  </button>
                 </div>
-                <div className="article-list">
-                  {availableArticles.map(article => (
-                    <div
-                      key={article.id}
-                      className={`article-item ${formData.selectedArticles.includes(article.id) ? 'selected' : ''}`}
-                      onClick={() => handleArticleToggle(article.id)}
-                    >
-                      <div className="article-checkbox">
-                        <i className={`fas ${formData.selectedArticles.includes(article.id) ? 'fa-check-square' : 'fa-square'}`}></i>
-                      </div>
-                      <span className="article-title">{article.title}</span>
+
+                {/* Buscador */}
+                <div className="article-search">
+                  <SearchBarDebounced 
+                    onSearch={handleSearch}
+                    placeholder="Buscar por título"
+                  />
+                </div>
+
+                {/* Información de paginación */}
+                <div className="pagination-info">
+                  <span>Mostrando {articles.length} de {pagination.total} artículos</span>
+                </div>
+
+                {/* Lista de artículos */}
+                <div className="article-list-container-simple">
+                  {loadingArticles ? (
+                    <div className="loading-state">
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <p>Cargando artículos...</p>
                     </div>
-                  ))}
+                  ) : articles.length === 0 ? (
+                    <div className="empty-state">
+                      <i className="fas fa-inbox"></i>
+                      <p>No se encontraron artículos</p>
+                    </div>
+                  ) : (
+                    <div className="simple-article-list">
+                      {articles.map(article => {
+                        const isSelected = formData.selectedArticles.includes(article._id || article.id)
+                        return (
+                          <div
+                            key={article._id || article.id}
+                            className={`simple-article-item ${isSelected ? 'selected' : ''}`}
+                            onClick={() => handleArticleToggle(article._id || article.id)}
+                          >
+                            <div className="article-checkbox">
+                              <i className={`fas ${isSelected ? 'fa-check-square' : 'fa-square'}`}></i>
+                            </div>
+                            <div className="article-content">
+                              <div className="article-row">
+                                <span className="article-label">Título:</span>
+                                <span className="article-value">{article.title || '-'}</span>
+                              </div>
+                              <div className="article-row">
+                                <span className="article-label">Categoría:</span>
+                                <span className="article-value">{article.category || '-'}</span>
+                              </div>
+                              <div className="article-row-inline">
+                                <div className="article-inline-item">
+                                  <span className="article-label">Páginas:</span>
+                                  <span className="article-value">{article.pages || '-'}</span>
+                                </div>
+                                <div className="article-inline-item">
+                                  <span className="article-label">Año:</span>
+                                  <span className="article-value">{article.year || '-'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
+
+                {/* Paginación mejorada */}
+                {pagination.total > pagination.limit && (
+                  <div className="pagination-controls-mini">
+                    <button 
+                      onClick={() => setPagination(prev => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }))}
+                      disabled={pagination.offset === 0}
+                      className="pagination-btn"
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                      <span>Anterior</span>
+                    </button>
+                    <div className="pagination-info-center">
+                      <span className="page-current">{Math.floor(pagination.offset / pagination.limit) + 1}</span>
+                      <span className="page-separator">/</span>
+                      <span className="page-total">{Math.ceil(pagination.total / pagination.limit)}</span>
+                    </div>
+                    <button 
+                      onClick={() => setPagination(prev => ({ ...prev, offset: prev.offset + prev.limit }))}
+                      disabled={pagination.offset + pagination.limit >= pagination.total}
+                      className="pagination-btn"
+                    >
+                      <span>Siguiente</span>
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
