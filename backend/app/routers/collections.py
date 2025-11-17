@@ -7,10 +7,13 @@ Endpoints básicos:
 - GET    /collections/{id}/articles               - Obtener artículos de una colección
 - POST   /collections/{id}/articles               - Añadir artículo a colección
 - DELETE /collections/{id}/articles/{article_id}  - Quitar artículo de colección
+- PUT    /collections/{id}                        - Actualizar colección
+- GET    /collections/{id}/image                  - Obtener imagen de colección
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, Response
+from typing import Optional
 from app.controllers.collections_controller import CollectionsController
-from app.models.collection import CollectionCreate, AddArticleToCollection
+from app.models.collection import CollectionCreate, CollectionUpdate, AddArticleToCollection
 from app.core.auth import get_current_user
 from app.core.responses import StandardResponse, create_response_examples
 
@@ -46,7 +49,7 @@ async def create_collection(
     controller: CollectionsController = Depends()
 ):
     """
-    Crear una nueva colección.
+    Crear una nueva colección con imagen opcional.
     """
     return await controller.create(collection_data, current_user)
 
@@ -163,4 +166,50 @@ async def remove_article_from_collection(
     """
     return await controller.remove_article(collection_id, article_id, current_user)
 
+
+@router.put(
+    "/{collection_id}",
+    response_model=StandardResponse,
+    summary="Actualizar colección",
+    responses=create_response_examples(
+        success_example={
+            "message": "Colección actualizada exitosamente",
+            "data": {
+                "_id": "col_ml_20241111120000",
+                "name": "Machine Learning Updated",
+                "description": "Papers sobre ML y Deep Learning"
+            }
+        }
+    )
+)
+async def update_collection(
+    collection_id: str,
+    update_data: CollectionUpdate,
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Actualizar una colección existente (nombre, descripción, color, imagen).
+    """
+    return await controller.update(collection_id, update_data, current_user)
+
+
+@router.get(
+    "/{collection_id}/image",
+    summary="Obtener imagen de colección",
+    response_class=Response,
+    responses={
+        200: {"description": "Imagen de la colección"},
+        404: {"description": "Imagen no encontrada"}
+    }
+)
+async def get_collection_image(
+    collection_id: str,
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Obtener la imagen de una colección.
+    """
+    return await controller.get_image(collection_id, current_user)
 

@@ -2,9 +2,10 @@
 Servicio de Colecciones.
 """
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.article_repository import ArticleRepository
+from app.services.storage_service import StorageService
 from app.core import NotFoundError, AuthorizationError
 
 
@@ -13,8 +14,9 @@ class CollectionService:
     def __init__(self):
         self.collection_repo = CollectionRepository()
         self.article_repo = ArticleRepository()
+        self.storage_service = StorageService()
     
-    async def create(self, user_id: str, name: str, description: str = None, color: str = "#3B82F6") -> Dict:
+    async def create(self, user_id: str, name: str, description: str = None, color: str = "#3B82F6", image = None) -> Dict:
         """
         Crear una nueva colección.
         """
@@ -29,6 +31,25 @@ class CollectionService:
             "description": description,
             "color": color
         }
+        
+        # Guardar imagen si se proporciona (base64)
+        if image:
+            print(f"Collection ID: {collection_id}")
+            print(f"Image type: {type(image)}")
+            print(f"Image length: {len(image) if image else 0}")
+            print(f"Image starts with: {image[:50] if image else 'None'}...")
+            try:
+                filename = await self._save_collection_image(collection_id, image)
+                collection_data["image_url"] = filename
+                print(f"Image saved as: {filename}")
+                print(f"=== IMAGEN GUARDADA ===")
+            except Exception as e:
+                print(f"ERROR saving image: {e}")
+                import traceback
+                traceback.print_exc()
+                # Continue without image
+        else:
+            print("No image provided")
         
         await self.collection_repo.create(collection_data)
         
@@ -143,3 +164,92 @@ class CollectionService:
         
         return result
 
+    async def update(
+        self, 
+        collection_id: str, 
+        user_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        color: Optional[str] = None,
+        image = None
+    ) -> Dict:
+        """
+        Actualizar una colección existente.
+        """
+        # Verificar que la colección existe y pertenece al usuario
+        collection = await self.collection_repo.find_by_id(collection_id)
+        if not collection:
+            raise NotFoundError("Colección no encontrada")
+        if collection.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para modificar esta colección")
+        
+        # Preparar datos de actualización
+        update_data = {}
+        if name is not None:
+            update_data["name"] = name
+        if description is not None:
+            update_data["description"] = description
+        if color is not None:
+            update_data["color"] = color
+        
+        # Guardar nueva imagen si se proporciona
+        if image and hasattr(image, 'read') and hasattr(image, 'filename') and image.filename:
+            try:
+                image_content = await image.read()
+                if image_content and len(image_content) > 0:
+                    # Determinar extensión del archivo
+                    ext = image.filename.split('.')[-1].lower() if '.' in image.filename else 'jpg'
+                    if ext not in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+                        ext = 'jpg'
+                    image_filename = f"{collection_id}_cover.{ext}"
+                    self.storage_service.save_file(image_content, image_filename, "profiles")
+                    update_data["image_url"] = image_filename
+            except Exception as e:
+                print(f"Error saving image: {e}")
+                # Continue without updating image
+        
+        # Actualizar en base de datos
+        if update_data:
+            await self.collection_repo.update(collection_id, update_data)
+        
+        # Retornar colección actualizada
+        updated_collection = await self.collection_repo.find_by_id(collection_id)
+        return updated_collection
+    
+    async def _save_collection_image(self, collection_id: str, base64_data: str) -> str:
+        """
+        Guarda la imagen de colección en disco y retorna el nombre del archivo.
+        """
+        import re
+        import base64
+        from datetime import datetime
+        
+        # Extraer el tipo de imagen y el contenido base64
+        if ',' in base64_data:
+            header, base64_content = base64_data.split(',', 1)
+            match = re.search(r'image/(\w+)', header)
+            extension = match.group(1) if match else 'jpg'
+            if extension == 'jpeg':
+                extension = 'jpg'
+        else:
+            base64_content = base64_data
+            extension = 'jpg'
+        
+        # Generar nombre único
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{collection_id}_{timestamp}.{extension}"
+        
+        # Decodificar base64
+        try:
+            image_content = base64.b64decode(base64_content)
+        except Exception as e:
+            raise ValueError(f"Error al decodificar imagen base64: {str(e)}")
+        
+        # Guardar archivo en storage/profiles/
+        self.storage_service.save_file(
+            content=image_content,
+            filename=filename,
+            storage_location="profiles"
+        )
+        
+        return filename

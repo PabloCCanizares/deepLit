@@ -11,6 +11,7 @@ function Collections() {
   const [filteredCollections, setFilteredCollections] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingCollection, setEditingCollection] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedCollections, setSelectedCollections] = useState([])
@@ -87,36 +88,86 @@ function Collections() {
     setTimeout(() => setSuccessMessage(''), 3000)
   }
 
-  const handleCreateCollection = async (collectionData) => {
+  const handleSaveCollection = async (collectionData) => {
     try {
-      // Crear la colección en el backend
-      const response = await collectionsAPI.create({
-        name: collectionData.name,
-        description: collectionData.category || '',
-        color: '#3B82F6'
-      })
+      console.log('\n=== SAVING COLLECTION ====')
+      console.log('Collection data:', collectionData)
+      console.log('Image type:', typeof collectionData.image)
+      console.log('Image:', collectionData.image ? collectionData.image.substring(0, 100) + '...' : 'None')
+      
+      if (editingCollection) {
+        // Modo edición
+        await collectionsAPI.update(editingCollection._id, {
+          name: collectionData.name,
+          description: collectionData.description || '',
+          color: '#3B82F6',
+          image: collectionData.image
+        })
 
-      const createdCollection = response.data
+        // Obtener artículos actuales de la colección
+        const currentResponse = await collectionsAPI.getWithArticles(editingCollection._id)
+        const currentArticles = currentResponse.data.articles || []
+        const currentArticleIds = currentArticles.map(a => a._id || a.id)
 
-      // Añadir artículos seleccionados a la colección
-      if (collectionData.selectedArticles && collectionData.selectedArticles.length > 0) {
-        await Promise.all(
-          collectionData.selectedArticles.map(articleId =>
-            collectionsAPI.addArticle(createdCollection._id, articleId)
+        // Determinar artículos a añadir y remover
+        const toAdd = collectionData.selectedArticles.filter(id => !currentArticleIds.includes(id))
+        const toRemove = currentArticleIds.filter(id => !collectionData.selectedArticles.includes(id))
+
+        // Añadir nuevos artículos
+        if (toAdd.length > 0) {
+          await Promise.all(
+            toAdd.map(articleId =>
+              collectionsAPI.addArticle(editingCollection._id, articleId)
+            )
           )
-        )
+        }
+
+        // Remover artículos
+        if (toRemove.length > 0) {
+          await Promise.all(
+            toRemove.map(articleId =>
+              collectionsAPI.removeArticle(editingCollection._id, articleId)
+            )
+          )
+        }
+
+        setSuccessMessage('Colección actualizada correctamente')
+      } else {
+        // Modo creación
+        const response = await collectionsAPI.create({
+          name: collectionData.name,
+          description: collectionData.description || '',
+          color: '#3B82F6',
+          image: collectionData.image
+        })
+
+        const createdCollection = response.data
+
+        // Añadir artículos seleccionados a la colección
+        if (collectionData.selectedArticles && collectionData.selectedArticles.length > 0) {
+          await Promise.all(
+            collectionData.selectedArticles.map(articleId =>
+              collectionsAPI.addArticle(createdCollection._id, articleId)
+            )
+          )
+        }
+
+        setSuccessMessage('Colección creada correctamente')
       }
 
-      // Recargar colecciones para obtener datos actualizados
+      // Recargar colecciones
       await loadCollections()
-      
-      setSuccessMessage('Colección creada correctamente')
       setTimeout(() => setSuccessMessage(''), 3000)
     } catch (err) {
-      console.error('Error creating collection:', err)
-      setSuccessMessage('Error al crear la colección')
+      console.error('Error saving collection:', err)
+      setSuccessMessage(editingCollection ? 'Error al actualizar la colección' : 'Error al crear la colección')
       setTimeout(() => setSuccessMessage(''), 3000)
     }
+  }
+
+  const handleEditCollection = (collection) => {
+    setEditingCollection(collection)
+    setIsCreateModalOpen(true)
   }
 
   return (
@@ -222,6 +273,7 @@ function Collections() {
                 </div>
                 <CollectionCard 
                   collection={collection}
+                  onEdit={handleEditCollection}
                 />
               </div>
             ))
@@ -237,11 +289,15 @@ function Collections() {
           <i className="fas fa-plus"></i>
         </button>
 
-        {/* Modal de creación */}
+        {/* Modal de creación/edición */}
         <CreateCollectionModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSave={handleCreateCollection}
+          onClose={() => {
+            setIsCreateModalOpen(false)
+            setEditingCollection(null)
+          }}
+          onSave={handleSaveCollection}
+          collection={editingCollection}
         />
 
         {/* Modal de confirmación de eliminación */}

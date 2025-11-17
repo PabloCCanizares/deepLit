@@ -3,16 +3,22 @@ Controlador de Colecciones.
 
 Responsabilidad: Gestionar operaciones de colecciones.
 """
-from fastapi import Depends
+from fastapi import Depends, Response
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.exceptions import HTTPException
+from typing import Optional
 from app.services.collection_service import CollectionService
-from app.models.collection import CollectionCreate, AddArticleToCollection
+from app.services.storage_service import StorageService
+from app.models.collection import CollectionCreate, CollectionUpdate, AddArticleToCollection
 from app.core import StandardResponse
+import io
 
 
 class CollectionsController:
     
     def __init__(self, service: CollectionService = Depends()):
         self.service = service
+        self.storage = StorageService()
     
     async def create(
         self,
@@ -26,7 +32,8 @@ class CollectionsController:
             user_id=current_user["_id"],
             name=collection_data.name,
             description=collection_data.description,
-            color=collection_data.color
+            color=collection_data.color,
+            image=collection_data.image
         )
         
         return StandardResponse(
@@ -118,3 +125,58 @@ class CollectionsController:
             data={"removed": result}
         )
 
+    async def update(
+        self,
+        collection_id: str,
+        update_data: CollectionUpdate,
+        current_user: dict
+    ) -> StandardResponse:
+        """
+        Actualizar una colección existente.
+        """
+        collection = await self.service.update(
+            collection_id=collection_id,
+            user_id=current_user["_id"],
+            name=update_data.name,
+            description=update_data.description,
+            color=update_data.color,
+            image=update_data.image
+        )
+        
+        return StandardResponse(
+            success=True,
+            message="Colección actualizada exitosamente",
+            data=collection
+        )
+
+    async def get_image(
+        self,
+        collection_id: str,
+        current_user: dict
+    ):
+        """
+        Obtener la imagen de una colección.
+        """
+        collection = await self.service.collection_repo.find_by_id(collection_id)
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Colección no encontrada")
+        
+        if collection.get("id_user") != current_user["_id"]:
+            raise HTTPException(status_code=403, detail="No tienes permiso para acceder a esta colección")
+        
+        image_url = collection.get("image_url")
+        
+        if not image_url:
+            raise HTTPException(status_code=404, detail="La colección no tiene imagen")
+        
+        if not self.storage.exists(image_url, storage_location="profiles"):
+            raise HTTPException(status_code=404, detail="Archivo de imagen no encontrado en el servidor")
+        
+        file_path = self.storage.get_path(image_url, storage_location="profiles")
+        
+        return FileResponse(
+            path=file_path,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=3600"}
+        )

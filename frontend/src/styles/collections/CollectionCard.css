@@ -15,11 +15,87 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .collection-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+}
+
+/* Menú de 3 puntos */
+.collection-menu {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+}
+
+.collection-menu .menu-button {
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.collection-menu .menu-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.collection-menu .menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow);
+  overflow: hidden;
+  min-width: 120px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.collection-menu .menu-dropdown button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.collection-menu .menu-dropdown button:hover {
+  background: var(--hover-bg);
+}
+
+.collection-menu .menu-dropdown button i {
+  width: 16px;
 }
 
 .collection-cover {
@@ -28,6 +104,15 @@
   padding-top: 75%; /* Aspect ratio 4:3 */
   background: linear-gradient(135deg, var(--main_color) 0%, var(--dark) 100%);
   overflow: hidden;
+}
+
+.collection-cover-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .collection-image {

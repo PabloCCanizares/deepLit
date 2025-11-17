@@ -15,7 +15,6 @@ class CollectionRepository:
     
     async def create(self, collection_data: dict) -> str:
         """Crear una nueva colección"""
-        # Añadir timestamps
         now = datetime.utcnow().isoformat()
         collection_data["created_at"] = now
         collection_data["updated_at"] = now
@@ -33,6 +32,16 @@ class CollectionRepository:
         cursor = self.collection.find({"id_user": user_id})
         collections = await cursor.to_list(length=None)
         return collections
+    
+    async def update(self, collection_id: str, update_data: dict) -> bool:
+        """Actualizar una colección existente"""
+        update_data["updated_at"] = datetime.utcnow().isoformat()
+        
+        result = await self.collection.update_one(
+            {"_id": collection_id},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
     
     async def count_articles_in_collection(self, collection_id: str) -> int:
         """Contar artículos en una colección"""

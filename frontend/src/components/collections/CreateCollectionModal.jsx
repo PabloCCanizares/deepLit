@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { articlesAPI } from '../../api/api'
+import { articlesAPI, collectionsAPI } from '../../api/api'
 import SearchBarDebounced from '../articles/SearchBarDebounced'
 import '../../styles/collections/CreateCollectionModal.css'
 
-function CreateCollectionModal({ isOpen, onClose, onSave }) {
+function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    description: '',
     image: null,
     selectedArticles: []
   })
@@ -23,6 +23,66 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
     limit: 20,
     offset: 0
   })
+
+  // Cargar datos de la colección cuando se abre en modo edición
+  useEffect(() => {
+    if (isOpen && collection) {
+      setFormData({
+        name: collection.name || '',
+        description: collection.description || '',
+        image: null,
+        selectedArticles: []
+      })
+      
+      // Si la colección tiene imagen, cargarla usando la API
+      if (collection.image_url) {
+        collectionsAPI.getImage(collection._id)
+          .then(blobUrl => {
+            if (blobUrl) {
+              setImagePreview(blobUrl)
+            }
+          })
+          .catch(err => {
+            console.error('Error loading collection image:', err)
+            setImagePreview(null)
+          })
+      } else {
+        setImagePreview(null)
+      }
+
+      // Cargar artículos de la colección
+      loadCollectionArticles()
+    } else if (isOpen) {
+      // Resetear formulario en modo creación
+      setFormData({
+        name: '',
+        description: '',
+        image: null,
+        selectedArticles: []
+      })
+      setImagePreview(null)
+    }
+    
+    // Cleanup blob URL on unmount
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [isOpen, collection])
+
+  const loadCollectionArticles = async () => {
+    if (!collection) return
+    
+    try {
+      const response = await collectionsAPI.getWithArticles(collection._id)
+      const collectionArticles = response.data.articles || []
+      const articleIds = collectionArticles.map(a => a._id || a.id)
+      setFormData(prev => ({ ...prev, selectedArticles: articleIds }))
+    } catch (err) {
+      console.error('Error loading collection articles:', err)
+    }
+  }
 
   // Cargar artículos cuando se abre el selector
   useEffect(() => {
@@ -71,7 +131,7 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
     // Reset form
     setFormData({
       name: '',
-      category: '',
+      description: '',
       image: null,
       selectedArticles: []
     })
@@ -99,10 +159,12 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
         return
       }
 
+      // Convertir a base64
       const reader = new FileReader()
       reader.onload = (e) => {
-        setImagePreview(e.target.result)
-        setFormData(prev => ({ ...prev, image: e.target.result }))
+        const base64 = e.target.result
+        setFormData(prev => ({ ...prev, image: base64 }))
+        setImagePreview(base64)
       }
       reader.readAsDataURL(file)
     }
@@ -141,6 +203,11 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
       alert('Por favor ingresa un nombre para la colección')
       return
     }
+    
+    console.log('\n=== SAVE COLLECTION ===')
+    console.log('Form data:', formData)
+    console.log('Image type:', typeof formData.image)
+    console.log('Image:', formData.image ? formData.image.substring(0, 100) + '...' : 'None')
     
     onSave(formData)
     handleClose()
@@ -185,14 +252,14 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
             />
           </div>
 
-          {/* Categoría con placeholder */}
+          {/* Descripción con placeholder */}
           <div className="form-group">
             <input
-              name="category"
+              name="description"
               type="text"
-              value={formData.category}
+              value={formData.description}
               onChange={handleInputChange}
-              placeholder="Categoría"
+              placeholder="Descripción"
               className="form-input"
             />
           </div>
@@ -329,7 +396,7 @@ function CreateCollectionModal({ isOpen, onClose, onSave }) {
             Cancelar
           </button>
           <button className="btn-save" onClick={handleSave}>
-            Guardar Colección
+            {collection ? 'Guardar Cambios' : 'Guardar Colección'}
           </button>
         </div>
       </div>

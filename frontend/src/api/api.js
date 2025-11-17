@@ -251,6 +251,14 @@ export const collectionsAPI = {
     });
   },
 
+  // Update collection
+  update: async (collectionId, collectionData) => {
+    return apiFetch(`/collections/${collectionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(collectionData)
+    });
+  },
+
   // Get collection with articles
   getWithArticles: async (collectionId, { limit = 100, offset = 0 } = {}) => {
     return apiFetch(`/collections/${collectionId}/articles?limit=${limit}&offset=${offset}`, {
@@ -271,6 +279,11 @@ export const collectionsAPI = {
     return apiFetch(`/collections/${collectionId}/articles/${articleId}`, {
       method: 'DELETE'
     });
+  },
+
+  // Get collection image (returns blob URL)
+  getImage: (collectionId) => {
+    return fetchFile(`/collections/${collectionId}/image`);
   },
 };
 
