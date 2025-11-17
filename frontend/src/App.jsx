@@ -10,6 +10,7 @@ import Articles from './pages/Articles'
 import ArticleView from './pages/ArticleView'
 import ArticleEdit from './pages/ArticleEdit'
 import Collections from './pages/Collections'
+import CollectionDetail from './pages/CollectionDetail'
 import History from './pages/History'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
@@ -39,6 +40,7 @@ function App() {
             <Route path="articles/:id" element={<ArticleView />} />
             <Route path="articles/:id/edit" element={<ArticleEdit />} />
             <Route path="collections" element={<Collections />} />
+            <Route path="collections/:id" element={<CollectionDetail />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             <Route path="search" element={<Articles />} />

@@ -82,14 +82,15 @@
 }
 
 .selection-actions .btn-primary {
-  background: var(--main_color) !important;
+  background: linear-gradient(135deg, var(--main_color), #4F46E5) !important;
   color: white;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .selection-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #4F46E5, var(--main_color)) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 /* Barra de selección antigua - mantenerla por compatibilidad pero no se usa */

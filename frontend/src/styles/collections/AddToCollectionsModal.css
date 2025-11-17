@@ -174,10 +174,14 @@
   background: var(--main_color);
   color: white;
   border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .add-to-collections-modal .btn-primary:hover:not(:disabled) {
-  background: var(--main_color_dark);
+  background: var(--main_color);
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
 }
 
 .add-to-collections-modal .btn-primary:disabled,

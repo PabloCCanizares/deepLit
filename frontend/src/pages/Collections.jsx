@@ -13,6 +13,8 @@ function Collections() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [selectedCollections, setSelectedCollections] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     loadCollections()
@@ -47,6 +49,42 @@ function Collections() {
 
   const handleSearch = (query) => {
     setSearchQuery(query)
+  }
+
+  const handleSelectCollection = (collectionId) => {
+    setSelectedCollections(prev => {
+      if (prev.includes(collectionId)) {
+        return prev.filter(id => id !== collectionId)
+      } else {
+        return [...prev, collectionId]
+      }
+    })
+  }
+
+  const handleDeleteSelected = () => {
+    if (selectedCollections.length === 0) {
+      setSuccessMessage('Selecciona al menos una colección')
+      setTimeout(() => setSuccessMessage(''), 3000)
+      return
+    }
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    setSuccessMessage(`Funcionalidad de eliminar ${selectedCollections.length} colección(es) - Próximamente`)
+    setTimeout(() => setSuccessMessage(''), 3000)
+    setShowDeleteModal(false)
+    setSelectedCollections([])
+  }
+
+  const handleCompareCollections = () => {
+    if (selectedCollections.length < 2) {
+      setSuccessMessage('Selecciona al menos 2 colecciones para comparar')
+      setTimeout(() => setSuccessMessage(''), 3000)
+      return
+    }
+    setSuccessMessage('Funcionalidad de comparar colecciones - Próximamente')
+    setTimeout(() => setSuccessMessage(''), 3000)
   }
 
   const handleCreateCollection = async (collectionData) => {
@@ -123,6 +161,36 @@ function Collections() {
           />
         </div>
 
+        {/* Controles de selección - Solo aparecen cuando hay colecciones seleccionadas */}
+        {selectedCollections.length > 0 && (
+          <div className="selection-controls-container">
+            <div className="selection-info">
+              <span className="selection-count">
+                <i className="fas fa-check-circle"></i>
+                {selectedCollections.length} colección(es) seleccionada(s)
+              </span>
+            </div>
+            <div className="selection-actions">
+              <button 
+                className="btn-secondary"
+                onClick={handleCompareCollections}
+                disabled={selectedCollections.length < 2}
+                title={selectedCollections.length < 2 ? 'Selecciona al menos 2 colecciones' : 'Comparar colecciones'}
+              >
+                <i className="fas fa-code-compare"></i>
+                Comparar
+              </button>
+              <button 
+                className="btn-danger"
+                onClick={handleDeleteSelected}
+              >
+                <i className="fas fa-trash"></i>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Vista Mosaico de Colecciones */}
         <div className="collections-grid">
           {loading ? (
@@ -143,10 +211,19 @@ function Collections() {
             </div>
           ) : (
             filteredCollections.map(collection => (
-              <CollectionCard 
-                key={collection._id} 
-                collection={collection}
-              />
+              <div key={collection._id} className="collection-card-wrapper">
+                <div className="collection-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedCollections.includes(collection._id)}
+                    onChange={() => handleSelectCollection(collection._id)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <CollectionCard 
+                  collection={collection}
+                />
+              </div>
             ))
           )}
         </div>
@@ -166,6 +243,41 @@ function Collections() {
           onClose={() => setIsCreateModalOpen(false)}
           onSave={handleCreateCollection}
         />
+
+        {/* Modal de confirmación de eliminación */}
+        {showDeleteModal && (
+          <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>
+                  <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
+                  {' '}Confirmar Eliminación
+                </h2>
+              </div>
+              <div className="modal-body">
+                <p>¿Estás seguro de que quieres eliminar {selectedCollections.length} colección(es)?</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  onClick={() => setShowDeleteModal(false)} 
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmDelete} 
+                  className="btn-danger"
+                >
+                  <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

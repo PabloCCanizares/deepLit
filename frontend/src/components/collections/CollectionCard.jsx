@@ -9,8 +9,8 @@ function CollectionCard({ collection }) {
   const id = collection._id || collection.id
 
   return (
-    <div className="collection-card">
-      <Link to={`/collections/${id}`} className="collection-cover-link">
+    <Link to={`/collections/${id}`} className="collection-card-link">
+      <div className="collection-card">
         <div 
           className="collection-cover"
           style={{ backgroundColor: color }}
@@ -19,19 +19,19 @@ function CollectionCard({ collection }) {
             <i className="fas fa-folder"></i>
           </div>
         </div>
-      </Link>
-      <div className="collection-info">
-        <div className="collection-name" title={name}>
-          <strong>Nombre:</strong> {name}
-        </div>
-        <div className="collection-description" title={description}>
-          <strong>Descripción:</strong> {description}
-        </div>
-        <div className="collection-articles">
-          <strong>Artículos:</strong> {articleCount}
+        <div className="collection-info">
+          <div className="collection-name" title={name}>
+            <strong>Nombre:</strong> {name}
+          </div>
+          <div className="collection-description" title={description}>
+            <strong>Descripción:</strong> {description}
+          </div>
+          <div className="collection-articles">
+            <strong>Artículos:</strong> {articleCount}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 

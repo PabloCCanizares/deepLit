@@ -13,7 +13,8 @@ function ArticleControls({
   onSelectAll,           // 🔹 función para seleccionar todos
   onDeleteSelected,      // 🔹 función para eliminar seleccionados (solo en Articles)
   onAddToMyArticles,     // 🔹 función para añadir a mis artículos (solo en OpenAlex)
-  onAddToCollections     // 🔹 función para añadir a colecciones (solo en Articles)
+  onAddToCollections,    // 🔹 función para añadir a colecciones (solo en Articles)
+  isCollectionView = false // 🔹 indica si estamos en vista de colección
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -112,58 +113,30 @@ function ArticleControls({
           </div>
 
           {/* Filtro */}
-        <div className="control-group" ref={sortRef}>
-          <button 
-            type="button" 
-            className="control-btn"
-            onClick={() => setShowSortMenu(!showSortMenu)}
-          >
-            <i className="fas fa-sort"></i>
-            <span>Ordenar por</span>
-          </button>
-          {showSortMenu && (
-            <div className="control-dropdown">
-              <button onClick={() => handleSort('year-asc')}>
-                <i className="fas fa-calendar-alt"></i> Año (Ascendente)
-              </button>
-              <button onClick={() => handleSort('year-desc')}>
-                <i className="fas fa-calendar-alt"></i> Año (Descendente)
-              </button>
-              <button onClick={() => handleSort('title-asc')}>
-                <i className="fas fa-sort-alpha-down"></i> Título (A-Z)
-              </button>
-              <button onClick={() => handleSort('title-desc')}>
-                <i className="fas fa-sort-alpha-up"></i> Título (Z-A)
-              </button>
-            </div>
-          )}
+          <div className="control-group" ref={filterRef}>
+            <button 
+              type="button" 
+              className="control-btn"
+              onClick={() => setShowFilterMenu(!showFilterMenu)}
+            >
+              <i className="fas fa-filter"></i>
+              <span>Filtrar por</span>
+            </button>
+            {showFilterMenu && (
+              <div className="control-dropdown">
+                <button onClick={() => handleFilter('all')}>
+                  <i className="fas fa-folder-open"></i> Todos
+                </button>
+                <button onClick={() => handleFilter('complete')}>
+                  <i className="fas fa-check-circle"></i> Completos
+                </button>
+                <button onClick={() => handleFilter('incomplete')}>
+                  <i className="fas fa-exclamation-circle"></i> Incompletos
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Filtro */}
-        <div className="control-group" ref={filterRef}>
-          <button 
-            type="button" 
-            className="control-btn"
-            onClick={() => setShowFilterMenu(!showFilterMenu)}
-          >
-            <i className="fas fa-filter"></i>
-            <span>Filtrar por</span>
-          </button>
-          {showFilterMenu && (
-            <div className="control-dropdown">
-              <button onClick={() => handleFilter('all')}>
-                <i className="fas fa-folder-open"></i> Todos
-              </button>
-              <button onClick={() => handleFilter('complete')}>
-                <i className="fas fa-check-circle"></i> Completos
-              </button>
-              <button onClick={() => handleFilter('incomplete')}>
-                <i className="fas fa-exclamation-circle"></i> Incompletos
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* 🔹 Paginación mejorada */}
       <div className="pagination-controls">
@@ -255,7 +228,7 @@ function ArticleControls({
               onClick={onDeleteSelected}
             >
               <i className="fas fa-trash"></i>
-              Eliminar seleccionados
+              {isCollectionView ? 'Eliminar de Colección' : 'Eliminar seleccionados'}
             </button>
           )}
           {onAddToMyArticles && (
