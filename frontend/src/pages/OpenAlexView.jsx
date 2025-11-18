@@ -18,8 +18,9 @@ const OpenAlexView = () => {
       try {
         setLoading(true)
         setError(null)
-        
-        const response = await openalexAPI.getById(decodedId)
+        const encodedId = encodeURIComponent(decodedId)
+        console.log('Fetching document with ID:', encodedId)
+        const response = await openalexAPI.getById(encodedId)
         console.log('Artículo OpenAlex recibido:', response.data)
         setDocument(response.data)
       } catch (err) {
@@ -78,6 +79,8 @@ const OpenAlexView = () => {
   const citations = document.citations || document.cited_by_count || 0
   const doi = document.doi || document.link || ''
   const type = document.type || 'No especificado'
+  const pdf_url = document.pdf_url || 'No hay PDF disponible'
+  const landing_page_url = document.landing_page_url || 'No hay página donde ver el artículo disponible'
   
   // Procesar autores
   let authors = 'No especificado'
@@ -159,6 +162,14 @@ const OpenAlexView = () => {
               <label>DOI/Enlace:</label>
               <a href={doi.startsWith('http') ? doi : `https://doi.org/${doi}`} target="_blank" rel="noopener noreferrer">
                 {doi}
+              </a>
+            </div>
+          )}
+          {pdf_url && (
+            <div className="documentField">
+              <label>Enlace PDF:</label>
+              <a href={pdf_url.startsWith('http') ? pdf_url : pdf_url} target="_blank" rel="noopener noreferrer">
+                {pdf_url}
               </a>
             </div>
           )}

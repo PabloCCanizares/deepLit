@@ -215,23 +215,10 @@ export const openalexAPI = {
   },
 
   // Get single work by ID - Recupera datos del backend usando búsqueda por ID
-  getById: async (id) => {
-    // OpenAlex usa IDs con formato URL, ejemplo: https://openalex.org/W2741809807
-    // Usamos el filtro de búsqueda para encontrar ese artículo específico
-    const response = await apiFetch('/openalex/search', {
-      method: 'POST',
-      body: JSON.stringify({
-        pagination: { limit: 1, offset: 0 },
-        filters: { "openalex_id": id }
-      })
+    getById: async (id) => {
+    return apiFetch(`/openalex/${id}`, {
+      method: 'GET'
     });
-    
-    // El artículo debería estar en la primera posición del array
-    if (response.data.articles && response.data.articles.length > 0) {
-      return { data: response.data.articles[0] };
-    } else {
-      throw new Error('Artículo no encontrado');
-    }
   },
 };
 

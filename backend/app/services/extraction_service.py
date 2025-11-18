@@ -7,7 +7,6 @@ import io
 import PyPDF2
 from typing import Dict
 
-
 class ExtractionService:
     
     async def extract_features(self, pdf_bytes: bytes) -> Dict:
@@ -16,7 +15,7 @@ class ExtractionService:
         """
         # Extraer texto del PDF
         text = await self.extract_text_from_pdf_bytes(pdf_bytes)
-        
+
         # FIXME: MEJORAR LAS FUNCIONES DE EXTRACCIÓN
         # Por ahora devuelven placeholders, implementar lógica real
         

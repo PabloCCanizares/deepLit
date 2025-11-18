@@ -6,15 +6,15 @@ function ArticleControls({
   onFilter, 
   viewMode, 
   onViewModeChange,
-  pagination,            // 🔹 { total, limit, offset }
-  onChangePagination,    // 🔹 función para actualizar offset/limit
-  selectedCount = 0,     // 🔹 cantidad de artículos seleccionados
-  totalCount = 0,        // 🔹 total de artículos en la página
-  onSelectAll,           // 🔹 función para seleccionar todos
-  onDeleteSelected,      // 🔹 función para eliminar seleccionados (solo en Articles)
-  onAddToMyArticles,     // 🔹 función para añadir a mis artículos (solo en OpenAlex)
-  onAddToCollections,    // 🔹 función para añadir a colecciones (solo en Articles)
-  isCollectionView = false // 🔹 indica si estamos en vista de colección
+  pagination,            // { total, limit, offset }
+  onChangePagination,    // función para actualizar offset/limit
+  selectedCount = 0,     // cantidad de artículos seleccionados
+  totalCount = 0,        // total de artículos en la página
+  onSelectAll,           // función para seleccionar todos
+  onDeleteSelected,      // función para eliminar seleccionados (solo en Articles)
+  onAddToMyArticles,     // función para añadir a mis artículos (solo en OpenAlex)
+  onAddToCollections,    // función para añadir a colecciones (solo en Articles)
+  isCollectionView = false // indica si estamos en vista de colección
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)

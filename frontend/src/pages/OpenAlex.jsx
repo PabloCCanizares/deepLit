@@ -123,11 +123,10 @@ function OpenAlex() {
     }
   }
 
-  const handleAddToMyArticles = () => {
+  const handleAddToMyArticles = async () =>{
     if (selectedArticles.length === 0) return
     
-    // TODO: Implementar funcionalidad de añadir a mis artículos
-    alert(`${selectedArticles.length} artículo(s) seleccionado(s) para añadir (funcionalidad pendiente)`)
+    const response = await openalexAPI.addToMyArticles(selectedArticles)
   }
 
   return (

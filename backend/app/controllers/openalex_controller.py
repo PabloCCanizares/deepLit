@@ -28,3 +28,15 @@ class OpenAlexController:
             data= articles_data
         )
 
+    async def get_by_id(self, openalex_id: str) -> StandardResponse:
+        """
+        Obtener artículo por ID.
+        """
+        article = await self.service.get_by_id(openalex_id)
+        
+        return StandardResponse(
+            success=True,
+            message="Artículo de OpenAlex recuperado correctamente",
+            data=article
+        )
+    
