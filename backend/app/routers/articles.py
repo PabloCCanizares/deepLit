@@ -46,6 +46,7 @@ async def get_user_articles(
     Obtener lista de artículos del usuario autenticado.
     **TODO:** Añadir más filtros cuando sea necesario (year, category, etc.)
     """
+    print("query:", query)
     return await controller.get_user_articles(query, current_user)
 
 

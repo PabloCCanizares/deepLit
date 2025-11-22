@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useCollection } from "../../context/CollectionContext";
 import '../../styles/App.css'
 
 function Navbar({ toggleSidebar }) {
@@ -9,6 +10,7 @@ function Navbar({ toggleSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
+  const { collections, selectedCollectionId, changeCollection  } = useCollection();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -47,19 +49,32 @@ function Navbar({ toggleSidebar }) {
         </div>
 
         <div className="navbarMenu">
+          {/* Collection selector*/}
+          <div className="collectionSelector">
+            <select
+              value={selectedCollectionId || ""}
+              onChange={(e) => changeCollection(e.target.value)}
+            >
+              <option value="">— Sin colección —</option>
+
+              {collections.map(col => (
+                <option key={col._id} value={col._id}>
+                  {col.name}
+                </option>
+              ))}
+            </select>
+          </div>          
           {/* Theme toggle buttons */}
           <div className="themeToggle">
             <button 
               className={`themeButton ${theme === 'light' ? 'active' : ''}`}
               onClick={() => theme !== 'light' && toggleTheme()}
-              title="Modo claro"
             >
               <i className="fas fa-sun"></i>
             </button>
             <button 
               className={`themeButton ${theme === 'dark' ? 'active' : ''}`}
               onClick={() => theme !== 'dark' && toggleTheme()}
-              title="Modo oscuro"
             >
               <i className="fas fa-moon"></i>
             </button>

@@ -59,6 +59,27 @@ class CollectionService:
         
         return collection_data
     
+    '''
+    async def get_collection_id_by_name(self, user_id: str, collection_name: Optional[str] = None) -> Optional[str]:
+        """
+        Obtener el ID de una colección por su nombre y usuario.
+        """
+        collection = await self.collection_repo.find_by_name_and_user(user_id,collection_name)
+        if collection:
+            return collection["_id"]
+        return None
+    '''
+
+    async def collection_exists(self, user_id: str, collection_id: str) -> bool:
+        """
+        Verificar si una colección existe y pertenece al usuario.
+        """
+        collection = await self.collection_repo.find_by_id(collection_id)
+        if collection and collection.get("id_user") == user_id:
+            return True
+        return False
+
+
     async def get_collection_with_articles(
         self, 
         collection_id: str, 

@@ -5,6 +5,7 @@ import CollectionCard from '../components/collections/CollectionCard'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
 import '../styles/App.css'
 import '../styles/collections/Collections.css'
+import { useCollection } from "../context/CollectionContext";
 
 function Collections() {
   const [collections, setCollections] = useState([])
@@ -16,7 +17,8 @@ function Collections() {
   const [loading, setLoading] = useState(true)
   const [selectedCollections, setSelectedCollections] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-
+  const { refreshCollections } = useCollection();
+  
   useEffect(() => {
     loadCollections()
   }, [])
@@ -130,7 +132,8 @@ function Collections() {
             )
           )
         }
-
+        refreshCollections();
+        
         setSuccessMessage('Colección actualizada correctamente')
       } else {
         // Modo creación
@@ -151,6 +154,7 @@ function Collections() {
             )
           )
         }
+        refreshCollections();
 
         setSuccessMessage('Colección creada correctamente')
       }

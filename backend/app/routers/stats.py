@@ -6,6 +6,8 @@ Endpoints para obtener estadísticas del usuario.
 from fastapi import APIRouter, Depends
 from app.controllers import StatsController
 from app.core import StandardResponse, create_response_examples, get_current_user
+from typing import Optional
+
 
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
@@ -33,11 +35,13 @@ router = APIRouter(prefix="/stats", tags=["Stats"])
     )
 )
 async def get_dashboard_stats(
+    collection_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
     controller: StatsController = Depends()
 ):
     """
     Obtener estadísticas del dashboard del usuario autenticado.
     """
-    return await controller.get_dashboard_stats(current_user)
+    print("collection_dashboard:", collection_id)
+    return await controller.get_dashboard_stats(current_user, collection_id)
 

@@ -87,4 +87,12 @@ class CollectionRepository:
             {"$pull": {"collection_ids": collection_id}}
         )
         return result.modified_count > 0
+    
+    async def find_by_name_and_user(self, user_id: str, collection_name: Optional[str] = None) -> Optional[dict]:
+        """Buscar colección por nombre y usuario"""
+        collection = await self.collection.find_one({
+            "id_user": user_id,
+            "name": collection_name
+        })
+        return collection
 

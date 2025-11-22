@@ -86,9 +86,13 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
               <Link to={`${baseRoute}/${encodedId}`} className="list-action-btn" title="Ver">
                 <i className="fas fa-eye"></i>
               </Link>
-              <Link to={`${baseRoute}/${encodedId}/edit`} className="list-action-btn" title="Editar">
-                <i className="fas fa-edit"></i>
-              </Link>
+              <button
+                className="save-article-btn"
+                title="Guardar artículo"
+                onClick={() => handleSaveArticle(id)} // tu función para guardar
+              >
+                <i className="far fa-bookmark"></i>
+              </button>
             </div>
           </div>
         )

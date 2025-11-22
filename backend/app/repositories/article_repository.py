@@ -42,28 +42,46 @@ class ArticleRepository:
         result = await self.collection.delete_one({"_id": article_id})
         return result.deleted_count > 0
     
-    async def count_documents(self, user_id: str) -> int:
+    async def count_documents(self, user_id: str, collection_id: Optional[str] = None) -> int:
         """Contar documentos asociados a un usuario"""
-        print("Contando documentos para el usuario:", user_id)
-        count = await self.collection.count_documents({"id_user": user_id})
+
+        filter_query = {"id_user": user_id}
+        
+        if collection_id:  # Si collection no es None ni vacío
+            filter_query["collection_ids"] = {"$in": [collection_id]}
+        
+        count = await self.collection.count_documents(filter_query)
+
         return count
     
-    async def count_documents_by_year(self, user_id: str) -> List[dict]:
+    async def count_documents_by_year(self, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
         """Contar artículos agrupados por año para un usuario"""
+        # Filtro base
+        match_filter = {"id_user": user_id}
+
+        # Si se especifica collection_id y collection_ids es un array en los documentos
+        if collection_id:
+            match_filter["collection_ids"] = {"$in": [collection_id]}
+
+        # Pipeline de agregación
         pipeline = [
-            {"$match": {"id_user": user_id}},
+            {"$match": match_filter},
             {"$group": {"_id": "$year", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}}
         ]
-        
+
+        # Ejecutar agregación
         cursor = self.collection.aggregate(pipeline)
         results = await cursor.to_list(length=None)
         return results
-    
+        
 
-    async def get_user_articles(self, query: QueryBody, current_user: dict) -> List[dict]:
+    async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
         """Recuperar artículos del usuario actual con paginación y filtros"""
-        filter_criteria = {"id_user": current_user}
+        filter_criteria = {"id_user": user_id}
+
+        if collection_id:
+            filter_criteria["collection_ids"] = {"$in": [collection_id]}
 
         limit = query.pagination.limit
         offset = query.pagination.offset

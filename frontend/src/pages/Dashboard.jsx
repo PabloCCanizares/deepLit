@@ -5,9 +5,11 @@ import YearChart from '../components/dashboard/YearChart'
 import KeywordRanking from '../components/dashboard/KeywordRanking'
 import '../styles/App.css'
 import '../styles/dashboard/Dashboard.css'
+import { useCollection } from "../context/CollectionContext";
 
 
 function Dashboard() {
+  const { selectedCollectionId } = useCollection();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,12 +18,16 @@ function Dashboard() {
 
   useEffect(() => {
     loadDashboard();
-  }, []);
+  }, [selectedCollectionId]);
 
   const loadDashboard = async () => {
     try {
       setLoading(true);
-      const response = await statsAPI.getStats();
+
+      const response = await statsAPI.getStats({
+        collection_id: selectedCollectionId || undefined
+      });
+      
       setStats(response.data);
       console.log('Dashboard stats:', response);
     } catch (err) {

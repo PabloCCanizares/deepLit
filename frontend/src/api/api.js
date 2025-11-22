@@ -121,7 +121,16 @@ export const authAPI = {
 
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
-  getStats: () => apiFetch('/stats/dashboard'),
+  getStats: async ({ collection_id }) => {
+  let url = "stats/dashboard";
+  console.log("1- statsAPI.getStats called with collection_id:", collection_id);
+  if (collection_id) {
+    url += `?collection_id=${collection_id}`;
+  }
+  console.log("2- statsAPI.getStats called with collection_id:", url);
+  console.log(url);
+  return apiFetch(url);
+  },
 };
 
 // Upload API - Subida de artículos
@@ -163,19 +172,20 @@ export const uploadAPI = {
 
 export const articlesAPI = {
   // Get articles with pagination
-  getArticles: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
+  getArticles: async ({ limit = 10, offset = 0, filters = {}, collection_id } = {}) => {
+    const body = {
+      pagination: { limit, offset },
+      filters: Object.keys(filters).length > 0 ? filters : null,
+      collection_id: collection_id || undefined, // campo separado
+    };
+
+    console.log("articlesAPI.getArticles body:", body);
+
     return apiFetch('/articles/search', {
       method: 'POST',
-      body: JSON.stringify({
-        pagination: {
-          limit,
-          offset
-        },
-        filters: Object.keys(filters).length > 0 ? filters : null
-      })
+      body: JSON.stringify(body)
     });
   },
-
   // Get single article by ID
   getById: async (id) => {
     return apiFetch(`/articles/${id}`, {

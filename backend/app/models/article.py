@@ -14,6 +14,7 @@ class QueryBody(BaseModel):
     """Query para obtener artículos con paginación y filtros"""
     pagination: Pagination
     filters: Optional[Dict[str, Any]] = Field(None, description="Filtros opcionales (year, category, etc.)")
+    collection_id: Optional[str] = Field(None, description="ID de la colección para filtrar artículos (opcional)")
 
 class ArticleUpdate(BaseModel):
     """

@@ -154,6 +154,24 @@
   background: var(--main_color);
 }
 
+.save-article-btn {
+  padding: 0.4rem 0.8rem;
+  background: var(--dark);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.save-article-btn:hover {
+  background: var(--main_color);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .list-header,

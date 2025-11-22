@@ -9,9 +9,12 @@ import AddToCollectionsModal from '../components/collections/AddToCollectionsMod
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
+import { useCollection } from "../context/CollectionContext";
 
 
-function Articles() {
+
+function CollectionArticles() {
+  const { selectedCollectionId, collections } = useCollection();
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
   const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
@@ -31,19 +34,37 @@ function Articles() {
   const [viewMode, setViewMode] = useState('list')
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
 
-  useEffect(() => {
-    loadDocuments()
-  }, [pagination.offset, pagination.limit, searchQuery])
+  const selectedCollection = collections.find(c => c._id === selectedCollectionId);
+  const collectionName = selectedCollection ? selectedCollection.name : null;
+
 
   useEffect(() => {
+    if (!selectedCollectionId) return; // importante
+    loadDocuments()
+  }, [selectedCollectionId, pagination.offset, pagination.limit, searchQuery])
+
+  useEffect(() => {
+    if (!selectedCollectionId) return;
     applyFiltersAndSort()
   }, [documents, sortCriteria, filterCriteria])
+  
+
+  if (!selectedCollectionId) {
+    return (
+      <div className="page-container">
+        <h1>Ninguna colección seleccionada</h1>
+        <p>Selecciona una colección en el menú de la parte superior.</p>
+      </div>
+    );
+  }
+
 
   const loadDocuments = async () => {
     try {
       setLoading(true)
-      
-      const response = await articlesAPI.getArticles({ 
+      console.log("Loading documents for collection:", selectedCollectionId);
+      const response = await articlesAPI.getArticles({
+        collection_id: selectedCollectionId || undefined,
         limit: pagination.limit, 
         offset: pagination.offset,
         filters: {"title": searchQuery} 
@@ -219,7 +240,7 @@ function Articles() {
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
-              <h1 className="header-title">Todos Mis Artículos</h1>
+              <h1 className="header-title">Artículos de "{collectionName}"</h1>
               <p className="header-subtitle">
                 Gestiona y organiza tu biblioteca de artículos
               </p>
@@ -349,4 +370,4 @@ function Articles() {
   )
 }
 
-export default Articles
+export default CollectionArticles
