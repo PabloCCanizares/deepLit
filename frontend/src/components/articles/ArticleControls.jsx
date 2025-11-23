@@ -124,13 +124,13 @@ function ArticleControls({
             </button>
             {showFilterMenu && (
               <div className="control-dropdown">
-                <button onClick={() => handleFilter('all')}>
+                <button onClick={() => handleFilter({mode:'all'})}>
                   <i className="fas fa-folder-open"></i> Todos
                 </button>
-                <button onClick={() => handleFilter('complete')}>
+                <button onClick={() => handleFilter({mode:'complete'})}>
                   <i className="fas fa-check-circle"></i> Completos
                 </button>
-                <button onClick={() => handleFilter('incomplete')}>
+                <button onClick={() => handleFilter({mode:'incomplete'})}>
                   <i className="fas fa-exclamation-circle"></i> Incompletos
                 </button>
               </div>

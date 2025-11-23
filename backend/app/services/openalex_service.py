@@ -2,9 +2,8 @@
 Servicio de OpenAlex.
 """
 from datetime import datetime
-from app.repositories import ArticleRepository
 from app.models import QueryBody
-from typing import List, Dict
+from typing import List, Dict, Any
 import pyalex
 from pyalex import config, Works, Authors, Sources, Institutions, Topics, Publishers, Funders
 import json
@@ -20,20 +19,76 @@ class OpenAlexService:
         config.retry_http_codes = [429, 500, 503]
     
     
+    def map_sort_field(self, field: str) -> str:
+        field_mappings = {
+            "year": "publication_date",
+            "title": "display_name",
+            "relevance": "relevance_score",
+            "works_count": "works_count",
+            "cited_by_count": "cited_by_count",
+        }
+        return field_mappings.get(field, field)  # Devuelve el campo mapeado o el original si no hay mapeo
+
+
+    def map_filters(self, filters: Dict[str, Any]) -> Dict[str, Any]:
+        mapped = {}
+        
+        for key, value in filters.items():
+            if value is None or value == "":
+                continue  # ignorar filtros vacíos
+
+            # FIXME Otros filtros :
+            if key == "year":
+                mapped["publication_year"] = value
+                continue
+
+            # Si es un filtro válido, pasarlo tal cual
+            mapped[key] = value
+
+        return mapped
+
+
     async def get_openalex_articles(self, body: QueryBody) -> Dict:
         limit = body.pagination.limit
         offset = body.pagination.offset
-        filters = body.filters or {}
-
-        # Calculate the page number from offset and limit
         page = (offset // limit) + 1 if limit > 0 else 1
 
-        filters = filters or {}
+        raw_filters = body.filters or {}
 
+        # FIXME de momento no se usa el mode con OpenAlex
+        mode_filter = raw_filters.pop("mode", None)
+        
+        filters = self.map_filters(raw_filters)
 
-
-        # Construimos y ejecutamos la query
         works_query = Works().filter(**filters)
+
+
+        if body.sort_by:
+            try:
+                sort_field, sort_order = body.sort_by.split("-")
+            except ValueError:
+                # Si llega algo inválido, usar orden asc por defecto
+                sort_field = body.sort_by
+                sort_order = "asc"
+            
+
+            sort_field = self.map_sort_field(sort_field)
+
+            if sort_field in ["display_name", "cited_by_count", "works_count", "publication_date", "relevance_score"]:
+                if sort_field=="cited_by_count":
+                    works_query = works_query.sort(cited_by_count=sort_order)
+                elif sort_field=="display_name":
+                    works_query = works_query.sort(display_name=sort_order)
+                elif sort_field=="works_count":
+                    works_query = works_query.sort(works_count=sort_order)
+                elif sort_field=="publication_date":
+                    works_query = works_query.sort(publication_date=sort_order)
+                elif sort_field=="relevance_score":
+                    works_query = works_query.sort(relevance_score=sort_order)
+            else:
+                # Campo no soportado, ignorar ordenamiento
+                pass
+
         results = works_query.get(per_page=limit, page=page)
 
         # total de artículos que coinciden con la query
@@ -62,9 +117,11 @@ class OpenAlexService:
                 print("Resultado problemático:", result)
                 # with open("openalex_failed_results.json", "w", encoding="utf-8") as f:
                 #     json.dump(result, f, ensure_ascii=False, indent=2)
-
+        print("LONGITUD FILTRADOS:", len(filtered_results))
+        print("results", filtered_results[0])
         return {"articles": filtered_results, "total": total_articles}
-    
+
+
     async def get_by_id(self, openalex_id: str) -> Dict:
         """
         Obtener artículo por ID.

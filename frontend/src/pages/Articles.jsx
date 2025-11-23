@@ -13,44 +13,65 @@ import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 
 function Articles() {
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
-  const [documents, setDocuments] = useState([])
+
+
+
+  //const [loading, setLoading] = useState(false)
+
+  // Controles de búsqueda, filtros y orden
+  const [filterCriteria, setFilterCriteria] = useState({mode: 'all'});
+
+  // Paginación real
+  const [pagination, setPagination] = useState({
+    limit: 10,
+    offset: 0,
+    total: 0,
+  });
+
+
+
+
+
+  //const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 10,
-    offset: 0
-  })
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState('all')
+  //const [filterCriteria, setFilterCriteria] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
 
-  useEffect(() => {
-    loadDocuments()
-  }, [pagination.offset, pagination.limit, searchQuery])
+
 
   useEffect(() => {
-    applyFiltersAndSort()
-  }, [documents, sortCriteria, filterCriteria])
+    loadDocuments()
+  }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
+
 
   const loadDocuments = async () => {
     try {
       setLoading(true)
       
-      const response = await articlesAPI.getArticles({ 
-        limit: pagination.limit, 
+      console.log("Loading documents with filters:", filterCriteria, "and searchQuery:", searchQuery);
+
+      const response = await articlesAPI.getArticles({
+        limit: pagination.limit,
         offset: pagination.offset,
-        filters: {"title": searchQuery} 
+        filters: {
+          title: searchQuery || undefined,  // ← Título dentro de filters
+          ...filterCriteria,
+        },
+
+        sort_by: sortCriteria,
       });
       console.log("Respuesta de artículos:", response);
       
-      setDocuments(response.data.articles)
+      setFilteredDocuments(response.data.articles)
       setPagination(prev => ({
         ...prev,
         total: response.data.total
@@ -63,46 +84,17 @@ function Articles() {
     }
   }
 
-  const applyFiltersAndSort = () => {
-    let filtered = [...documents]
-
-
-    // 2. Aplicar filtros
-    if (filterCriteria === 'complete') {
-      filtered = filtered.filter(doc => 
-        doc.title && doc.category && doc.pages && doc.year
-      )
-    } else if (filterCriteria === 'incomplete') {
-      filtered = filtered.filter(doc => 
-        !doc.title || !doc.category || !doc.pages || !doc.year
-      )
-    }
-
-    // 3. Aplicar ordenamiento
-    filtered.sort((a, b) => {
-      switch (sortCriteria) {
-        case 'year-asc':
-          return (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
-        case 'year-desc':
-          return (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
-        case 'title-asc':
-          return (a.title || '').localeCompare(b.title || '')
-        case 'title-desc':
-          return (b.title || '').localeCompare(a.title || '')
-        default:
-          return 0
-      }
-    })
-
-    setFilteredDocuments(filtered)
-  }
+  
 
   const handleSort = (criteria) => {
     setSortCriteria(criteria)
   }
 
-  const handleFilter = (filter) => {
-    setFilterCriteria(filter)
+  const handleFilter = (newFilter) => {
+    setFilterCriteria(prev => ({
+      ...prev,
+      ...newFilter,  // sobrescribe solo los campos que vienen
+    }));
   }
 
   const handleSearch = (query) => {
@@ -124,7 +116,10 @@ function Articles() {
     
     // Recargar artículos después de subir (solo si no es un error)
     if (!message || !message.toLowerCase().includes('error')) {
-      loadDocuments()
+      setPagination(prev => ({ ...prev, offset: 0 }));
+      // recargar directamente
+      loadDocuments();
+
     }
     
     // Limpiar el mensaje después de 4 segundos
@@ -194,7 +189,7 @@ function Articles() {
         }))
       } else {
         // Actualizar con los datos nuevos
-        setDocuments(response.data.articles)
+        setFilteredDocuments(response.data.articles)
         setPagination(prev => ({
           ...prev,
           total: response.data.total
@@ -227,7 +222,7 @@ function Articles() {
             <div className="header-stats">
               <div className="stat-item">
                 <span className="stat-number">
-                  {filterCriteria === 'all' ? pagination.total : filteredDocuments.length}
+                  {filterCriteria.mode === 'all' ? pagination.total : filteredDocuments.length}
                 </span>
                 <span className="stat-label">Filtrados</span>
               </div>

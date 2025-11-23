@@ -38,7 +38,7 @@ class ArticlesController:
                     data={}
                 )
 
-
+        print("LLEGOOOOO")
         articles_data = await self.article_service.get_user_articles(query, current_user["_id"], collection_id)
      
         return StandardResponse(

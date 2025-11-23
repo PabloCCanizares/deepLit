@@ -7,41 +7,43 @@ import ArticleList from '../components/articles/ArticleList'
 import '../styles/App.css'
 
 function OpenAlex() {
-  const [articles, setArticles] = useState([])
   const [filteredArticles, setFilteredArticles] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
   const [pagination, setPagination] = useState({
-    total: 0,
     limit: 10,
-    offset: 0
-  })
+    offset: 0,
+    total: 0,
+  });
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState('all')
+  const [filterCriteria, setFilterCriteria] = useState({mode: 'all'});
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
 
   useEffect(() => {
     loadArticles()
-  }, [pagination.offset, pagination.limit, searchQuery])
-
-  useEffect(() => {
-    applyFiltersAndSort()
-  }, [articles, sortCriteria, filterCriteria])
+  }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
 
   const loadArticles = async () => {
     try {
       setLoading(true)
-      const response = await openalexAPI.getWorks({ 
-        limit: pagination.limit, 
+      const response = await openalexAPI.getWorks({
+        limit: pagination.limit,
         offset: pagination.offset,
-        filters: {"title.search": searchQuery} 
+
+        // CAMBIO ✔️
+        filters: {
+          "title.search": searchQuery || undefined,  // ← Título dentro de filters
+          ...filterCriteria,
+        },
+
+        sort_by: sortCriteria,
       });
 
       console.log("Respuesta de OpenAlex:", response);
       
-      setArticles(response.data.articles)
+      setFilteredArticles(response.data.articles)
       setPagination(prev => ({
         ...prev,
         total: response.data.total
@@ -51,40 +53,6 @@ function OpenAlex() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const applyFiltersAndSort = () => {
-    let filtered = [...articles]
-
-
-    // 2. Aplicar filtros
-    if (filterCriteria === 'complete') {
-      filtered = filtered.filter(article => 
-        article.title && article.category && article.pages && article.year
-      )
-    } else if (filterCriteria === 'incomplete') {
-      filtered = filtered.filter(article => 
-        !article.title || !article.category || !article.pages || !article.year
-      )
-    }
-
-    // 3. Aplicar ordenamiento
-    filtered.sort((a, b) => {
-      switch (sortCriteria) {
-        case 'year-asc':
-          return (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
-        case 'year-desc':
-          return (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
-        case 'title-asc':
-          return (a.title || '').localeCompare(b.title || '')
-        case 'title-desc':
-          return (b.title || '').localeCompare(a.title || '')
-        default:
-          return 0
-      }
-    })
-
-    setFilteredArticles(filtered)
   }
 
   const handleSort = (criteria) => {

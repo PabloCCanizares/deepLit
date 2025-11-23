@@ -5,6 +5,7 @@ from typing import Optional
 from app.database import get_database
 from app.models import QueryBody
 from typing import List
+from pymongo import ASCENDING, DESCENDING
 
 class ArticleRepository:
     
@@ -78,6 +79,7 @@ class ArticleRepository:
 
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
         """Recuperar artículos del usuario actual con paginación y filtros"""
+        
         filter_criteria = {"id_user": user_id}
 
         if collection_id:
@@ -86,15 +88,33 @@ class ArticleRepository:
         limit = query.pagination.limit
         offset = query.pagination.offset
 
+        sort_criteria = query.sort_by
+
         filters = query.filters or {}
-        # 🧩 Agregar filtros opcionales (ej. category, language, etc.)
+
+        # Manejar el filtro 'mode' por separado
+        mode_filter = filters.pop("mode", None)
+
+        # ... (procesamiento de filtros y modo como en la respuesta anterior) ...
         if filters:
             for key, value in filters.items():
-                # Si quieres permitir búsquedas parciales para campos de texto:
-                if isinstance(value, str):
+                if isinstance(value, str) and key not in ["mode"]:
                     filter_criteria[key] = {"$regex": value, "$options": "i"}
                 else:
                     filter_criteria[key] = value
+
+        if mode_filter == "complete":
+            filter_criteria["title"] = {"$ne": None}
+            filter_criteria["year"] = {"$ne": None}
+            filter_criteria["pages"] = {"$ne": None}
+            filter_criteria["category"] = {"$ne": None}
+        elif mode_filter == "incomplete":
+            filter_criteria["$or"] = [
+                {"title": None},
+                {"year": None},
+                {"pages": None},
+                {"category": None}
+            ]
 
         # Proyección: solo devolver campos necesarios para la lista
         projection = {
@@ -105,16 +125,35 @@ class ArticleRepository:
             "year": 1
         }
 
+        print("FILTER CRITERIA:", filter_criteria)
+
+        # 🚀 APLICAR LA LÓGICA DE ORDENACIÓN
+        # Creamos la cadena base del cursor
+        cursor = self.collection.find(filter_criteria, projection)
+
+
+        #FIXME hacer con mas campos: añadir campo sortBy (campo), y sortOrder (asc, desc)
+        if sort_criteria == "year-asc":
+            # Orden ascendente por el campo "year"
+            cursor = cursor.sort("year", ASCENDING)
+        elif sort_criteria == "year-desc":
+            # Orden descendente por el campo "year"
+            cursor = cursor.sort("year", DESCENDING)
+        else:
+            # Si es nulo o no coincide con los valores esperados, 
+            # PyMongo no añade ningún sort por defecto (usa el orden natural/inserción)
+            pass
+
+        # Aplicar paginación después del sort
         cursor = (
-            self.collection
-            .find(filter_criteria, projection)
+            cursor
             .skip(offset)
             .limit(limit)
         )
-        
+
 
         results = await cursor.to_list(length=limit)
+        print("RESULTS:", results)
         return results
-
 
 

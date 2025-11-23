@@ -71,7 +71,16 @@ const ArticleEdit = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
-      await articlesAPI.update(id, formData)
+
+      // Convierte los strings vacios a null para que en el backend haya campos nulos
+      const sanitizedData = Object.fromEntries(
+        Object.entries(formData).map(([key, value]) => [
+          key,
+          value === "" ? null : value
+        ])
+      )
+
+      await articlesAPI.update(id, sanitizedData)
       navigate(`/articles/${id}`)
     } catch (err) {
       console.error('Error saving document:', err)

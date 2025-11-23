@@ -15,6 +15,7 @@ class QueryBody(BaseModel):
     pagination: Pagination
     filters: Optional[Dict[str, Any]] = Field(None, description="Filtros opcionales (year, category, etc.)")
     collection_id: Optional[str] = Field(None, description="ID de la colección para filtrar artículos (opcional)")
+    sort_by: Optional[str] = Field(None, description="Criterio de ordenamiento (campo-orden) (e.g., 'year-desc')")
 
 class ArticleUpdate(BaseModel):
     """

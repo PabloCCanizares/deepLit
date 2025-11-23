@@ -172,11 +172,12 @@ export const uploadAPI = {
 
 export const articlesAPI = {
   // Get articles with pagination
-  getArticles: async ({ limit = 10, offset = 0, filters = {}, collection_id } = {}) => {
+  getArticles: async ({ limit = 10, offset = 0, filters = {}, collection_id, sort_by} = {}) => {
     const body = {
       pagination: { limit, offset },
       filters: Object.keys(filters).length > 0 ? filters : null,
-      collection_id: collection_id || undefined, // campo separado
+      collection_id: collection_id || undefined,
+      sort_by: sort_by // campo separado
     };
 
     console.log("articlesAPI.getArticles body:", body);
@@ -213,13 +214,14 @@ export const articlesAPI = {
 
 
 export const openalexAPI = {
-  getWorks: async ({ limit = 10, offset = 0, filters = {} } = {}) => {
+  getWorks: async ({ limit = 10, offset = 0, filters = {}, sort_by} = {}) => {
     console.log("API OPENALEX - getWorks called");
     return apiFetch('/openalex/search', {
       method: 'POST',
       body: JSON.stringify({
         pagination: { limit, offset },
-        filters: Object.keys(filters).length > 0 ? filters : null
+        filters: Object.keys(filters).length > 0 ? filters : null,
+        sort_by: sort_by // campo separado
       })
     });
   },
