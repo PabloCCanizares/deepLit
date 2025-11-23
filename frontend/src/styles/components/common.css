@@ -13,7 +13,7 @@
 .header-panel {
   background: linear-gradient(135deg, var(--main_color), var(--dark));
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   margin-bottom: 2rem;
   color: white;
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
@@ -22,29 +22,44 @@
 .header-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: center !important;
+  flex-wrap: nowrap;
   gap: 1.5rem;
 }
 
+.header-info {
+  display: flex;
+  align-items: baseline !important;
+  gap: 0.5rem;
+  padding-left: 0 !important;
+}
+
 .header-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   color: white;
 }
 
 .header-subtitle {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  font-size: 0.9rem;
+  opacity: 0.85;
   margin: 0;
   font-weight: 400;
+}
+
+.header-subtitle::before {
+  content: "·";
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+  opacity: 0.6;
 }
 
 .header-stats {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .stat-item {

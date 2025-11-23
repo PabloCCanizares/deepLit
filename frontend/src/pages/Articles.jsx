@@ -215,9 +215,9 @@ function Articles() {
           <div className="header-content">
             <div className="header-info">
               <h1 className="header-title">Todos Mis Artículos</h1>
-              <p className="header-subtitle">
-                Gestiona y organiza tu biblioteca de artículos
-              </p>
+              <span className="header-subtitle">
+               Gestiona y organiza tu biblioteca de artículos
+              </span>
             </div>
             <div className="header-stats">
               <div className="stat-item">
