@@ -4,6 +4,7 @@ import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
+import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 
 function OpenAlex() {
@@ -135,6 +136,12 @@ function OpenAlex() {
             onSelectArticle={handleSelectArticle}
           />
         )}
+
+        {/* Paginación debajo de los artículos */}
+        <Pagination 
+          pagination={pagination}
+          onChangePagination={setPagination}
+        />
       </div>
     </div>
   )

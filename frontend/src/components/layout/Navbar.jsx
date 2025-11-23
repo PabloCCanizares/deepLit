@@ -9,13 +9,18 @@ function Navbar({ toggleSidebar }) {
   const { user, logout, profileImageUrl } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCollectionMenu, setShowCollectionMenu] = useState(false);
   const userMenuRef = useRef(null);
+  const collectionMenuRef = useRef(null);
   const { collections, selectedCollectionId, changeCollection  } = useCollection();
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
+      }
+      if (collectionMenuRef.current && !collectionMenuRef.current.contains(event.target)) {
+        setShowCollectionMenu(false);
       }
     }
 
@@ -30,6 +35,13 @@ function Navbar({ toggleSidebar }) {
     // No necesitamos redirigir manualmente - PrivateRoute lo hará automáticamente
     // cuando detecte que user === null
   };
+
+  const handleCollectionChange = (collectionId) => {
+    changeCollection(collectionId);
+    setShowCollectionMenu(false);
+  };
+
+  const selectedCollection = collections.find(c => c._id === selectedCollectionId);
 
   return (
     <nav className="navbar">
@@ -50,19 +62,36 @@ function Navbar({ toggleSidebar }) {
 
         <div className="navbarMenu">
           {/* Collection selector*/}
-          <div className="collectionSelector">
-            <select
-              value={selectedCollectionId || ""}
-              onChange={(e) => changeCollection(e.target.value)}
+          <div className="collectionSelector" ref={collectionMenuRef}>
+            <button 
+              className="collectionButton"
+              onClick={() => setShowCollectionMenu(!showCollectionMenu)}
             >
-              <option value="">— Sin colección —</option>
-
-              {collections.map(col => (
-                <option key={col._id} value={col._id}>
-                  {col.name}
-                </option>
-              ))}
-            </select>
+              <span>{selectedCollection ? selectedCollection.name : 'Sin colección'}</span>
+              <i className="fas fa-chevron-down"></i>
+            </button>
+            
+            {showCollectionMenu && (
+              <div className="collectionDropdown">
+                <button
+                  className={`collectionOption ${!selectedCollectionId ? 'active' : ''}`}
+                  onClick={() => handleCollectionChange('')}
+                >
+                  <i className="fas fa-list"></i>
+                  <span>Sin colección</span>
+                </button>
+                {collections.map(col => (
+                  <button
+                    key={col._id}
+                    className={`collectionOption ${selectedCollectionId === col._id ? 'active' : ''}`}
+                    onClick={() => handleCollectionChange(col._id)}
+                  >
+                    <i className="fas fa-folder"></i>
+                    <span>{col.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>          
           {/* Theme toggle buttons */}
           <div className="themeToggle">

@@ -18,8 +18,10 @@ function ArticleControls({
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [showPaginationMenu, setShowPaginationMenu] = useState(false)
   const sortRef = useRef(null)
   const filterRef = useRef(null)
+  const paginationMenuRef = useRef(null)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -28,6 +30,9 @@ function ArticleControls({
       }
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setShowFilterMenu(false)
+      }
+      if (paginationMenuRef.current && !paginationMenuRef.current.contains(event.target)) {
+        setShowPaginationMenu(false)
       }
     }
 
@@ -138,49 +143,62 @@ function ArticleControls({
           </div>
         </div>
 
-      {/* 🔹 Paginación mejorada */}
-      <div className="pagination-controls">
-        <div className="items-per-page">
-          <label>
-            <span className="label-text">Mostrar</span>
-            <select value={pagination.limit} onChange={handleLimitChange} className="pagination-select">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
-            <span className="label-text">elementos</span>
-          </label>
-        </div>
-
-        <div className="page-navigation">
-          <button 
-            className="nav-arrow" 
-            onClick={goToPrevious} 
-            disabled={currentPage <= 1}
-            title="Página anterior"
-          >
-            <i className="fas fa-chevron-left"></i>
-          </button>
-          
-          <div className="page-info">
-            <span className="page-current">{currentPage}</span>
-            <span className="page-separator">/</span>
-            <span className="page-total">{totalPages || 1}</span>
-          </div>
-          
-          <button 
-            className="nav-arrow" 
-            onClick={goToNext} 
-            disabled={currentPage >= totalPages}
-            title="Página siguiente"
-          >
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
       <div className="control-right">
+        <div className="items-per-page" ref={paginationMenuRef}>
+          <button 
+            className="paginationButton"
+            onClick={() => setShowPaginationMenu(!showPaginationMenu)}
+          >
+            <span>{pagination.limit}</span>
+            <i className="fas fa-chevron-down"></i>
+          </button>
+          {showPaginationMenu && (
+            <div className="paginationDropdown">
+              <button
+                className={`paginationOption ${pagination.limit === 5 ? 'active' : ''}`}
+                onClick={() => {
+                  handleLimitChange({ target: { value: '5' } })
+                  setShowPaginationMenu(false)
+                }}
+              >
+                <i className="fas fa-list"></i>
+                <span>5</span>
+              </button>
+              <button
+                className={`paginationOption ${pagination.limit === 10 ? 'active' : ''}`}
+                onClick={() => {
+                  handleLimitChange({ target: { value: '10' } })
+                  setShowPaginationMenu(false)
+                }}
+              >
+                <i className="fas fa-list"></i>
+                <span>10</span>
+              </button>
+              <button
+                className={`paginationOption ${pagination.limit === 20 ? 'active' : ''}`}
+                onClick={() => {
+                  handleLimitChange({ target: { value: '20' } })
+                  setShowPaginationMenu(false)
+                }}
+              >
+                <i className="fas fa-list"></i>
+                <span>20</span>
+              </button>
+              <button
+                className={`paginationOption ${pagination.limit === 50 ? 'active' : ''}`}
+                onClick={() => {
+                  handleLimitChange({ target: { value: '50' } })
+                  setShowPaginationMenu(false)
+                }}
+              >
+                <i className="fas fa-list"></i>
+                <span>50</span>
+              </button>
+            </div>
+          )}
+          <span className="label-text">por página</span>
+        </div>
+
         <div className="view-toggle">
           <button
             type="button"

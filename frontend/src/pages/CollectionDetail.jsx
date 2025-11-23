@@ -6,6 +6,7 @@ import ArticleControls from '../components/articles/ArticleControls'
 import ArticleCard from '../components/articles/ArticleCard'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
+import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import '../styles/collections/CollectionDetail.css'
@@ -304,6 +305,12 @@ function CollectionDetail() {
             onSelectArticle={handleSelectArticle}
           />
         )}
+
+        {/* Paginación debajo de los artículos */}
+        <Pagination 
+          pagination={pagination}
+          onChangePagination={setPagination}
+        />
 
         {/* Modal de confirmación de eliminación */}
         {showDeleteModal && (

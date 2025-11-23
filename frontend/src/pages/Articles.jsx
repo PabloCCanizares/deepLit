@@ -6,6 +6,7 @@ import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
 import AddToCollectionsModal from '../components/collections/AddToCollectionsModal'
+import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
@@ -272,6 +273,12 @@ function Articles() {
             onSelectArticle={handleSelectArticle}
           />
         )}
+
+        {/* Paginación debajo de los artículos */}
+        <Pagination 
+          pagination={pagination}
+          onChangePagination={setPagination}
+        />
 
         {/* Botón flotante para subir artículos */}
         <button 

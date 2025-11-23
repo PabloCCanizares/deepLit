@@ -1,0 +1,106 @@
+/* ===== PAGINACIÓN SEPARADA ===== */
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.pagination-arrow {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  flex-shrink: 0;
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.pagination-arrow:disabled {
+  background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.page-number {
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.page-number:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--main_color);
+  color: var(--main_color);
+  transform: translateY(-2px);
+}
+
+.page-number.active {
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
+  border-color: var(--main_color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.page-ellipsis {
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 0 0.25rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    gap: 0.25rem;
+    padding: 0.75rem;
+  }
+  
+  .pagination-arrow,
+  .page-number {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+  
+  .page-numbers {
+    gap: 0.25rem;
+  }
+}
