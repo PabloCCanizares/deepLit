@@ -27,7 +27,7 @@ function CollectionDetail() {
   const [filterCriteria, setFilterCriteria] = useState('all')
   const [pagination, setPagination] = useState({
     total: 0,
-    limit: 100,
+    limit: 10,
     offset: 0
   })
 
@@ -80,6 +80,11 @@ function CollectionDetail() {
     })
 
     setFilteredArticles(filtered)
+    setPagination(prev => ({
+      ...prev,
+      total: filtered.length,
+      offset: 0
+    }))
   }
 
   const loadCollection = async () => {
@@ -202,36 +207,29 @@ function CollectionDetail() {
         {/* Header Panel */}
         <div className="header-panel">
           <div className="header-content">
-            <div className="header-info" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <button 
-                    onClick={() => navigate('/collections')} 
-                    className="back-button"
-                    title="Volver a Mis Colecciones"
-                    style={{ position: 'relative', transform: 'none', top: 'auto', left: 'auto' }}
-                  >
-                    <i className="fas fa-arrow-left"></i>
-                  </button>
-                  <h1 className="header-title" style={{ margin: 0 }}>{collection.name}</h1>
-                </div>
-                <div className="header-stats" style={{ margin: 0 }}>
-                  <div className="stat-item">
-                    <span className="stat-number">
-                      {filterCriteria === 'all' ? filteredArticles.length : filteredArticles.length}
-                    </span>
-                    <span className="stat-label">Filtrados</span>
-                  </div>
-                  <div className="stat-divider"></div>
-                  <div className="stat-item">
-                    <span className="stat-number">{articles.length}</span>
-                    <span className="stat-label">Total</span>
-                  </div>
-                </div>
-              </div>
-              <p className="header-subtitle" style={{ marginTop: '0.5rem', marginLeft: '58px' }}>
+            <div className="header-info">
+              <button 
+                onClick={() => navigate('/collections')} 
+                className="back-button"
+                title="Volver a Mis Colecciones"
+              >
+                <i className="fas fa-arrow-left"></i>
+              </button>
+              <h1 className="header-title">{collection.name}</h1>
+              <span className="header-subtitle">
                 {collection.description || 'Sin descripción'}
-              </p>
+              </span>
+            </div>
+            <div className="header-stats">
+              <div className="stat-item">
+                <span className="stat-number">{filteredArticles.length}</span>
+                <span className="stat-label">Filtrados</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat-item">
+                <span className="stat-number">{articles.length}</span>
+                <span className="stat-label">Total</span>
+              </div>
             </div>
           </div>
         </div>
@@ -290,7 +288,7 @@ function CollectionDetail() {
           </div>
         ) : viewMode === 'list' ? (
           <ArticleList 
-            documents={filteredArticles} 
+            documents={filteredArticles.slice(pagination.offset, pagination.offset + pagination.limit)} 
             loading={false} 
             error={null}
             selectedArticles={selectedArticles}
@@ -299,7 +297,7 @@ function CollectionDetail() {
           />
         ) : (
           <ArticleGrid 
-            documents={filteredArticles} 
+            documents={filteredArticles.slice(pagination.offset, pagination.offset + pagination.limit)} 
             loading={false} 
             error={null}
             selectedArticles={selectedArticles}

@@ -7,23 +7,20 @@
   padding: 0.75rem;
   transition: all 0.3s ease;
   border-radius: 12px;
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   width: 42px;
   height: 42px;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  flex-shrink: 0;
 }
 
 .back-button:hover {
   background: linear-gradient(135deg, var(--main_color), #4F46E5);
   border-color: transparent;
   color: white;
-  transform: translateY(-50%) translateX(-2px);
+  transform: translateX(-2px);
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 }
 
@@ -63,9 +60,7 @@
 
 .header-info {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  position: relative;
-  padding-left: 3rem;
-  width: 100%;
+  align-items: baseline !important;
+  gap: 0.5rem;
+  padding-left: 0 !important;
 }
