@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import '../../styles/articles/ArticleList.css'
+import '../../styles/openalex/OpenAlexList.css'
 
-function ArticleList({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onSelectAll }) {
+function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -58,8 +58,18 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
         const id = doc._id || doc.id
         const isSelected = selectedArticles.includes(id)
         
+        console.log('Rendering document with ID:', id)
         // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
+        const encodedId = encodeURIComponent(id)
+
         
+        //const clean_id = id.split("/").at(-1);
+        let clean_id = id;
+        
+        console.log('Encoded ID for URL:', encodedId)
+        
+        const isSaved = savedArticles.includes(clean_id) || savedArticles.includes(id);
+
         return (
           <div key={id} className={`list-row ${isSelected ? 'selected' : ''}`}>
             <div className="list-col-select">
@@ -72,9 +82,9 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
                 </div>
               )}
             </div>
-            <div className="list-col-title" title={title}>
+            <div className="list-col-title">
               <i className="fas fa-file-alt list-icon"></i>
-              <Link to={`${baseRoute}/${id}`} className="list-title-link">
+              <Link to={`${baseRoute}/${clean_id}`} className="list-title-link">
                 {title}
               </Link>
             </div>
@@ -82,21 +92,16 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
             <div className="list-col-pages">{pages}</div>
             <div className="list-col-year">{year}</div>
             <div className="list-col-actions">
-              <Link to={`${baseRoute}/${id}`} className="list-action-btn" title="Ver">
+              <Link to={`${baseRoute}/${clean_id}`} className="list-action-btn">
                 <i className="fas fa-eye"></i>
               </Link>
-              <Link to={`${baseRoute}/${id}/edit`} className="list-action-btn" title="Editar">
-                <i className="fas fa-edit"></i>
-              </Link>
-{/*
-              <button
-                className="save-article-btn"
-                title="Guardar artículo"
-                onClick={() => handleSaveArticle(id)} // tu función para guardar
-              >
-                <i className="far fa-bookmark"></i>
-              </button>
-*/  }
+            <button
+                className={`save-article-btn ${isSaved ? "saved" : ""}`}
+                title={isSaved ? "Artículo guardado" : "Guardar artículo"}
+                onClick={() => onSave(clean_id)}
+                >
+                <i className={isSaved ? "fas fa-bookmark" : "far fa-bookmark"}></i>
+            </button>
             </div>
           </div>
         )
@@ -105,7 +110,7 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
   )
 }
 
-export default ArticleList
+export default OpenAlexList
 
 
 

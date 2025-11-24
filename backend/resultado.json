@@ -1,907 +1,924 @@
 {
-    "id": "https://openalex.org/W3038568908",
-    "doi": "https://doi.org/10.1585/pfr.15.2402039",
-    "title": "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device",
-    "display_name": "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device",
-    "publication_year": 2020,
-    "publication_date": "2020-06-08",
+    "id": "https://openalex.org/W2610474987",
+    "doi": "https://doi.org/10.21954/ou.ro.0000bd41",
+    "title": "Contested Sensemaking and Everyday Leadership Practices in the Context of UK Parliamentary Select Committees",
+    "display_name": "Contested Sensemaking and Everyday Leadership Practices in the Context of UK Parliamentary Select Committees",
+    "publication_year": 2042,
+    "publication_date": "2042-01-01",
     "ids": {
-        "openalex": "https://openalex.org/W3038568908",
-        "doi": "https://doi.org/10.1585/pfr.15.2402039",
-        "mag": "3038568908"
+        "openalex": "https://openalex.org/W2610474987",
+        "doi": "https://doi.org/10.21954/ou.ro.0000bd41",
+        "mag": "2610474987"
     },
     "language": "en",
     "primary_location": {
-        "id": "doi:10.1585/pfr.15.2402039",
-        "is_oa": true,
-        "landing_page_url": "https://doi.org/10.1585/pfr.15.2402039",
-        "pdf_url": "https://www.jstage.jst.go.jp/article/pfr/15/0/15_2402039/_pdf",
-        "source": {
-            "id": "https://openalex.org/S46033839",
-            "display_name": "Plasma and Fusion Research",
-            "issn_l": "1880-6821",
-            "issn": [
-                "1880-6821"
-            ],
-            "is_oa": true,
-            "is_in_doaj": false,
-            "is_core": true,
-            "host_organization": "https://openalex.org/P4328135220",
-            "host_organization_name": "Japan Society of Plasma Science and Nuclear Fusion Research",
-            "host_organization_lineage": [
-                "https://openalex.org/P4328135220"
-            ],
-            "host_organization_lineage_names": [],
-            "type": "journal"
-        },
+        "id": "mag:2610474987",
+        "is_oa": false,
+        "landing_page_url": "http://oro.open.ac.uk/48449/",
+        "pdf_url": null,
+        "source": null,
         "license": null,
         "license_id": null,
-        "version": "publishedVersion",
-        "is_accepted": true,
-        "is_published": true,
-        "raw_source_name": "Plasma and Fusion Research",
-        "raw_type": "journal-article"
+        "version": null,
+        "is_accepted": false,
+        "is_published": false,
+        "raw_source_name": null,
+        "raw_type": null
     },
-    "type": "article",
+    "type": "dissertation",
     "indexed_in": [
-        "crossref"
+        "datacite"
     ],
     "open_access": {
         "is_oa": true,
-        "oa_status": "diamond",
-        "oa_url": "https://www.jstage.jst.go.jp/article/pfr/15/0/15_2402039/_pdf",
+        "oa_status": "green",
+        "oa_url": "https://doi.org/10.21954/ou.ro.0000bd41",
         "any_repository_has_fulltext": false
     },
     "authorships": [
         {
             "author_position": "first",
             "author": {
-                "id": "https://openalex.org/A5039600762",
-                "display_name": "M. Shoji",
-                "orcid": "https://orcid.org/0000-0003-0655-7347"
+                "id": "https://openalex.org/A5056755997",
+                "display_name": "Annette Stansfield",
+                "orcid": "https://orcid.org/0000-0002-8351-7157"
             },
-            "institutions": [
-                {
-                    "id": "https://openalex.org/I4210108322",
-                    "display_name": "National Institute for Fusion Science",
-                    "ror": "https://ror.org/01t3wyv61",
-                    "country_code": "JP",
-                    "type": "facility",
-                    "lineage": [
-                        "https://openalex.org/I1319490839",
-                        "https://openalex.org/I199525922",
-                        "https://openalex.org/I4210108322"
-                    ]
-                },
-                {
-                    "id": "https://openalex.org/I199525922",
-                    "display_name": "National Institutes of Natural Sciences",
-                    "ror": "https://ror.org/055n47h92",
-                    "country_code": "JP",
-                    "type": "facility",
-                    "lineage": [
-                        "https://openalex.org/I1319490839",
-                        "https://openalex.org/I199525922"
-                    ]
-                }
-            ],
-            "countries": [
-                "JP"
-            ],
+            "institutions": [],
+            "countries": [],
             "is_corresponding": true,
-            "raw_author_name": "Mamoru SHOJI",
-            "raw_affiliation_strings": [
-                "National Institute for Fusion Science, National Institutes of Natural Sciences"
-            ],
-            "affiliations": [
-                {
-                    "raw_affiliation_string": "National Institute for Fusion Science, National Institutes of Natural Sciences",
-                    "institution_ids": [
-                        "https://openalex.org/I4210108322"
-                    ]
-                },
-                {
-                    "raw_affiliation_string": "National Institute for Fusion Science, National Institutes of Natural Sciences",
-                    "institution_ids": [
-                        "https://openalex.org/I199525922"
-                    ]
-                }
-            ]
+            "raw_author_name": "Annette Stansfield",
+            "raw_affiliation_strings": [],
+            "affiliations": []
         }
     ],
     "institutions": [],
-    "countries_distinct_count": 1,
+    "countries_distinct_count": 0,
     "institutions_distinct_count": 1,
     "corresponding_author_ids": [
-        "https://openalex.org/A5039600762"
+        "https://openalex.org/A5056755997"
     ],
-    "corresponding_institution_ids": [
-        "https://openalex.org/I199525922",
-        "https://openalex.org/I4210108322"
-    ],
+    "corresponding_institution_ids": [],
     "apc_list": null,
     "apc_paid": null,
-    "fwci": 0.40325236,
-    "has_fulltext": true,
-    "cited_by_count": 801215,
+    "fwci": 0.0,
+    "has_fulltext": false,
+    "cited_by_count": 0,
     "citation_normalized_percentile": {
-        "value": 0.87928955,
+        "value": 0.0,
         "is_in_top_1_percent": false,
         "is_in_top_10_percent": false
     },
-    "cited_by_percentile_year": {
-        "min": 89,
-        "max": 100
-    },
+    "cited_by_percentile_year": null,
     "biblio": {
-        "volume": "15",
-        "issue": "0",
-        "first_page": "2402039",
-        "last_page": "2402039"
+        "volume": null,
+        "issue": null,
+        "first_page": null,
+        "last_page": null
     },
     "is_retracted": false,
     "is_paratext": false,
     "is_xpac": false,
     "primary_topic": {
-        "id": "https://openalex.org/T10346",
-        "display_name": "Magnetic confinement fusion research",
-        "score": 0.9991000294685364,
+        "id": "https://openalex.org/T10344",
+        "display_name": "Management and Organizational Studies",
+        "score": 0.6376000046730042,
         "subfield": {
-            "id": "https://openalex.org/subfields/3106",
-            "display_name": "Nuclear and High Energy Physics"
+            "id": "https://openalex.org/subfields/1407",
+            "display_name": "Organizational Behavior and Human Resource Management"
         },
         "field": {
-            "id": "https://openalex.org/fields/31",
-            "display_name": "Physics and Astronomy"
+            "id": "https://openalex.org/fields/14",
+            "display_name": "Business, Management and Accounting"
         },
         "domain": {
-            "id": "https://openalex.org/domains/3",
-            "display_name": "Physical Sciences"
+            "id": "https://openalex.org/domains/2",
+            "display_name": "Social Sciences"
         }
     },
     "topics": [
         {
-            "id": "https://openalex.org/T10346",
-            "display_name": "Magnetic confinement fusion research",
-            "score": 0.9991000294685364,
+            "id": "https://openalex.org/T10344",
+            "display_name": "Management and Organizational Studies",
+            "score": 0.6376000046730042,
             "subfield": {
-                "id": "https://openalex.org/subfields/3106",
-                "display_name": "Nuclear and High Energy Physics"
+                "id": "https://openalex.org/subfields/1407",
+                "display_name": "Organizational Behavior and Human Resource Management"
             },
             "field": {
-                "id": "https://openalex.org/fields/31",
-                "display_name": "Physics and Astronomy"
+                "id": "https://openalex.org/fields/14",
+                "display_name": "Business, Management and Accounting"
             },
             "domain": {
-                "id": "https://openalex.org/domains/3",
-                "display_name": "Physical Sciences"
+                "id": "https://openalex.org/domains/2",
+                "display_name": "Social Sciences"
             }
         },
         {
-            "id": "https://openalex.org/T11949",
-            "display_name": "Nuclear Physics and Applications",
-            "score": 0.9987999796867371,
+            "id": "https://openalex.org/T13158",
+            "display_name": "Political and Economic history of UK and US",
+            "score": 0.6037999987602234,
             "subfield": {
-                "id": "https://openalex.org/subfields/3108",
-                "display_name": "Radiation"
+                "id": "https://openalex.org/subfields/3320",
+                "display_name": "Political Science and International Relations"
             },
             "field": {
-                "id": "https://openalex.org/fields/31",
-                "display_name": "Physics and Astronomy"
+                "id": "https://openalex.org/fields/33",
+                "display_name": "Social Sciences"
             },
             "domain": {
-                "id": "https://openalex.org/domains/3",
-                "display_name": "Physical Sciences"
+                "id": "https://openalex.org/domains/2",
+                "display_name": "Social Sciences"
             }
         },
         {
-            "id": "https://openalex.org/T10592",
-            "display_name": "Fusion materials and technologies",
-            "score": 0.998199999332428,
+            "id": "https://openalex.org/T10213",
+            "display_name": "Public Policy and Administration Research",
+            "score": 0.5501000285148621,
             "subfield": {
-                "id": "https://openalex.org/subfields/2505",
-                "display_name": "Materials Chemistry"
+                "id": "https://openalex.org/subfields/3321",
+                "display_name": "Public Administration"
             },
             "field": {
-                "id": "https://openalex.org/fields/25",
-                "display_name": "Materials Science"
+                "id": "https://openalex.org/fields/33",
+                "display_name": "Social Sciences"
             },
             "domain": {
-                "id": "https://openalex.org/domains/3",
-                "display_name": "Physical Sciences"
+                "id": "https://openalex.org/domains/2",
+                "display_name": "Social Sciences"
             }
         }
     ],
     "keywords": [
         {
-            "id": "https://openalex.org/keywords/radiation",
-            "display_name": "Radiation",
-            "score": 0.7057818174362183
+            "id": "https://openalex.org/keywords/sensemaking",
+            "display_name": "Sensemaking",
+            "score": 0.7626656293869019
         },
         {
-            "id": "https://openalex.org/keywords/plasma",
-            "display_name": "Plasma",
-            "score": 0.5598242878913879
+            "id": "https://openalex.org/keywords/leadership-style",
+            "display_name": "Leadership style",
+            "score": 0.5974557995796204
         },
         {
-            "id": "https://openalex.org/keywords/materials-science",
-            "display_name": "Materials science",
-            "score": 0.5517664551734924
+            "id": "https://openalex.org/keywords/praxis",
+            "display_name": "Praxis",
+            "score": 0.5966812372207642
         },
         {
-            "id": "https://openalex.org/keywords/optics",
-            "display_name": "Optics",
-            "score": 0.5239154100418091
+            "id": "https://openalex.org/keywords/context",
+            "display_name": "Context (archaeology)",
+            "score": 0.5829522609710693
         },
         {
-            "id": "https://openalex.org/keywords/shield",
-            "display_name": "Shield",
-            "score": 0.5098416209220886
+            "id": "https://openalex.org/keywords/public-relations",
+            "display_name": "Public relations",
+            "score": 0.5764830708503723
         },
         {
-            "id": "https://openalex.org/keywords/neutron",
-            "display_name": "Neutron",
-            "score": 0.4559711515903473
+            "id": "https://openalex.org/keywords/political-science",
+            "display_name": "Political science",
+            "score": 0.5277265310287476
         },
         {
-            "id": "https://openalex.org/keywords/nuclear-engineering",
-            "display_name": "Nuclear engineering",
-            "score": 0.3836207985877991
+            "id": "https://openalex.org/keywords/leadership-studies",
+            "display_name": "Leadership studies",
+            "score": 0.5253190994262695
         },
         {
-            "id": "https://openalex.org/keywords/physics",
-            "display_name": "Physics",
-            "score": 0.32291728258132935
+            "id": "https://openalex.org/keywords/servant-leadership",
+            "display_name": "Servant leadership",
+            "score": 0.4627501964569092
         },
         {
-            "id": "https://openalex.org/keywords/nuclear-physics",
-            "display_name": "Nuclear physics",
-            "score": 0.13794386386871338
+            "id": "https://openalex.org/keywords/shared-leadership",
+            "display_name": "Shared leadership",
+            "score": 0.4497787356376648
         },
         {
-            "id": "https://openalex.org/keywords/geology",
-            "display_name": "Geology",
-            "score": 0.05549171566963196
+            "id": "https://openalex.org/keywords/corporate-governance",
+            "display_name": "Corporate governance",
+            "score": 0.42571574449539185
+        },
+        {
+            "id": "https://openalex.org/keywords/public-administration",
+            "display_name": "Public administration",
+            "score": 0.39069876074790955
+        },
+        {
+            "id": "https://openalex.org/keywords/sociology",
+            "display_name": "Sociology",
+            "score": 0.34978169202804565
+        },
+        {
+            "id": "https://openalex.org/keywords/management",
+            "display_name": "Management",
+            "score": 0.23684167861938477
+        },
+        {
+            "id": "https://openalex.org/keywords/law",
+            "display_name": "Law",
+            "score": 0.09358161687850952
         }
     ],
     "concepts": [
         {
-            "id": "https://openalex.org/C153385146",
-            "wikidata": "https://www.wikidata.org/wiki/Q18335",
-            "display_name": "Radiation",
+            "id": "https://openalex.org/C2780554381",
+            "wikidata": "https://www.wikidata.org/wiki/Q2063340",
+            "display_name": "Sensemaking",
             "level": 2,
-            "score": 0.7057818174362183
+            "score": 0.7626656293869019
         },
         {
-            "id": "https://openalex.org/C82706917",
-            "wikidata": "https://www.wikidata.org/wiki/Q10251",
-            "display_name": "Plasma",
+            "id": "https://openalex.org/C197386563",
+            "wikidata": "https://www.wikidata.org/wiki/Q6508686",
+            "display_name": "Leadership style",
             "level": 2,
-            "score": 0.5598242878913879
+            "score": 0.5974557995796204
         },
         {
-            "id": "https://openalex.org/C192562407",
-            "wikidata": "https://www.wikidata.org/wiki/Q228736",
-            "display_name": "Materials science",
-            "level": 0,
-            "score": 0.5517664551734924
+            "id": "https://openalex.org/C2777122596",
+            "wikidata": "https://www.wikidata.org/wiki/Q1247560",
+            "display_name": "Praxis",
+            "level": 2,
+            "score": 0.5966812372207642
         },
         {
-            "id": "https://openalex.org/C120665830",
-            "wikidata": "https://www.wikidata.org/wiki/Q14620",
-            "display_name": "Optics",
+            "id": "https://openalex.org/C2779343474",
+            "wikidata": "https://www.wikidata.org/wiki/Q3109175",
+            "display_name": "Context (archaeology)",
+            "level": 2,
+            "score": 0.5829522609710693
+        },
+        {
+            "id": "https://openalex.org/C39549134",
+            "wikidata": "https://www.wikidata.org/wiki/Q133080",
+            "display_name": "Public relations",
             "level": 1,
-            "score": 0.5239154100418091
+            "score": 0.5764830708503723
         },
         {
-            "id": "https://openalex.org/C138081364",
-            "wikidata": "https://www.wikidata.org/wiki/Q852013",
-            "display_name": "Shield",
-            "level": 2,
-            "score": 0.5098416209220886
-        },
-        {
-            "id": "https://openalex.org/C152568617",
-            "wikidata": "https://www.wikidata.org/wiki/Q2348",
-            "display_name": "Neutron",
-            "level": 2,
-            "score": 0.4559711515903473
-        },
-        {
-            "id": "https://openalex.org/C116915560",
-            "wikidata": "https://www.wikidata.org/wiki/Q83504",
-            "display_name": "Nuclear engineering",
-            "level": 1,
-            "score": 0.3836207985877991
-        },
-        {
-            "id": "https://openalex.org/C121332964",
-            "wikidata": "https://www.wikidata.org/wiki/Q413",
-            "display_name": "Physics",
+            "id": "https://openalex.org/C17744445",
+            "wikidata": "https://www.wikidata.org/wiki/Q36442",
+            "display_name": "Political science",
             "level": 0,
-            "score": 0.32291728258132935
+            "score": 0.5277265310287476
         },
         {
-            "id": "https://openalex.org/C185544564",
-            "wikidata": "https://www.wikidata.org/wiki/Q81197",
-            "display_name": "Nuclear physics",
+            "id": "https://openalex.org/C7225491",
+            "wikidata": "https://www.wikidata.org/wiki/Q2697537",
+            "display_name": "Leadership studies",
+            "level": 3,
+            "score": 0.5253190994262695
+        },
+        {
+            "id": "https://openalex.org/C67126808",
+            "wikidata": "https://www.wikidata.org/wiki/Q2912387",
+            "display_name": "Servant leadership",
+            "level": 3,
+            "score": 0.4627501964569092
+        },
+        {
+            "id": "https://openalex.org/C88251983",
+            "wikidata": "https://www.wikidata.org/wiki/Q7489549",
+            "display_name": "Shared leadership",
+            "level": 3,
+            "score": 0.4497787356376648
+        },
+        {
+            "id": "https://openalex.org/C39389867",
+            "wikidata": "https://www.wikidata.org/wiki/Q380767",
+            "display_name": "Corporate governance",
+            "level": 2,
+            "score": 0.42571574449539185
+        },
+        {
+            "id": "https://openalex.org/C3116431",
+            "wikidata": "https://www.wikidata.org/wiki/Q31728",
+            "display_name": "Public administration",
             "level": 1,
-            "score": 0.13794386386871338
+            "score": 0.39069876074790955
         },
         {
-            "id": "https://openalex.org/C127313418",
-            "wikidata": "https://www.wikidata.org/wiki/Q1069",
-            "display_name": "Geology",
+            "id": "https://openalex.org/C144024400",
+            "wikidata": "https://www.wikidata.org/wiki/Q21201",
+            "display_name": "Sociology",
             "level": 0,
-            "score": 0.05549171566963196
+            "score": 0.34978169202804565
         },
         {
-            "id": "https://openalex.org/C5900021",
-            "wikidata": "https://www.wikidata.org/wiki/Q163082",
-            "display_name": "Petrology",
+            "id": "https://openalex.org/C187736073",
+            "wikidata": "https://www.wikidata.org/wiki/Q2920921",
+            "display_name": "Management",
+            "level": 1,
+            "score": 0.23684167861938477
+        },
+        {
+            "id": "https://openalex.org/C199539241",
+            "wikidata": "https://www.wikidata.org/wiki/Q7748",
+            "display_name": "Law",
+            "level": 1,
+            "score": 0.09358161687850952
+        },
+        {
+            "id": "https://openalex.org/C86803240",
+            "wikidata": "https://www.wikidata.org/wiki/Q420",
+            "display_name": "Biology",
+            "level": 0,
+            "score": 0.0
+        },
+        {
+            "id": "https://openalex.org/C151730666",
+            "wikidata": "https://www.wikidata.org/wiki/Q7205",
+            "display_name": "Paleontology",
             "level": 1,
             "score": 0.0
         },
         {
-            "id": "https://openalex.org/C127413603",
-            "wikidata": "https://www.wikidata.org/wiki/Q11023",
-            "display_name": "Engineering",
+            "id": "https://openalex.org/C162324750",
+            "wikidata": "https://www.wikidata.org/wiki/Q8134",
+            "display_name": "Economics",
             "level": 0,
             "score": 0.0
         }
     ],
     "mesh": [],
-    "locations_count": 1,
+    "locations_count": 2,
     "locations": [
         {
-            "id": "doi:10.1585/pfr.15.2402039",
+            "id": "mag:2610474987",
+            "is_oa": false,
+            "landing_page_url": "http://oro.open.ac.uk/48449/",
+            "pdf_url": null,
+            "source": null,
+            "license": null,
+            "license_id": null,
+            "version": null,
+            "is_accepted": false,
+            "is_published": null,
+            "raw_source_name": null,
+            "raw_type": null
+        },
+        {
+            "id": "doi:10.21954/ou.ro.0000bd41",
             "is_oa": true,
-            "landing_page_url": "https://doi.org/10.1585/pfr.15.2402039",
-            "pdf_url": "https://www.jstage.jst.go.jp/article/pfr/15/0/15_2402039/_pdf",
+            "landing_page_url": "https://doi.org/10.21954/ou.ro.0000bd41",
+            "pdf_url": null,
             "source": {
-                "id": "https://openalex.org/S46033839",
-                "display_name": "Plasma and Fusion Research",
-                "issn_l": "1880-6821",
-                "issn": [
-                    "1880-6821"
-                ],
-                "is_oa": true,
+                "id": "https://openalex.org/S4306401187",
+                "display_name": "Open Research Online (The Open University)",
+                "issn_l": null,
+                "issn": null,
+                "is_oa": false,
                 "is_in_doaj": false,
-                "is_core": true,
-                "host_organization": "https://openalex.org/P4328135220",
-                "host_organization_name": "Japan Society of Plasma Science and Nuclear Fusion Research",
+                "is_core": false,
+                "host_organization": "https://openalex.org/I204136569",
+                "host_organization_name": "The Open University",
                 "host_organization_lineage": [
-                    "https://openalex.org/P4328135220"
+                    "https://openalex.org/I204136569"
                 ],
                 "host_organization_lineage_names": [],
-                "type": "journal"
+                "type": "repository"
             },
             "license": null,
             "license_id": null,
-            "version": "publishedVersion",
-            "is_accepted": true,
-            "is_published": true,
-            "raw_source_name": "Plasma and Fusion Research"
+            "version": null,
+            "is_accepted": false,
+            "is_published": null,
+            "raw_source_name": null,
+            "raw_type": "article-journal"
         }
     ],
     "best_oa_location": {
-        "id": "doi:10.1585/pfr.15.2402039",
+        "id": "doi:10.21954/ou.ro.0000bd41",
         "is_oa": true,
-        "landing_page_url": "https://doi.org/10.1585/pfr.15.2402039",
-        "pdf_url": "https://www.jstage.jst.go.jp/article/pfr/15/0/15_2402039/_pdf",
+        "landing_page_url": "https://doi.org/10.21954/ou.ro.0000bd41",
+        "pdf_url": null,
         "source": {
-            "id": "https://openalex.org/S46033839",
-            "display_name": "Plasma and Fusion Research",
-            "issn_l": "1880-6821",
-            "issn": [
-                "1880-6821"
-            ],
-            "is_oa": true,
+            "id": "https://openalex.org/S4306401187",
+            "display_name": "Open Research Online (The Open University)",
+            "issn_l": null,
+            "issn": null,
+            "is_oa": false,
             "is_in_doaj": false,
-            "is_core": true,
-            "host_organization": "https://openalex.org/P4328135220",
-            "host_organization_name": "Japan Society of Plasma Science and Nuclear Fusion Research",
+            "is_core": false,
+            "host_organization": "https://openalex.org/I204136569",
+            "host_organization_name": "The Open University",
             "host_organization_lineage": [
-                "https://openalex.org/P4328135220"
+                "https://openalex.org/I204136569"
             ],
             "host_organization_lineage_names": [],
-            "type": "journal"
+            "type": "repository"
         },
         "license": null,
         "license_id": null,
-        "version": "publishedVersion",
-        "is_accepted": true,
-        "is_published": true,
-        "raw_source_name": "Plasma and Fusion Research",
-        "raw_type": "journal-article"
+        "version": null,
+        "is_accepted": false,
+        "is_published": false,
+        "raw_source_name": null,
+        "raw_type": "article-journal"
     },
     "sustainable_development_goals": [
         {
-            "display_name": "Affordable and clean energy",
-            "score": 0.8799999952316284,
-            "id": "https://metadata.un.org/sdg/7"
+            "display_name": "Peace, Justice and strong institutions",
+            "id": "https://metadata.un.org/sdg/16",
+            "score": 0.7200000286102295
         }
     ],
     "grants": [],
     "awards": [],
     "funders": [],
     "has_content": {
-        "grobid_xml": true,
-        "pdf": true
+        "grobid_xml": false,
+        "pdf": false
     },
-    "referenced_works_count": 8,
-    "referenced_works": [
-        "https://openalex.org/W2783171299",
-        "https://openalex.org/W2945236265",
-        "https://openalex.org/W2151240562",
-        "https://openalex.org/W2069091362",
-        "https://openalex.org/W2590699823",
-        "https://openalex.org/W2922014310",
-        "https://openalex.org/W2806477398",
-        "https://openalex.org/W2527753843"
-    ],
+    "referenced_works_count": 0,
+    "referenced_works": [],
     "related_works": [
-        "https://openalex.org/W2606430476",
-        "https://openalex.org/W2069389872",
-        "https://openalex.org/W2024680443",
-        "https://openalex.org/W1992734408",
-        "https://openalex.org/W2909752308",
-        "https://openalex.org/W2074503354",
-        "https://openalex.org/W2353473218",
-        "https://openalex.org/W2060642378",
-        "https://openalex.org/W2094345694",
-        "https://openalex.org/W2889162861"
+        "https://openalex.org/W2906042979",
+        "https://openalex.org/W2897882779",
+        "https://openalex.org/W2891597140",
+        "https://openalex.org/W3007935928",
+        "https://openalex.org/W2601252399",
+        "https://openalex.org/W2006792107",
+        "https://openalex.org/W2006593716",
+        "https://openalex.org/W2227758335",
+        "https://openalex.org/W2603457412",
+        "https://openalex.org/W2130726057",
+        "https://openalex.org/W3205627619",
+        "https://openalex.org/W2772188377",
+        "https://openalex.org/W996898993",
+        "https://openalex.org/W3158052285",
+        "https://openalex.org/W2169762028",
+        "https://openalex.org/W2120280556",
+        "https://openalex.org/W2088800102",
+        "https://openalex.org/W3182201686",
+        "https://openalex.org/W2790346356",
+        "https://openalex.org/W2997299724"
     ],
     "abstract_inverted_index": {
-        "Radiation": [
+        "This": [
             0
         ],
-        "resistant": [
-            1,
-            196
-        ],
-        "camera": [
-            2
-        ],
-        "system": [
-            3,
-            18
-        ],
-        "was": [
-            4,
-            98
-        ],
-        "constructed": [
-            5
-        ],
-        "for": [
-            6
-        ],
-        "monitoring": [
-            7
-        ],
-        "deuterium": [
-            8
-        ],
-        "plasma": [
-            9,
-            44
-        ],
-        "discharges": [
-            10
-        ],
-        "in": [
-            11,
-            42,
-            52,
-            69,
-            83,
-            118
-        ],
-        "the": [
-            12,
-            43,
-            47,
-            62,
-            88,
-            91,
-            94,
-            105,
-            108,
-            112,
-            115,
-            119,
-            124,
-            129,
-            132,
-            139,
-            142,
-            145,
-            151,
-            159,
-            163,
-            174,
-            178,
-            187,
-            191,
-            194
-        ],
-        "Large": [
-            13
-        ],
-        "Helical": [
-            14
-        ],
-        "Device": [
-            15
-        ],
-        "(LHD).": [
-            16
-        ],
-        "This": [
-            17,
-            181
-        ],
-        "has": [
-            19,
-            134
-        ],
-        "contributed": [
-            20
-        ],
-        "to": [
-            21,
-            32,
-            123,
-            162,
-            186
-        ],
-        "safe": [
-            22
-        ],
-        "operation": [
-            23
-        ],
-        "during": [
-            24
-        ],
-        "two": [
-            25
-        ],
-        "experimental": [
-            26
-        ],
-        "campaigns": [
-            27
-        ],
-        "without": [
-            28
-        ],
-        "serious": [
-            29
-        ],
-        "problems": [
-            30
-        ],
-        "due": [
-            31
-        ],
-        "radiation": [
-            33,
-            95,
-            109,
-            143,
-            160,
-            195
-        ],
-        "(neutrons": [
-            34
-        ],
-        "and": [
-            35,
-            111
-        ],
-        "gamma-rays).": [
-            36
-        ],
-        "The": [
-            37,
-            64
-        ],
-        "cameras": [
-            38,
-            65,
-            133
-        ],
-        "steadily": [
-            39
-        ],
-        "functioned": [
-            40
-        ],
-        "even": [
-            41
-        ],
-        "discharge": [
-            45
-        ],
-        "with": [
-            46,
-            78,
-            158
-        ],
-        "maximum": [
-            48
-        ],
-        "neutron": [
-            49
-        ],
-        "emission": [
-            50
-        ],
-        "rate": [
-            51
-        ],
-        "FY": [
-            53
-        ],
-        "2017,": [
-            54
-        ],
-        "though": [
-            55
-        ],
-        "some": [
-            56,
-            169
-        ],
-        "bright": [
-            57,
-            154,
-            170
-        ],
-        "specks": [
-            58,
-            155,
-            171
-        ],
-        "temporarily": [
-            59
-        ],
-        "appeared": [
-            60
-        ],
-        "on": [
-            61,
-            144,
-            177
-        ],
-        "images.": [
-            63
-        ],
-        "have": [
-            66
-        ],
-        "been": [
-            67,
-            135
-        ],
-        "installed": [
-            68
-        ],
-        "shield": [
-            70,
-            92,
-            120
-        ],
-        "boxes": [
-            71,
-            76
-        ],
-        "which": [
-            72,
-            103,
-            165
-        ],
-        "consist": [
-            73
-        ],
-        "of": [
-            74,
-            90,
-            107,
-            114,
-            128,
-            131,
-            138,
-            141,
-            153,
-            190,
-            193
-        ],
-        "lead": [
-            75
-        ],
-        "covered": [
-            77
-        ],
-        "10%": [
-            79
-        ],
-        "borated": [
-            80
-        ],
-        "polyethylene": [
-            81
-        ],
-        "blocks": [
-            82
-        ],
-        "all": [
-            84
-        ],
-        "directions.": [
-            85
-        ],
-        "For": [
-            86
-        ],
-        "optimizing": [
-            87
-        ],
-        "design": [
-            89
-        ],
-        "box,": [
-            93
-        ],
-        "flux": [
-            96,
-            110,
+        "thesis": [
+            1
+        ],
+        "is": [
+            2,
+            15,
+            106,
             161
         ],
-        "distribution": [
-            97
-        ],
-        "calculated": [
-            99
-        ],
-        "by": [
-            100,
-            173
-        ],
-        "MCNP-6": [
-            101
-        ],
-        "code,": [
-            102
-        ],
-        "reveals": [
-            104
-        ],
-        "reduction": [
-            106
-        ],
-        "change": [
-            113
-        ],
-        "energy": [
-            116
-        ],
-        "spectra": [
-            117
-        ],
-        "box.": [
-            121
-        ],
-        "Thanks": [
-            122
-        ],
-        "optimization,": [
-            125
-        ],
-        "significant": [
-            126
-        ],
-        "extension": [
-            127,
-            189
-        ],
-        "lifetime": [
-            130,
-            192
-        ],
-        "realized.": [
-            136
-        ],
-        "Investigation": [
-            137
-        ],
-        "influence": [
-            140
-        ],
-        "CCD": [
-            146
-        ],
-        "image": [
-            147,
-            179
-        ],
-        "sensor": [
-            148
-        ],
-        "shows": [
-            149
-        ],
-        "that": [
-            150,
-            168
-        ],
-        "number": [
-            152
-        ],
-        "generally": [
-            156
-        ],
-        "increases": [
-            157
-        ],
-        "camera,": [
-            164
-        ],
-        "also": [
-            166,
-            183
-        ],
-        "indicates": [
-            167
-        ],
-        "disappear": [
-            172
-        ],
-        "self-annealing": [
-            175
-        ],
-        "process": [
-            176
-        ],
-        "sensor.": [
-            180
-        ],
-        "phenomenon": [
-            182
-        ],
-        "highly": [
-            184
-        ],
-        "contributes": [
-            185
-        ],
-        "further": [
+        "an": [
+            3,
             188
         ],
-        "cameras.": [
+        "exploratory": [
+            4
+        ],
+        "study": [
+            5,
+            112
+        ],
+        "of": [
+            6,
+            21,
+            32,
+            53,
+            67,
+            102,
+            113,
+            120,
+            135,
+            158,
+            184,
+            191
+        ],
+        "everyday": [
+            7,
+            35
+        ],
+        "leadership": [
+            8,
+            26,
+            38,
+            121,
+            140,
+            177
+        ],
+        "in": [
+            9,
+            49,
+            117,
+            196
+        ],
+        "UK": [
+            10
+        ],
+        "parliamentary": [
+            11,
+            23,
+            79
+        ],
+        "select": [
+            12,
+            36,
+            83,
+            103
+        ],
+        "committees.": [
+            13
+        ],
+        "It": [
+            14,
+            40,
+            131,
+            173
+        ],
+        "based": [
+            16,
+            186
+        ],
+        "on": [
+            17,
+            95,
+            175,
+            187
+        ],
+        "a": [
+            18,
+            33,
+            43,
+            107,
+            181
+        ],
+        "detailed": [
+            19
+        ],
+        "analysis": [
+            20
+        ],
+        "the": [
+            22,
+            29,
+            46,
+            50,
+            62,
+            100,
+            118,
+            128,
+            133,
+            144,
+            155,
+            170
+        ],
+        "context": [
+            24,
+            146
+        ],
+        "for": [
+            25,
+            89
+        ],
+        "and": [
+            27,
+            55,
+            59,
+            69,
+            81,
+            92,
+            115,
+            137,
+            150,
+            165,
+            194
+        ],
+        "highlights": [
+            28,
+            132
+        ],
+        "distinctive": [
+            30
+        ],
+        "characteristics": [
+            31
+        ],
+        "chair’s": [
+            34
+        ],
+        "committee": [
+            37,
+            57
+        ],
+        "practices.": [
+            39
+        ],
+        "examines": [
+            41
+        ],
+        "how": [
+            42,
+            148
+        ],
+        "chair": [
+            44
+        ],
+        "addresses": [
+            45
+        ],
+        "challenges": [
+            47
+        ],
+        "involved": [
+            48
+        ],
+        "social": [
+            51
+        ],
+        "processes": [
+            52
+        ],
+        "mobilising": [
+            54
+        ],
+        "aligning": [
+            56
+        ],
+        "members": [
+            58
+        ],
+        "stakeholders": [
+            60
+        ],
+        "around": [
+            61
+        ],
+        "committee’s": [
+            63
+        ],
+        "purpose:": [
+            64
+        ],
+        "making": [
+            65
+        ],
+        "sense": [
+            66
+        ],
+        "complex": [
+            68
+        ],
+        "contentious": [
+            70
+        ],
+        "public": [
+            71
+        ],
+        "policy": [
+            72
+        ],
+        "dilemmas.": [
+            73
+        ],
+        "While": [
+            74
+        ],
+        "still": [
+            75
+        ],
+        "largely": [
+            76
+        ],
+        "bound": [
+            77
+        ],
+        "by": [
+            78
+        ],
+        "routines": [
+            80
+        ],
+        "tradition,": [
+            82
+        ],
+        "committees": [
+            84
+        ],
+        "offer": [
+            85
+        ],
+        "chairs": [
+            86
+        ],
+        "increasing": [
+            87
+        ],
+        "opportunities": [
+            88
+        ],
+        "flexibility,": [
+            90
+        ],
+        "influence": [
+            91
+        ],
+        "leadership.": [
+            93
+        ],
+        "Based": [
+            94
+        ],
+        "privileged": [
+            96
+        ],
+        "research": [
+            97
+        ],
+        "access": [
+            98
+        ],
+        "to": [
+            99,
+            139,
+            154,
+            179
+        ],
+        "workings": [
+            101
+        ],
+        "committees,": [
+            104
+        ],
+        "this": [
+            105,
             197
+        ],
+        "real-time": [
+            108
+        ],
+        "embedded": [
+            109
+        ],
+        "comparative": [
+            110
+        ],
+        "case": [
+            111
+        ],
+        "similarities": [
+            114
+        ],
+        "differences": [
+            116
+        ],
+        "enactment": [
+            119,
+            157
+        ],
+        "across": [
+            122
+        ],
+        "two": [
+            123
+        ],
+        "parallel": [
+            124
+        ],
+        "contemporaneous": [
+            125
+        ],
+        "inquiries": [
+            126
+        ],
+        "within": [
+            127
+        ],
+        "same": [
+            129
+        ],
+        "committee.": [
+            130
+        ],
+        "significance": [
+            134
+        ],
+        "sensemaking": [
+            136
+        ],
+        "sensegiving": [
+            138
+        ],
+        "while": [
+            141
+        ],
+        "proposing": [
+            142
+        ],
+        "that": [
+            143
+        ],
+        "politicised": [
+            145
+        ],
+        "accentuates": [
+            147
+        ],
+        "challenge": [
+            149,
+            195
+        ],
+        "conflict": [
+            151
+        ],
+        "are": [
+            152
+        ],
+        "integral": [
+            153
+        ],
+        "daily": [
+            156
+        ],
+        "leadership,": [
+            159,
+            185
+        ],
+        "which": [
+            160
+        ],
+        "often": [
+            162
+        ],
+        "more": [
+            163
+        ],
+        "volatile": [
+            164
+        ],
+        "much": [
+            166
+        ],
+        "harder": [
+            167
+        ],
+        "work": [
+            168
+        ],
+        "than": [
+            169
+        ],
+        "literature": [
+            171
+        ],
+        "suggests.": [
+            172
+        ],
+        "builds": [
+            174
+        ],
+        "existing": [
+            176
+        ],
+        "theory": [
+            178
+        ],
+        "contribute": [
+            180
+        ],
+        "novel": [
+            182
+        ],
+        "conception": [
+            183
+        ],
+        "adaptive": [
+            189
+        ],
+        "combination": [
+            190
+        ],
+        "sensegiving,": [
+            192
+        ],
+        "praxis": [
+            193
+        ],
+        "context,": [
+            198
+        ],
+        "with": [
+            199
+        ],
+        "potentially": [
+            200
+        ],
+        "wider": [
+            201
+        ],
+        "application.": [
+            202
         ]
     },
-    "counts_by_year": [
-        {
-            "year": 2025,
-            "cited_by_count": 801210
-        },
-        {
-            "year": 2024,
-            "cited_by_count": 2
-        },
-        {
-            "year": 2022,
-            "cited_by_count": 2
-        },
-        {
-            "year": 2021,
-            "cited_by_count": 1
-        }
-    ],
-    "updated_date": "2025-11-06T03:46:38.306776",
+    "counts_by_year": [],
+    "updated_date": "2025-11-06T06:51:31.235846",
     "created_date": "2025-10-10T00:00:00"
 }

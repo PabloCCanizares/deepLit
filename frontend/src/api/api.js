@@ -135,15 +135,15 @@ export const statsAPI = {
 
 // Upload API - Subida de artículos
 export const uploadAPI = {
-  uploadPDF: (file) => {
+  uploadPDF: (file, collection_id) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+      console.log('uploadAPI.uploadPDF called with collection_id:', collection_id);
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1];
         apiFetch('/pdfs', {
           method: 'POST',
-          body: JSON.stringify({ filename: file.name, content: base64String }),
+          body: JSON.stringify({ filename: file.name, content: base64String , collection_id: collection_id}),
         }).then(resolve).catch(reject);
       };
       
@@ -228,10 +228,28 @@ export const openalexAPI = {
 
   // Get single work by ID - Recupera datos del backend usando búsqueda por ID
     getById: async (id) => {
-    return apiFetch(`/openalex/${id}`, {
-      method: 'GET'
-    });
-  },
+      return apiFetch(`/openalex/${id}`, {
+        method: 'GET'
+        });
+    },
+
+    //Guarda un work de openalex en le colección actual y en todos los artículos
+    //Si es null no se manda el query param collection_id
+    saveWork: async (id, collection_id) => {
+      const url = collection_id
+        ? `/openalex/${id}/save?collection_id=${collection_id}`
+        : `/openalex/${id}/save`;
+
+      return apiFetch(url, { method: 'POST' });
+    },
+
+    unsaveWork: async (id, collection_id) => {
+      return apiFetch(`/openalex/${id}/unsave`, {
+        method: 'POST',
+        body: JSON.stringify({collection_id: collection_id})
+      });
+    },
+
 };
 
 export const collectionsAPI = {
@@ -265,7 +283,7 @@ export const collectionsAPI = {
     });
   },
 
-  // Add article to collection
+  // Add existent article to collection
   addArticle: async (collectionId, articleId) => {
     return apiFetch(`/collections/${collectionId}/articles`, {
       method: 'POST',
@@ -284,6 +302,12 @@ export const collectionsAPI = {
   getImage: (collectionId) => {
     return fetchFile(`/collections/${collectionId}/image`);
   },
+
+  getIdsbyCollection: async (collection_id) => {
+    return apiFetch(`/collections/${collection_id}/ids`, {
+      method: 'GET'
+    });
+  }
 };
 
 

@@ -19,46 +19,43 @@ class ExtractionService:
         # FIXME: MEJORAR LAS FUNCIONES DE EXTRACCIÓN
         # Por ahora devuelven placeholders, implementar lógica real
         
-        title = "extract_title"  # await self.extract_title(text)
-        abstract = "extract_abstract"  # extract_abstract(text)
-        keywords = "extract_keywords"  # extract_keywords(text)
-        bibliography = "extract_bibliography"  # extract_bibliography(text)
-        citations = "extract_citations"  # extract_citations(text)
-        year = "extract_year"  # extract_year(text)
-        category = "extract_category"  # extract_category(text)
-        pages = "extract_pages"  # extract_pages(text) 
-        link = "extract_link"  # extract_link(text)
-        observations = "extract_observations"  # extract_observations(text)
-        type = "extract_type"  # extract_type(text)
+          # extract_abstract(text)
+        
+        
+        
+
+        doi = "extract_doi"
+        title = "extract_title"  
+        relevance_score = "extract_relevance_score"  
+        year = "extract_year"  
+        category = "extract_category"  
+        type_ = "extract_type"  
+        pages = "extract_pages"
+        pdf_url = "extract_pdf_url"  
+        landing_page_url = "extract_landing_page_url"  
+        keywords = [{"key": "Construct (python library)", "score": 0.8385770320892334}]
+        referenced_works = ["https://openalex.org/W1560783210", "https://openalex.org/W1560783210"]
+        related_works = ["https://openalex.org/W3203790917", "https://openalex.org/W3201736257"]
+        counts_by_year = [{"year": 2025,"cited_by_count": 82},{"year": 2024,"cited_by_count": 118}]
+        abstract = "extract_abstract"
         #FIXME: seguramente en la funcion de extract_text se pueden obtener las paginas
         
         return {
+            "doi": doi,
             "title": title,
-            "abstract": abstract,
-            "keywords": keywords,
-            "bibliography": bibliography,
-            "citations": citations,
+            "relevance_score": relevance_score,
             "year": year,
             "category": category,
-            "pages": pages
+            "type": type_,
+            "pages": pages,
+            "pdf_url": pdf_url,
+            "landing_page_url": landing_page_url,
+            "keywords": keywords,
+            "referenced_works": referenced_works,
+            "related_works": related_works,
+            "counts_by_year": counts_by_year,
+            "abstract": abstract
         }
-    
-    """
-    # Formato esperado para mantener consistencia con home.html
-    {
-        "authors": autores,
-        "Year": anio,
-        "Category": categoria,
-        "Type": tipo,
-        "Acronym": acronimo,
-        "Cites": "",
-        "Pag.": paginas,
-        "Obs.": obs,
-        "Summary": resumen,
-        "link": enlace,
-        "citation": cita
-    }
-    """
     
     async def extract_text_from_pdf_bytes(self, pdf_bytes: bytes) -> str:
         """

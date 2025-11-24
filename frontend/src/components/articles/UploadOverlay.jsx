@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { uploadAPI } from '../../api/api';
 import '../../styles/articles/UploadOverlay.css';
 
-const UploadOverlay = ({ isOpen, onClose, onUploadSuccess }) => {
+const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id }) => {
   // Referencias para los inputs de archivo
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -52,7 +52,8 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess }) => {
 
     // Iniciar la carga en background
     try {
-      await uploadAPI.uploadPDF(file);
+      console.log('Uploading to collection:', collection_id);
+      await uploadAPI.uploadPDF(file, collection_id);
       if (onUploadSuccess) {
         onUploadSuccess('Archivo subido correctamente');
       }

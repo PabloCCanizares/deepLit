@@ -288,6 +288,7 @@ function CollectionArticles() {
           isOpen={isUploadOverlayOpen}
           onClose={() => setIsUploadOverlayOpen(false)}
           onUploadSuccess={handleUploadSuccess}
+          collection_id={selectedCollectionId}
         />
 
         {/* Mensaje de éxito de carga */}

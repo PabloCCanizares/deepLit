@@ -1,0 +1,8 @@
+.library {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 2rem;
+}
+
+/* .loading-container, .error-container y .empty-container ahora en common.css */

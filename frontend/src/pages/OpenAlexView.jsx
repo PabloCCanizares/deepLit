@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { openalexAPI } from '../api/api'
-import '../styles/articles/ArticleViewEdit.css'
+import '../styles/openalex/OpenAlexView.css'
 
 const OpenAlexView = () => {
   const { id } = useParams()
@@ -10,17 +10,17 @@ const OpenAlexView = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Decodificar el ID que viene de la URL
-  const decodedId = decodeURIComponent(id)
+
+
 
   useEffect(() => {
     const fetchDocument = async () => {
       try {
         setLoading(true)
         setError(null)
-        const encodedId = encodeURIComponent(decodedId)
-        console.log('Fetching document with ID:', encodedId)
-        const response = await openalexAPI.getById(encodedId)
+
+        console.log('Fetching document with ID:', id)
+        const response = await openalexAPI.getById(id)
         console.log('Artículo OpenAlex recibido:', response.data)
         setDocument(response.data)
       } catch (err) {
@@ -31,17 +31,14 @@ const OpenAlexView = () => {
       }
     }
 
-    if (decodedId) {
+    if (id) {
       fetchDocument()
     } else {
       setError('ID de artículo no proporcionado')
       setLoading(false)
     }
-  }, [decodedId])
+  }, [id])
 
-  const handleEdit = () => {
-    navigate(`/openalex/${encodeURIComponent(decodedId)}/edit`)
-  }
 
   const handleBack = () => {
     navigate('/openalex')
@@ -120,10 +117,6 @@ const OpenAlexView = () => {
               <button onClick={handleBack} className="btn-secondary">
                 <i className="fas fa-arrow-left"></i>
                 Volver
-              </button>
-              <button onClick={handleEdit} className="btn-primary">
-                <i className="fas fa-edit"></i>
-                Editar
               </button>
             </div>
           </div>

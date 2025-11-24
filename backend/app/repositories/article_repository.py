@@ -157,3 +157,22 @@ class ArticleRepository:
         return results
 
 
+
+
+    async def get_article_ids_by_collection(self, collection_id: str) -> List[str]:
+        """
+        Devuelve una lista de IDs de artículos que pertenecen a una colección.
+        Busca por artículos donde 'collection_ids' contiene el collection_id.
+        """
+
+        cursor = self.collection.find(
+            {"collection_ids": collection_id},
+            {"_id": 1}  # Solo devolver el ID
+        )
+
+        ids = []
+        async for doc in cursor:
+            ids.append(str(doc["_id"]))
+
+        print("Article IDs in collection", collection_id, ":", ids)
+        return ids

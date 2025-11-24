@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 from app.controllers import PdfsController
 from app.models import PdfUpload
 from app.core import StandardResponse, create_response_examples, get_current_user
+from typing import Optional
 
 router = APIRouter(prefix="/pdfs", tags=["PDFs"])
 
@@ -49,5 +50,6 @@ async def create_pdf(
     """
     Subir un PDF y extraer su contenido automáticamente.
     """
-    return await controller.upload_pdf(pdf_data, current_user)
+    print(current_user, "collectionId:", pdf_data.collection_id)
+    return await controller.upload_pdf(pdf_data, current_user, pdf_data.collection_id)
 

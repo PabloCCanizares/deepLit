@@ -6,8 +6,10 @@ from fastapi import Depends
 from app.services.pdf_service import PdfService
 from app.services.article_service import ArticleService
 from app.services.extraction_service import ExtractionService
+from app.services.collection_service import CollectionService
 from app.models import PdfUpload
 from app.core import StandardResponse
+from typing import Optional
 
 
 class PdfsController:
@@ -16,19 +18,30 @@ class PdfsController:
         self,
         pdf_service: PdfService = Depends(),
         extraction_service: ExtractionService = Depends(),
-        article_service: ArticleService = Depends()
+        article_service: ArticleService = Depends(),
+        collection_service: CollectionService = Depends()
     ):
         # Inyección de dependencias de los 3 services
         self.pdf_service = pdf_service
         self.extraction_service = extraction_service
         self.article_service = article_service
+        self.collection_service = collection_service
     
-    async def upload_pdf(self, pdf_data: PdfUpload, current_user: dict) -> StandardResponse:
+    async def upload_pdf(self, pdf_data: PdfUpload,  current_user: dict, collection_id: Optional[str] = None) -> StandardResponse:
         """
         Subir PDF y crear artículo asociado.
         """
-        user_id = current_user.get("_id")
+        user_id = current_user["_id"]
         
+        if collection_id:
+            exists = await self.collection_service.collection_exists(user_id, collection_id)
+            if not exists:
+                return StandardResponse(
+                    success=False,
+                    message="Colección no encontrada",
+                    data={}
+                )
+            
         # PASO 1: Guardar PDF (PdfService)
         pdf_id = await self.pdf_service.save_pdf(pdf_data, user_id)
         
@@ -37,10 +50,11 @@ class PdfsController:
         features = await self.extraction_service.extract_features(pdf_bytes)
         
         # PASO 3: Crear artículo con referencia al PDF (ArticleService)
-        article_id = await self.article_service.create_from_features(
+        article_id = await self.article_service.create_from_pdf_features(
             pdf_id=pdf_id,
             user_id=user_id,
-            features=features
+            features=features,
+            collection_id=collection_id
         )
         
         return StandardResponse(

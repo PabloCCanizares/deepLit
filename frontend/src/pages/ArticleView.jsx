@@ -158,13 +158,13 @@ const ArticleView = () => {
         {document.keywords && (
           <div className="documentSection">
             <h3>Palabras Clave</h3>
-            <div className="documentKeywords">
-              {document.keywords.split(',').map((keyword, index) => (
-                <span key={index} className="keyword-badge">
-                  {keyword.trim()}
-                </span>
-              ))}
-            </div>
+              <div className="documentKeywords">
+                {document.keywords?.map((item, index) => (
+                  <span key={index} className="keyword-badge">
+                    {item.key}
+                  </span>
+                ))}
+              </div>
           </div>
         )}
 

@@ -180,3 +180,16 @@ class CollectionsController:
             media_type="image/jpeg",
             headers={"Cache-Control": "public, max-age=3600"}
         )
+
+
+    async def get_ids_from_collection(self, collection_id: str, current_user: dict) -> StandardResponse:
+        """
+        Obtener los IDs de los artículos en una colección.
+        """
+        article_ids = await self.service.get_ids_from_collection(collection_id=collection_id, user_id=current_user["_id"])
+        
+        return StandardResponse(
+            success=True,
+            message="IDs de artículos recuperados correctamente",
+            data={"article_ids": article_ids}
+        )

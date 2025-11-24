@@ -3,13 +3,13 @@ Servicio de OpenAlex.
 """
 from datetime import datetime
 from app.models import QueryBody
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import pyalex
 from pyalex import config, Works, Authors, Sources, Institutions, Topics, Publishers, Funders
-import json
 from app.core import NotFoundError
-
-
+from app.repositories import ArticleRepository
+import json
+ 
 class OpenAlexService:
     
     def __init__(self):
@@ -17,7 +17,34 @@ class OpenAlexService:
         config.max_retries = 5
         config.retry_backoff_factor = 0.1
         config.retry_http_codes = [429, 500, 503]
-    
+        self.article_repo = ArticleRepository()
+
+    async def save_openalex_article_by_id(
+        self,
+        openalex_id: str,
+        collection_id: Optional[str],
+        id_user: str
+    ) -> Dict:
+        """
+        Guardar artículo de OpenAlex por ID en una colección específica.
+        """
+        article = await self.get_by_id(openalex_id)
+
+        article["id_user"] = id_user
+        if collection_id:
+            article["collection_ids"] = [collection_id]
+
+        #print("Artículo a guardar en BD:", article)
+        print("Collection ID", collection_id)
+        if collection_id:
+            print("El artículo :", article)
+        # Se guarda el artículo en la base de datos
+        article_id = await self.article_repo.create(article)
+
+        return article_id
+
+        
+
     
     def map_sort_field(self, field: str) -> str:
         field_mappings = {
@@ -106,7 +133,7 @@ class OpenAlexService:
                 #Escoger solo 4 campos relevantes
 
                 filtered_results.append({
-                    "_id": result["id"],
+                    "_id": result["id"].split("/")[-1],
                     "title": result["title"],
                     "year": result.get("year", ""),
                     "category": result.get("category", ""),
@@ -128,13 +155,13 @@ class OpenAlexService:
         Verifica que el artículo pertenezca al usuario.
         """
 
+
         print("Buscando artículo de OpenAlex con ID:", openalex_id)
-        article = Works().get(openalex_id)
+        article = Works()[openalex_id]
 
         if isinstance(article, (tuple, list)):
             article = article[0]
-        
-        article = article[0]  # Acceder al primer elemento si es una lista o tupla
+            article = article[0]  # Acceder al primer elemento si es una lista o tupla
         print("TYPE OF ARTICLE RAW:", type(article) )
         if not article:
             raise NotFoundError("Artículo no encontrado")
@@ -153,14 +180,14 @@ class OpenAlexService:
         
         #print("TYPE OF ARTICLE:", type(article))
         #print("VALUE OF ARTICLE:", article)
-
-        import json
-
+        '''
         with open("resultado.json", "w", encoding="utf-8") as f:
             json.dump(article, f, indent=4, ensure_ascii=False)
-                
+        '''
+        # Si tiene primary_topic, asignar category (es lo mismo)
         if article.get("primary_topic",None) is not None:
             article["category"] = article["primary_topic"]["display_name"]
+        # Se hace lo mismo con publication-year -> year
         if article.get("publication_year",None) is not None:
             article["year"] = article["publication_year"]
         
@@ -231,14 +258,14 @@ class OpenAlexService:
         article["keywords"] = keywords_list
        
         article_final = {
-            "_id": article["id"],
-            "doi": article.get("doi", ""),
-            "title": article["title"],
+            "_id": article.get("id", None).split("/")[-1],
+            "doi": article.get("doi", None),
+            "title": article.get("title", None),
             "relevance_score": article.get("relevance_score", None),
-            "year": article.get("year", ""),
-            "category": article.get("category", ""),
-            "type": article.get("type", ""),
-            "pages": article.get("pages", ""),
+            "year": article.get("year", None),
+            "category": article.get("category", None),
+            "type": article.get("type", None),
+            "pages": article.get("pages", None),
             "pdf_url": article.get("pdf_url", None),
             "landing_page_url": article.get("landing_page_url", None),
             "keywords": article.get("keywords", []),

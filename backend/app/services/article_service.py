@@ -13,19 +13,20 @@ class ArticleService:
     
     def __init__(self):
         self.article_repo = ArticleRepository()
-        # ✅ SOLO su repository, NO tiene pdf_repo ni extraction logic
     
-    async def create_from_features(
+    async def create_from_pdf_features(
         self,
         pdf_id: str,
         user_id: str,
-        features: Dict
+        features: Dict,
+        collection_id: Optional[str] = None
     ) -> str:
         """
         Crear artículo a partir de características extraídas.
         """
         # Generar ID del artículo
         article_id = f"article_{pdf_id}"
+        
         
         # Preparar datos del artículo
         article_dict = {
@@ -34,6 +35,11 @@ class ArticleService:
             "id_pdf": pdf_id,
             **features  # title, abstract, authors, year, keywords, etc.
         }
+
+        if collection_id:
+            # Aquí asignamos una lista que contiene el ID al nuevo campo "collection_ids"
+            article_dict["collection_ids"] = [collection_id]
+
         
         # Guardar en base de datos
         result_id = await self.article_repo.create(article_dict)

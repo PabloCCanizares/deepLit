@@ -1,0 +1,147 @@
+.lib-item {
+  flex: 0 0 calc(33.333% - 12px);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.lib-item.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border: 2px solid var(--main_color);
+}
+
+.article-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 2px solid var(--main_color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.article-checkbox:hover {
+  background: var(--main_color);
+  color: white;
+}
+
+.article-checkbox i {
+  font-size: 16px;
+  color: var(--main_color);
+}
+
+.article-checkbox:hover i {
+  color: white;
+}
+
+.lib-cover-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.lib-cover {
+  width: 90px;
+  height: 120px;
+  background: white;
+  border: 2px solid var(--dark);
+  border-radius: 4px;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.lib-cover:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, var(--dark) 0%, var(--main_color) 100%);
+  border-color: var(--dark);
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.5);
+}
+
+.lib-cover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lib-cover:hover .lib-cover-overlay {
+  opacity: 1;
+}
+
+.lib-cover-icon {
+  color: white;
+  font-size: 24px;
+}
+
+.lib-meta {
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+  color: var(--dark);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.title-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lib-edit-btn {
+  margin-top: auto;
+  font-size: 0.95rem;
+  padding-bottom: 0;
+}
+
+.lib-edit-btn a {
+  background: none;
+  border: none;
+  color: var(--dark);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.lib-edit-btn a:hover {
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .lib-item {
+    flex: 0 0 calc(50% - 12px);
+  }
+}
+
+@media (max-width: 576px) {
+  .lib-item {
+    flex: 0 0 100%;
+  }
+}

@@ -10,9 +10,11 @@ import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-
+import { useCollection } from "../context/CollectionContext";
 
 function Articles() {
+    const { selectedCollectionId } = useCollection();
+
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
 
 
@@ -294,6 +296,7 @@ function Articles() {
           isOpen={isUploadOverlayOpen}
           onClose={() => setIsUploadOverlayOpen(false)}
           onUploadSuccess={handleUploadSuccess}
+          collection_id={selectedCollectionId}
         />
 
         {/* Mensaje de éxito de carga */}

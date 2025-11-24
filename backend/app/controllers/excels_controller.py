@@ -35,7 +35,7 @@ class ExcelsController:
         for i, article_data in enumerate(articles_data):
             try:
                 unique_excel_id = f"{excel_id}_row{i}"
-                article_id = await self.article_service.create_from_features(
+                article_id = await self.article_service.create_from_pdf_features(
                     pdf_id=unique_excel_id,
                     user_id=user_id,
                     features=article_data

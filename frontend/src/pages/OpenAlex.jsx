@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
-import { openalexAPI } from '../api/api'
+import { collectionsAPI, openalexAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-import ArticleControls from '../components/articles/ArticleControls'
-import ArticleGrid from '../components/articles/ArticleGrid'
-import ArticleList from '../components/articles/ArticleList'
+import OpenAlexControls from '../components/openalex/OpenAlexControls'
+import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
+import OpenAlexList from '../components/openalex/OpenAlexList'
 import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
+import { useCollection } from "../context/CollectionContext";
 
 function OpenAlex() {
+  const { selectedCollectionId } = useCollection();
   const [filteredArticles, setFilteredArticles] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
   const [pagination, setPagination] = useState({
@@ -22,6 +24,9 @@ function OpenAlex() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
 
+  const [savedArticles, setSavedArticles] = useState([]);
+
+
   useEffect(() => {
     loadArticles()
   }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
@@ -33,14 +38,19 @@ function OpenAlex() {
         limit: pagination.limit,
         offset: pagination.offset,
 
-        // CAMBIO ✔️
         filters: {
-          "title.search": searchQuery || undefined,  // ← Título dentro de filters
+          "title.search": searchQuery || undefined,  // Título dentro de filters
           ...filterCriteria,
         },
 
         sort_by: sortCriteria,
       });
+
+      if (selectedCollectionId) {
+      //Traer los IDS de los artículos guardados en la colección actuals
+        const savedIds = await collectionsAPI.getIdsbyCollection(selectedCollectionId);
+        setSavedArticles(savedIds.data.article_ids || []);
+      }
 
       console.log("Respuesta de OpenAlex:", response);
       
@@ -98,12 +108,30 @@ function OpenAlex() {
     const response = await openalexAPI.addToMyArticles(selectedArticles)
   }
 
+
+  const handleSaveArticle = async (id) => {
+    try {
+      console.log("GGGGGGGGGGGardando artículo con ID:", id);
+      const res = await openalexAPI.saveWork(id, selectedCollectionId);
+      console.log("Respuesta al guardar artículo:", res);
+      if (res.success) {
+        // Añadir el ID a la lista de guardados
+        console.log("Artículo guardado con éxito:", savedArticles);
+        setSavedArticles(prev => [...prev, id]);
+        console.log("Lista actualizada de artículos guardados:", savedArticles);
+      }
+    } catch (e) {
+      console.error("Error saving:", e);
+    }
+  };
+
+
   return (
     <div className="page-container">
       <div className="container">
         <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         
-        <ArticleControls 
+        <OpenAlexControls 
           onSort={handleSort} 
           onFilter={handleFilter}
           viewMode={viewMode}
@@ -117,7 +145,7 @@ function OpenAlex() {
         />
         
         {viewMode === 'list' ? (
-          <ArticleList 
+          <OpenAlexList 
             documents={filteredArticles} 
             loading={loading} 
             error={error}
@@ -125,9 +153,11 @@ function OpenAlex() {
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
+            savedArticles={savedArticles}
+            onSave={handleSaveArticle}
           />
         ) : (
-          <ArticleGrid 
+          <OpenAlexGrid 
             documents={filteredArticles} 
             loading={loading} 
             error={error}

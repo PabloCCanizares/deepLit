@@ -273,4 +273,23 @@ class CollectionService:
             storage_location="profiles"
         )
         
-        return filename
+        return 
+    
+    async def get_ids_from_collection(self, collection_id: str, user_id: str) -> List[str]:
+        """
+        Obtener IDs de artículos en una colección.
+        Verifica que la colección pertenezca al usuario.
+        """
+        # Verificar que existe y pertenece al usuario
+        collection = await self.collection_repo.find_by_id(collection_id)
+        
+        if not collection:
+            raise NotFoundError("Colección no encontrada")
+        
+        if collection.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para acceder a esta colección")
+        
+        # Obtener artículos de la colección
+        article_ids = await self.article_repo.get_article_ids_by_collection(collection_id)
+                
+        return article_ids
