@@ -335,9 +335,13 @@ function CollectionDetail() {
                 >
                   Cancelar
                 </button>
-                <Link to={`${baseRoute}/${encodedId}/edit`} className="list-action-btn" title="Editar">
-                  <i className="fas fa-edit"></i>
-                </Link>
+                <button 
+                  onClick={confirmRemoveFromCollection} 
+                  className="btn-primary"
+                >
+                  <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
+                  Eliminar de Colección
+                </button>
               </div>
             </div>
           </div>
