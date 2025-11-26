@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import '../../styles/openalex/OpenAlexList.css'
 
-function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave }) {
+function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave, onSaveMultiple }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -96,11 +96,20 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
               </Link>
             <button
                 className={`save-article-btn ${isSaved ? "saved" : ""}`}
-                title={isSaved ? "Artículo guardado" : "Guardar artículo"}
+                title={isSaved ? "Artículo guardado" : "Guardar en colección actual"}
                 onClick={() => onSave(clean_id)}
-                >
+              >
                 <i className={isSaved ? "fas fa-bookmark" : "far fa-bookmark"}></i>
-            </button>
+              </button>
+              {onSaveMultiple && (
+                <button
+                  className="save-multiple-btn"
+                  title="Guardar en múltiples colecciones"
+                  onClick={() => onSaveMultiple(clean_id)}
+                >
+                  <i className="fas fa-layer-group"></i>
+                </button>
+              )}
             </div>
           </div>
         )

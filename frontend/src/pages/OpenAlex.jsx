@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collectionsAPI, openalexAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import OpenAlexControls from '../components/openalex/OpenAlexControls'
@@ -8,6 +8,7 @@ import OpenAlexList from '../components/openalex/OpenAlexList'
 import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import { useCollection } from "../context/CollectionContext";
+import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
 
 // Variable de módulo para evitar doble lectura en StrictMode
 let cachedParams = undefined
@@ -45,6 +46,7 @@ const resetCachedParams = () => {
 
 function OpenAlex() {
   const { selectedCollectionId } = useCollection();
+  const queryClient = useQueryClient()
   
   // Leer parámetros guardados (si existen)
   const saved = getSavedParams()
@@ -52,6 +54,8 @@ function OpenAlex() {
   // Estados para filtros y paginación (inicializados desde sessionStorage si existe)
   const [selectedArticles, setSelectedArticles] = useState([])
   const [pagination, setPagination] = useState(saved?.pagination || { limit: 10, offset: 0, total: 0 });
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [articleToSave, setArticleToSave] = useState(null)
   const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
   const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' });
   const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
@@ -141,17 +145,31 @@ function OpenAlex() {
     await openalexAPI.addToMyArticles(selectedArticles)
   }
 
+  // Guardar en la colección actual (botón simple)
   const handleSaveArticle = async (id) => {
     try {
       const res = await openalexAPI.saveWork(id, selectedCollectionId);
       if (res.success) {
-        // TODO: Invalidar query de savedArticles para refrescar
-        console.log("Artículo guardado con éxito");
+        queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
       }
     } catch (e) {
       console.error("Error saving:", e);
     }
   };
+
+  // Abrir modal para guardar en múltiples colecciones
+  const handleOpenSaveModal = (id) => {
+    setArticleToSave(id)
+    setShowSaveModal(true)
+  }
+
+  // Cuando el modal termina de guardar
+  const handleSaveSuccess = (message) => {
+    setShowSaveModal(false)
+    setArticleToSave(null)
+    // Invalidar todas las queries de savedArticles
+    queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
+  }
 
   return (
     <div className="page-container">
@@ -182,6 +200,7 @@ function OpenAlex() {
             onSelectAll={handleSelectAll}
             savedArticles={savedArticles}
             onSave={handleSaveArticle}
+            onSaveMultiple={handleOpenSaveModal}
           />
         ) : (
           <OpenAlexGrid 
@@ -197,6 +216,14 @@ function OpenAlex() {
         <Pagination 
           pagination={pagination}
           onChangePagination={setPagination}
+        />
+
+        {/* Modal para guardar en múltiples colecciones */}
+        <SaveToCollectionsModal
+          isOpen={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          articleId={articleToSave}
+          onSuccess={handleSaveSuccess}
         />
       </div>
     </div>

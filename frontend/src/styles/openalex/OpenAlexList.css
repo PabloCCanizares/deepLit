@@ -238,3 +238,27 @@
 .save-article-btn i {
   transition: transform 0.2s ease, color 0.2s ease;
 }
+
+/* Botón múltiples colecciones */
+.save-multiple-btn {
+  padding: 0.4rem 0.8rem;
+  background: var(--main_color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.save-multiple-btn:hover {
+  background: var(--dark);
+  transform: scale(1.05);
+}
+
+.save-multiple-btn i {
+  font-size: 0.85rem;
+}
