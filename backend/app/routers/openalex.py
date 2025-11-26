@@ -73,7 +73,6 @@ async def get_openalex_article_by_id(
     current_user: dict = Depends(get_current_user),
     controller: OpenAlexController = Depends()
 ):
-    print("Obteniendo artículo de OpenAlex con ID:", openalex_id)
     return await controller.get_by_id(openalex_id)
 
 
@@ -106,7 +105,7 @@ async def save_openalex_article_by_id(
     current_user: dict = Depends(get_current_user),
     controller: OpenAlexController = Depends()
 ):
-    print("Obteniendo artículo de OpenAlex con ID:", openalex_id, "para guardarlo en la colección:", collection_id)
+    # print("Obteniendo artículo de OpenAlex con ID:", openalex_id, "para guardarlo en la colección:", collection_id)
     return await controller.save_openalex_article_by_id(openalex_id, collection_id, current_user)
 
 

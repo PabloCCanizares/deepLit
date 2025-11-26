@@ -34,10 +34,6 @@ class OpenAlexService:
         if collection_id:
             article["collection_ids"] = [collection_id]
 
-        #print("Artículo a guardar en BD:", article)
-        print("Collection ID", collection_id)
-        if collection_id:
-            print("El artículo :", article)
         # Se guarda el artículo en la base de datos
         article_id = await self.article_repo.create(article)
 
@@ -144,8 +140,8 @@ class OpenAlexService:
                 print("Resultado problemático:", result)
                 # with open("openalex_failed_results.json", "w", encoding="utf-8") as f:
                 #     json.dump(result, f, ensure_ascii=False, indent=2)
-        print("LONGITUD FILTRADOS:", len(filtered_results))
-        print("results", filtered_results[0])
+        # print("LONGITUD FILTRADOS:", len(filtered_results))
+        # print("results", filtered_results[0])
         return {"articles": filtered_results, "total": total_articles}
 
 
@@ -156,19 +152,19 @@ class OpenAlexService:
         """
 
 
-        print("Buscando artículo de OpenAlex con ID:", openalex_id)
+        # print("Buscando artículo de OpenAlex con ID:", openalex_id)
         article = Works()[openalex_id]
 
         if isinstance(article, (tuple, list)):
             article = article[0]
             article = article[0]  # Acceder al primer elemento si es una lista o tupla
-        print("TYPE OF ARTICLE RAW:", type(article) )
+        # print("TYPE OF ARTICLE RAW:", type(article) )
         if not article:
             raise NotFoundError("Artículo no encontrado")
         
         article = await self.select_fields(article)
 
-        print("Artículo de OpenAlex obtenido:", article)
+        # print("Artículo de OpenAlex obtenido:", article)
         return article
 
 

@@ -58,7 +58,7 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         const id = doc._id || doc.id
         const isSelected = selectedArticles.includes(id)
         
-        console.log('Rendering document with ID:', id)
+
         // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
         const encodedId = encodeURIComponent(id)
 
@@ -66,7 +66,6 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         //const clean_id = id.split("/").at(-1);
         let clean_id = id;
         
-        console.log('Encoded ID for URL:', encodedId)
         
         const isSaved = savedArticles.includes(clean_id) || savedArticles.includes(id);
 

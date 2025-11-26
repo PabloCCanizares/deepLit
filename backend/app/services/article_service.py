@@ -79,7 +79,6 @@ class ArticleService:
         
         # Obtener total de artículos del usuario (para metadatos de paginación)
         total = await self.article_repo.count_documents(user_id, collection_id)
-        print("ARTICLES:", articles)
         return {
             "articles": articles,
             "total": total

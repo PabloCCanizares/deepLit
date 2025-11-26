@@ -41,6 +41,7 @@ const OpenAlexView = () => {
 
 
   const handleBack = () => {
+    sessionStorage.setItem('openalex_from_detail', 'true')
     navigate('/openalex')
   }
 

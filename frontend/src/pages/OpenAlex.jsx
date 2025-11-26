@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { collectionsAPI, openalexAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import OpenAlexControls from '../components/openalex/OpenAlexControls'
@@ -8,123 +9,149 @@ import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import { useCollection } from "../context/CollectionContext";
 
+// Variable de módulo para evitar doble lectura en StrictMode
+let cachedParams = undefined
+
+// Leer estado guardado de sessionStorage (solo si venimos de "Volver")
+const getSavedParams = () => {
+  // Si ya leímos, devolver lo mismo (evita problemas con StrictMode)
+  if (cachedParams !== undefined) {
+    return cachedParams
+  }
+  
+  const fromDetail = sessionStorage.getItem('openalex_from_detail') === 'true'
+  sessionStorage.removeItem('openalex_from_detail') // Limpiar flag
+  
+  if (!fromDetail) {
+    sessionStorage.removeItem('openalex_params')
+    cachedParams = null
+    return null
+  }
+  
+  try {
+    const saved = sessionStorage.getItem('openalex_params')
+    cachedParams = saved ? JSON.parse(saved) : null
+    return cachedParams
+  } catch {
+    cachedParams = null
+    return null
+  }
+}
+
+// Resetear cuando el componente se desmonta (navegación real, no StrictMode)
+const resetCachedParams = () => {
+  cachedParams = undefined
+}
+
 function OpenAlex() {
   const { selectedCollectionId } = useCollection();
-  const [filteredArticles, setFilteredArticles] = useState([])
+  
+  // Leer parámetros guardados (si existen)
+  const saved = getSavedParams()
+  
+  // Estados para filtros y paginación (inicializados desde sessionStorage si existe)
   const [selectedArticles, setSelectedArticles] = useState([])
-  const [pagination, setPagination] = useState({
-    limit: 10,
-    offset: 0,
-    total: 0,
-  });
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState({mode: 'all'});
-  const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState('list')
-
-  const [savedArticles, setSavedArticles] = useState([]);
-
-
+  const [pagination, setPagination] = useState(saved?.pagination || { limit: 10, offset: 0, total: 0 });
+  const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
+  const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' });
+  const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
+  const [viewMode, setViewMode] = useState(saved?.viewMode || 'list')
+  
+  // Guardar parámetros en sessionStorage cuando cambien
   useEffect(() => {
-    loadArticles()
-  }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
+    sessionStorage.setItem('openalex_params', JSON.stringify({
+      pagination: { limit: pagination.limit, offset: pagination.offset, total: pagination.total },
+      sortCriteria,
+      filterCriteria,
+      searchQuery,
+      viewMode
+    }))
+    
+    // Resetear cache de params para la próxima navegación
+    resetCachedParams()
+  }, [pagination, sortCriteria, filterCriteria, searchQuery, viewMode])
 
-  const loadArticles = async () => {
-    try {
-      setLoading(true)
+  // React Query
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['openalex', pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria],
+    queryFn: async () => {
       const response = await openalexAPI.getWorks({
         limit: pagination.limit,
         offset: pagination.offset,
-
         filters: {
-          "title.search": searchQuery || undefined,  // Título dentro de filters
+          "title.search": searchQuery || undefined,
           ...filterCriteria,
         },
-
         sort_by: sortCriteria,
       });
+      return response.data
+    },
+  })
 
-      if (selectedCollectionId) {
-      //Traer los IDS de los artículos guardados en la colección actuals
-        const savedIds = await collectionsAPI.getIdsbyCollection(selectedCollectionId);
-        setSavedArticles(savedIds.data.article_ids || []);
-      }
+  // Query separada para los IDs guardados
+  const { data: savedData } = useQuery({
+    queryKey: ['savedArticles', selectedCollectionId],
+    queryFn: async () => {
+      if (!selectedCollectionId) return { article_ids: [] }
+      const response = await collectionsAPI.getIdsbyCollection(selectedCollectionId);
+      return response.data
+    },
+    enabled: !!selectedCollectionId, // Solo ejecutar si hay colección seleccionada
+  })
 
-      console.log("Respuesta de OpenAlex:", response);
-      
-      setFilteredArticles(response.data.articles)
-      setPagination(prev => ({
-        ...prev,
-        total: response.data.total
-      }))
-    } catch (err) {
-      setError(err.message || 'Error al cargar artículos')
-    } finally {
-      setLoading(false)
-    }
+  // Extraer datos de las queries
+  const filteredArticles = data?.articles || []
+  const total = data?.total || 0
+  const savedArticles = savedData?.article_ids || []
+
+  // Actualizar total cuando cambie
+  if (total !== pagination.total) {
+    setPagination(prev => ({ ...prev, total }))
   }
 
-  const handleSort = (criteria) => {
-    setSortCriteria(criteria)
-  }
-
-  const handleFilter = (filter) => {
-    setFilterCriteria(filter)
-  }
-
+  // Handlers (sin cambios)
+  const handleSort = (criteria) => setSortCriteria(criteria)
+  const handleFilter = (filter) => setFilterCriteria(filter)
+  
   const handleSearch = (query) => {
     setSearchQuery(query)
-    // Reiniciar a la primera página al hacer una búsqueda
     setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
-  const handleViewModeChange = (mode) => {
-    setViewMode(mode)
-  }
+  const handleViewModeChange = (mode) => setViewMode(mode)
 
   const handleSelectArticle = (articleId) => {
-    setSelectedArticles(prev => {
-      if (prev.includes(articleId)) {
-        return prev.filter(id => id !== articleId)
-      } else {
-        return [...prev, articleId]
-      }
-    })
+    setSelectedArticles(prev => 
+      prev.includes(articleId) 
+        ? prev.filter(id => id !== articleId)
+        : [...prev, articleId]
+    )
   }
 
   const handleSelectAll = () => {
-    if (selectedArticles.length === filteredArticles.length) {
-      setSelectedArticles([])
-    } else {
-      setSelectedArticles(filteredArticles.map(article => article._id || article.id))
-    }
+    setSelectedArticles(
+      selectedArticles.length === filteredArticles.length 
+        ? [] 
+        : filteredArticles.map(article => article._id || article.id)
+    )
   }
 
-  const handleAddToMyArticles = async () =>{
+  const handleAddToMyArticles = async () => {
     if (selectedArticles.length === 0) return
-    
-    const response = await openalexAPI.addToMyArticles(selectedArticles)
+    await openalexAPI.addToMyArticles(selectedArticles)
   }
-
 
   const handleSaveArticle = async (id) => {
     try {
-      console.log("GGGGGGGGGGGardando artículo con ID:", id);
       const res = await openalexAPI.saveWork(id, selectedCollectionId);
-      console.log("Respuesta al guardar artículo:", res);
       if (res.success) {
-        // Añadir el ID a la lista de guardados
-        console.log("Artículo guardado con éxito:", savedArticles);
-        setSavedArticles(prev => [...prev, id]);
-        console.log("Lista actualizada de artículos guardados:", savedArticles);
+        // TODO: Invalidar query de savedArticles para refrescar
+        console.log("Artículo guardado con éxito");
       }
     } catch (e) {
       console.error("Error saving:", e);
     }
   };
-
 
   return (
     <div className="page-container">
@@ -147,8 +174,8 @@ function OpenAlex() {
         {viewMode === 'list' ? (
           <OpenAlexList 
             documents={filteredArticles} 
-            loading={loading} 
-            error={error}
+            loading={isLoading} 
+            error={error?.message}
             baseRoute="/openalex"
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
@@ -159,15 +186,14 @@ function OpenAlex() {
         ) : (
           <OpenAlexGrid 
             documents={filteredArticles} 
-            loading={loading} 
-            error={error}
+            loading={isLoading} 
+            error={error?.message}
             baseRoute="/openalex"
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
           />
         )}
 
-        {/* Paginación debajo de los artículos */}
         <Pagination 
           pagination={pagination}
           onChangePagination={setPagination}

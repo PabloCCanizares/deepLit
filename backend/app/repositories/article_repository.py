@@ -125,8 +125,6 @@ class ArticleRepository:
             "year": 1
         }
 
-        print("FILTER CRITERIA:", filter_criteria)
-
         # 🚀 APLICAR LA LÓGICA DE ORDENACIÓN
         # Creamos la cadena base del cursor
         cursor = self.collection.find(filter_criteria, projection)
@@ -153,7 +151,7 @@ class ArticleRepository:
 
 
         results = await cursor.to_list(length=limit)
-        print("RESULTS:", results)
+        # print("RESULTS:", results)
         return results
 
 
@@ -174,5 +172,5 @@ class ArticleRepository:
         async for doc in cursor:
             ids.append(str(doc["_id"]))
 
-        print("Article IDs in collection", collection_id, ":", ids)
+        # print("Article IDs in collection", collection_id, ":", ids)
         return ids
