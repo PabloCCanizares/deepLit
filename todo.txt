@@ -1,19 +1,8 @@
-
-Revisar subida excel que usan campos de pdf y que no se añadan a coleccion actual.
-
-Revisar get imágenes de colecciónes. Se hacen las peticiones en un bucle en lugar de optimizados.
-
-En articulo openalex cuando no hay pdf quitar link. (Revisar que se esté consiguiendo el link, ultimas pruebas no han aparecido links...)
-
-Cache openalex al darle a volver. (Que no se llame a la API cuando le das a volver porque los artículos son los mismos)
-
-Solucionar problemas de enrutamiento en frontend. (Es posible que esté más o menos solucionada al usar en Articles.jsx ArticlesList siempre -- ya son artículos)
-
-Arreglar /search y /collection{id} y arreglar cuando no hay colección.
-
-Guardar 1 articulo openalex en varias colecciones a la vez con botón. (Añadir un nuevo botón que ponga varios + + o algo asi para que parezca varias colecciones y q sea como Spotify el 'modal')
-
 Crear un componente de filtros en vez de tener 20 paginas distintas (Además añadir más filtros (por campos))
+
+Difuminar navbar cuando estamos en colecciones o mis articulos.
+
+Componente para gestionar multiples articulos. (Eliminar, guardar en varias colecciones, etc)
 
 Usar complete o inclomplete con openalex igual que lo usa con articulo. (No sabemos si tiene solución investigar)
 
