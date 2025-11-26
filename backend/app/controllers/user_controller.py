@@ -3,12 +3,12 @@ Controlador de Usuario.
 
 Responsabilidad: Gestionar operaciones de perfil del usuario.
 """
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.responses import FileResponse
 from app.services.user_service import UserService
 from app.services.storage_service import StorageService
 from app.models import UserProfileUpdate, ChangePasswordRequest
-from app.core import StandardResponse
+from app.core import StandardResponse, NotFoundError
 
 
 class UserController:
@@ -83,20 +83,17 @@ class UserController:
         profile_image = current_user.get("profile_image")
         
         if not profile_image:
-            raise HTTPException(
-                status_code=404,
-                detail="El usuario no tiene imagen de perfil"
-            )
+            raise NotFoundError("El usuario no tiene imagen de perfil")
         
         # Verificar que el archivo existe
         if not self.storage.exists(profile_image, storage_location="profiles"):
-            raise HTTPException(
-                status_code=404,
-                detail="Archivo de imagen no encontrado en el servidor"
-            )
+            raise NotFoundError("Archivo de imagen no encontrado en el servidor")
         
         # Obtener la ruta completa y devolver el archivo
         file_path = self.storage.get_path(profile_image, storage_location="profiles")
         
-        # FileResponse detecta automáticamente el media_type por la extensión
-        return FileResponse(path=file_path)
+        # FileResponse con cache (consistente con imágenes de colección)
+        return FileResponse(
+            path=file_path,
+            headers={"Cache-Control": "public, max-age=3600"}
+        )

@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     
     UPLOADS_DIR: str = "uploads"
     PROFILES_DIR: str = "profiles"
+    COLLECTIONS_DIR: str = "collections"
     
     class Config:
         env_file = ".env"

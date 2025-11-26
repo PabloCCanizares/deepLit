@@ -24,6 +24,7 @@ class ExcelsController:
         Subir Excel y crear múltiples artículos (uno por fila).
         """
         user_id = current_user.get("_id")
+        collection_id = excel_data.collection_id  # Obtener collection_id del request
         
         # PASO 1: Parsear Excel y obtener lista de artículos
         excel_id, articles_data = await self.excel_service.parse_excel(excel_data, user_id)
@@ -38,13 +39,14 @@ class ExcelsController:
                 article_id = await self.article_service.create_from_pdf_features(
                     pdf_id=unique_excel_id,
                     user_id=user_id,
-                    features=article_data
+                    features=article_data,
+                    collection_id=collection_id  # Pasar collection_id al crear el artículo
                 )
                 created_articles.append({
                     "_id": article_id,
                     **article_data  # Incluye title, abstract, year, etc.
                 })
-                print(f"✅ Artículo creado: {article_id}")
+                print(f"✅ Artículo creado: {article_id}" + (f" en colección {collection_id}" if collection_id else ""))
             except Exception as e:
                 error_msg = f"Error en fila {i}: {str(e)}"
                 errors.append(error_msg)

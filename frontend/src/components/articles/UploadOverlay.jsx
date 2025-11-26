@@ -115,7 +115,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id }) => {
 
     // Iniciar la carga en background
     try {
-      await uploadAPI.uploadExcel(file);
+      await uploadAPI.uploadExcel(file, collection_id);
       if (onUploadSuccess) {
         onUploadSuccess('Archivo subido correctamente');
       }

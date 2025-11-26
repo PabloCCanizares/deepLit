@@ -28,17 +28,17 @@ class UserService:
         """
         Actualizar nombre e/o imagen de perfil del usuario.
         """
+        # Obtener usuario una sola vez al inicio
+        user = await self.user_repo.find_by_email(email)
+        
         update_data = {}
         
         if name is not None:
             update_data["name"] = name
         
         if profile_image is not None:
-            # Obtener usuario para eliminar imagen antigua
-            user = await self.user_repo.find_by_email(email)
-            old_image = user.get("profile_image")
-            
             # Eliminar imagen antigua si existe
+            old_image = user.get("profile_image")
             if old_image:
                 self.storage.delete_file(old_image, storage_location="profiles")
             
@@ -46,10 +46,8 @@ class UserService:
             filename = await self._save_profile_image(email, profile_image)
             update_data["profile_image"] = filename
         
-        # Si no se envió nada, no hacer nada
+        # Si no se envió nada, devolver usuario actual sin modificar
         if not update_data:
-            # Obtener usuario actual sin modificar
-            user = await self.user_repo.find_by_email(email)
             return {
                 "email": user.get("email"),
                 "name": user.get("name"),

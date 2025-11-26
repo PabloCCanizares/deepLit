@@ -207,7 +207,7 @@ class OpenAlexService:
                 if "pdf_url" in loc and loc["pdf_url"] is not None:
                     pdf_bool = True
                 if "landing_page_url" in loc and loc["landing_page_url"] is not None:
-                    is_landing_bool = True
+                    landing_bool = True
 
                 #Si no es la primera localización
                 if best_loc is None:

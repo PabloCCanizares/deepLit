@@ -7,29 +7,58 @@ function CollectionCard({ collection, onEdit }) {
   const [showMenu, setShowMenu] = useState(false)
   const [imageUrl, setImageUrl] = useState(null)
   const [imageError, setImageError] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
   const menuRef = useRef(null)
+  const cardRef = useRef(null)
   const name = collection.name || 'Sin título'
   const description = collection.description || 'Sin descripción'
   const articleCount = collection.article_count || 0
   const color = collection.color || '#3B82F6'
   const id = collection._id || collection.id
 
-  // Load collection image if exists
+  // Intersection Observer: detectar cuando el card es visible
   useEffect(() => {
-    if (collection.image_url) {
-      collectionsAPI.getImage(id)
-        .then(blobUrl => {
-          if (blobUrl) {
-            setImageUrl(blobUrl)
-          } else {
-            setImageError(true)
-          }
-        })
-        .catch(err => {
-          console.error('Error loading collection image:', err)
-          setImageError(true)
-        })
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect() // Solo necesitamos detectar una vez
+        }
+      },
+      { 
+        rootMargin: '100px', // Cargar un poco antes de que sea visible
+        threshold: 0.1 
+      }
+    )
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current)
     }
+
+    return () => observer.disconnect()
+  }, [])
+
+  // Cargar imagen solo cuando el card es visible
+  useEffect(() => {
+    if (!isVisible || !collection.image_url || imageUrl || imageLoading) return
+
+    setImageLoading(true)
+    collectionsAPI.getImage(id)
+      .then(blobUrl => {
+        if (blobUrl) {
+          setImageUrl(blobUrl)
+        } else {
+          setImageError(true)
+        }
+      })
+      .catch(err => {
+        console.error('Error loading collection image:', err)
+        setImageError(true)
+      })
+      .finally(() => {
+        setImageLoading(false)
+      })
     
     // Cleanup blob URL on unmount
     return () => {
@@ -37,7 +66,7 @@ function CollectionCard({ collection, onEdit }) {
         URL.revokeObjectURL(imageUrl)
       }
     }
-  }, [collection.image_url, id])
+  }, [isVisible, collection.image_url, id])
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -70,7 +99,7 @@ function CollectionCard({ collection, onEdit }) {
 
   return (
     <Link to={`/collections/${id}`} className="collection-card-link">
-      <div className="collection-card">
+      <div className="collection-card" ref={cardRef}>
         {/* Menú de 3 puntos */}
         <div className="collection-menu" ref={menuRef}>
           <button 
@@ -94,17 +123,22 @@ function CollectionCard({ collection, onEdit }) {
           className="collection-cover"
           style={{ backgroundColor: (imageUrl && !imageError) ? 'transparent' : color }}
         >
-          {(imageUrl && !imageError) ? (
+          {imageLoading ? (
+            <div className="collection-placeholder">
+              <i className="fas fa-spinner fa-spin"></i>
+            </div>
+          ) : (imageUrl && !imageError) ? (
             <img 
               src={imageUrl} 
               alt={name}
               className="collection-cover-image"
               onError={() => setImageError(true)}
             />
-          ) : null}
-          <div className="collection-placeholder" style={{ display: (imageUrl && !imageError) ? 'none' : 'flex' }}>
-            <i className="fas fa-folder"></i>
-          </div>
+          ) : (
+            <div className="collection-placeholder">
+              <i className="fas fa-folder"></i>
+            </div>
+          )}
         </div>
         <div className="collection-info">
           <div className="collection-name" title={name}>

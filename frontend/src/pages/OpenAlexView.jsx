@@ -76,8 +76,8 @@ const OpenAlexView = () => {
   const citations = document.citations || document.cited_by_count || 0
   const doi = document.doi || document.link || ''
   const type = document.type || 'No especificado'
-  const pdf_url = document.pdf_url || 'No hay PDF disponible'
-  const landing_page_url = document.landing_page_url || 'No hay página donde ver el artículo disponible'
+  const pdf_url = document.pdf_url || null  // null si no hay PDF
+  const landing_page_url = document.landing_page_url || null  // null si no hay landing page
   
   // Procesar autores
   let authors = 'No especificado'
@@ -158,14 +158,26 @@ const OpenAlexView = () => {
               </a>
             </div>
           )}
-          {pdf_url && (
-            <div className="documentField">
-              <label>Enlace PDF:</label>
-              <a href={pdf_url.startsWith('http') ? pdf_url : pdf_url} target="_blank" rel="noopener noreferrer">
+          <div className="documentField">
+            <label>Enlace PDF:</label>
+            {pdf_url ? (
+              <a href={pdf_url} target="_blank" rel="noopener noreferrer">
                 {pdf_url}
               </a>
-            </div>
-          )}
+            ) : (
+              <span className="no-data">No hay PDF disponible</span>
+            )}
+          </div>
+          <div className="documentField">
+            <label>Ver artículo:</label>
+            {landing_page_url ? (
+              <a href={landing_page_url} target="_blank" rel="noopener noreferrer">
+                {landing_page_url}
+              </a>
+            ) : (
+              <span className="no-data">No disponible</span>
+            )}
+          </div>
         </div>
 
         {abstract && (

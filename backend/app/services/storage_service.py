@@ -14,7 +14,7 @@ from app.config import settings
 
 
 # Tipos de almacenamiento disponibles
-StorageLocation = Literal["uploads", "profiles"]
+StorageLocation = Literal["uploads", "profiles", "collections"]
 
 
 class StorageService:
@@ -23,8 +23,9 @@ class StorageService:
     
     Estructura de directorios:
     storage/
-    ├── uploads/    # PDFs permanentes de usuarios
-    ├── profiles/   # Perfiles de usuarios
+    ├── uploads/      # PDFs permanentes de usuarios
+    ├── profiles/     # Fotos de perfil de usuarios
+    ├── collections/  # Imágenes de colecciones
     """
     
     def __init__(self):
@@ -37,6 +38,7 @@ class StorageService:
         self.storage_paths = {
             "uploads": self.base_dir / settings.UPLOADS_DIR,
             "profiles": self.base_dir / settings.PROFILES_DIR,
+            "collections": self.base_dir / settings.COLLECTIONS_DIR,
         }
         
         # Crear todos los directorios al inicializar

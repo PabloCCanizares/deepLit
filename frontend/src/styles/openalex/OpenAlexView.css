@@ -124,6 +124,11 @@
   flex: 1;
 }
 
+.documentField .no-data {
+  color: #9ca3af;
+  font-style: italic;
+}
+
 .documentAbstract {
   color: #555;
   line-height: 1.6;
@@ -571,6 +576,10 @@ body[data-theme='dark'] .formField label {
 
 body[data-theme='dark'] .documentField span {
   color: var(--text-primary);
+}
+
+body[data-theme='dark'] .documentField .no-data {
+  color: var(--text-secondary);
 }
 
 body[data-theme='dark'] .documentAbstract,

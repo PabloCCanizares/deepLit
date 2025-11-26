@@ -152,15 +152,15 @@ export const uploadAPI = {
     });
   },
 
-  uploadExcel: (file) => {
+  uploadExcel: (file, collection_id) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+      console.log('uploadAPI.uploadExcel called with collection_id:', collection_id);
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1];
         apiFetch('/excels', {
           method: 'POST',
-          body: JSON.stringify({ filename: file.name, content: base64String }),
+          body: JSON.stringify({ filename: file.name, content: base64String, collection_id: collection_id }),
         }).then(resolve).catch(reject);
       };
       

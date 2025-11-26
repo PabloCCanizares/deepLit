@@ -1,6 +1,8 @@
 """
 Servicio de Colecciones.
 """
+import re
+import base64
 from datetime import datetime
 from typing import List, Dict, Optional
 from app.repositories.collection_repository import CollectionRepository
@@ -213,21 +215,15 @@ class CollectionService:
         if color is not None:
             update_data["color"] = color
         
-        # Guardar nueva imagen si se proporciona
-        if image and hasattr(image, 'read') and hasattr(image, 'filename') and image.filename:
-            try:
-                image_content = await image.read()
-                if image_content and len(image_content) > 0:
-                    # Determinar extensión del archivo
-                    ext = image.filename.split('.')[-1].lower() if '.' in image.filename else 'jpg'
-                    if ext not in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
-                        ext = 'jpg'
-                    image_filename = f"{collection_id}_cover.{ext}"
-                    self.storage_service.save_file(image_content, image_filename, "profiles")
-                    update_data["image_url"] = image_filename
-            except Exception as e:
-                print(f"Error saving image: {e}")
-                # Continue without updating image
+        # Guardar nueva imagen si se proporciona (base64)
+        if image is not None:
+            # Eliminar imagen antigua si existe
+            old_image = collection.get("image_url")
+            if old_image:
+                self.storage_service.delete_file(old_image, storage_location="collections")
+            
+            filename = await self._save_collection_image(collection_id, image)
+            update_data["image_url"] = filename
         
         # Actualizar en base de datos
         if update_data:
@@ -241,10 +237,6 @@ class CollectionService:
         """
         Guarda la imagen de colección en disco y retorna el nombre del archivo.
         """
-        import re
-        import base64
-        from datetime import datetime
-        
         # Extraer el tipo de imagen y el contenido base64
         if ',' in base64_data:
             header, base64_content = base64_data.split(',', 1)
@@ -266,14 +258,14 @@ class CollectionService:
         except Exception as e:
             raise ValueError(f"Error al decodificar imagen base64: {str(e)}")
         
-        # Guardar archivo en storage/profiles/
+        # Guardar archivo en storage/collections/
         self.storage_service.save_file(
             content=image_content,
             filename=filename,
-            storage_location="profiles"
+            storage_location="collections"
         )
         
-        return 
+        return filename
     
     async def get_ids_from_collection(self, collection_id: str, user_id: str) -> List[str]:
         """

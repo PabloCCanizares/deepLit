@@ -5,12 +5,11 @@ Responsabilidad: Gestionar operaciones de colecciones.
 """
 from fastapi import Depends, Response
 from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.exceptions import HTTPException
 from typing import Optional
 from app.services.collection_service import CollectionService
 from app.services.storage_service import StorageService
 from app.models.collection import CollectionCreate, CollectionUpdate, AddArticleToCollection
-from app.core import StandardResponse
+from app.core import StandardResponse, NotFoundError, AuthorizationError
 import io
 
 
@@ -160,20 +159,20 @@ class CollectionsController:
         collection = await self.service.collection_repo.find_by_id(collection_id)
         
         if not collection:
-            raise HTTPException(status_code=404, detail="Colección no encontrada")
+            raise NotFoundError("Colección no encontrada")
         
         if collection.get("id_user") != current_user["_id"]:
-            raise HTTPException(status_code=403, detail="No tienes permiso para acceder a esta colección")
+            raise AuthorizationError("No tienes permiso para acceder a esta colección")
         
         image_url = collection.get("image_url")
         
         if not image_url:
-            raise HTTPException(status_code=404, detail="La colección no tiene imagen")
+            raise NotFoundError("La colección no tiene imagen")
         
-        if not self.storage.exists(image_url, storage_location="profiles"):
-            raise HTTPException(status_code=404, detail="Archivo de imagen no encontrado en el servidor")
+        if not self.storage.exists(image_url, storage_location="collections"):
+            raise NotFoundError("Archivo de imagen no encontrado en el servidor")
         
-        file_path = self.storage.get_path(image_url, storage_location="profiles")
+        file_path = self.storage.get_path(image_url, storage_location="collections")
         
         return FileResponse(
             path=file_path,
