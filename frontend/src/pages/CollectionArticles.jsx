@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { articlesAPI } from '../api/api'
+import { articlesAPI, collectionsAPI } from '../api/api'
 // import SearchBar from '../components/articles/SearchBar'
 import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
-import AddToCollectionsModal from '../components/collections/AddToCollectionsModal'
+import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
@@ -19,8 +19,7 @@ function CollectionArticles() {
 
   const [filteredDocuments, setFilteredDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showCollectionsModal, setShowCollectionsModal] = useState(false)
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
   const [pagination, setPagination] = useState({
     limit: 10,
     offset: 0,
@@ -147,37 +146,31 @@ function CollectionArticles() {
     }
   }
 
-  const handleDeleteSelected = async () => {
+  const handleRemoveFromCollection = async () => {
     if (selectedArticles.length === 0) return
-    setShowDeleteModal(true)
+    setShowRemoveModal(true)
   }
 
-  const handleAddToCollections = () => {
-    if (selectedArticles.length === 0) return
-    setShowCollectionsModal(true)
-  }
-
-  const handleCollectionsSuccess = (message) => {
-    setShowCollectionsModal(false)
-    setSelectedArticles([])
-    setUploadSuccessMessage(message || 'Artículos añadidos a colecciones correctamente')
-    setTimeout(() => setUploadSuccessMessage(''), 4000)
-  }
-
-  const confirmDeleteSelected = async () => {
-    const deletedCount = selectedArticles.length
+  const confirmRemoveFromCollection = async () => {
+    const removedCount = selectedArticles.length
     
     try {
-      // Eliminar los artículos
-      await Promise.all(selectedArticles.map(id => articlesAPI.delete(id)))
+      // Eliminar los artículos de la colección (no los elimina de la base de datos)
+      await Promise.all(
+        selectedArticles.map(id => 
+          collectionsAPI.removeArticle(selectedCollectionId, id)
+        )
+      )
       setSelectedArticles([])
-      setShowDeleteModal(false)
+      setShowRemoveModal(false)
       
       // Recargar documentos para obtener el estado actualizado
       const response = await articlesAPI.getArticles({ 
+        collection_id: selectedCollectionId,
         limit: pagination.limit, 
         offset: pagination.offset,
-        filters: {"title": searchQuery} 
+        filters: {"title": searchQuery},
+        sort_by: sortCriteria
       })
       
       // Si la página actual está vacía y no es la primera página, ir a la anterior
@@ -197,13 +190,13 @@ function CollectionArticles() {
         }))
       }
       
-      setUploadSuccessMessage(`${deletedCount} artículo(s) eliminado(s) correctamente`)
+      setUploadSuccessMessage(`${removedCount} artículo(s) eliminado(s) de la colección`)
       setTimeout(() => setUploadSuccessMessage(''), 4000)
     } catch (err) {
-      console.error('Error deleting articles:', err)
-      setUploadSuccessMessage('Error al eliminar artículos')
+      console.error('Error removing articles from collection:', err)
+      setUploadSuccessMessage('Error al eliminar artículos de la colección')
       setTimeout(() => setUploadSuccessMessage(''), 4000)
-      setShowDeleteModal(false)
+      setShowRemoveModal(false)
     }
   }
 
@@ -251,8 +244,8 @@ function CollectionArticles() {
           selectedCount={selectedArticles.length}
           totalCount={filteredDocuments.length}
           onSelectAll={handleSelectAll}
-          onDeleteSelected={handleDeleteSelected}
-          onAddToCollections={handleAddToCollections}
+          onDeleteSelected={handleRemoveFromCollection}
+          isCollectionView={true}
         />
         
         {viewMode === 'list' ? (
@@ -273,6 +266,12 @@ function CollectionArticles() {
             onSelectArticle={handleSelectArticle}
           />
         )}
+
+        {/* Paginación debajo de los artículos */}
+        <Pagination 
+          pagination={pagination}
+          onChangePagination={setPagination}
+        />
 
         {/* Botón flotante para subir artículos */}
         <button 
@@ -299,48 +298,40 @@ function CollectionArticles() {
           </div>
         )}
 
-        {/* Modal de confirmación de eliminación */}
-        {showDeleteModal && (
-          <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+        {/* Modal de confirmación de eliminar de colección */}
+        {showRemoveModal && (
+          <div className="modal-overlay" onClick={() => setShowRemoveModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>
-                  <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                  {' '}Confirmar Eliminación
+                  <i className="fas fa-folder-minus" style={{ color: 'var(--color-warning)' }}></i>
+                  {' '}Eliminar de Colección
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Estás seguro de que quieres eliminar {selectedArticles.length} artículo(s)?</p>
+                <p>¿Estás seguro de que quieres eliminar {selectedArticles.length} artículo(s) de esta colección?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Esta acción no se puede deshacer.
+                  Los artículos seguirán disponibles en tu biblioteca general.
                 </p>
               </div>
               <div className="modal-footer">
                 <button 
-                  onClick={() => setShowDeleteModal(false)} 
+                  onClick={() => setShowRemoveModal(false)} 
                   className="btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button 
-                  onClick={confirmDeleteSelected} 
+                  onClick={confirmRemoveFromCollection} 
                   className="btn-primary"
                 >
-                  <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-                  Eliminar Definitivamente
+                  <i className="fas fa-folder-minus" style={{ marginRight: '0.5rem' }}></i>
+                  Eliminar de Colección
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* Modal de añadir a colecciones */}
-        <AddToCollectionsModal
-          isOpen={showCollectionsModal}
-          onClose={() => setShowCollectionsModal(false)}
-          selectedArticles={selectedArticles}
-          onSuccess={handleCollectionsSuccess}
-        />
       </div>
     </div>
   )
