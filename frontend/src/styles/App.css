@@ -12,7 +12,7 @@
 
 /* ======= IMPORTAR ESTILOS DE ARTICLES ======= */
 @import './articles/ArticleCard.css';
-@import './articles/ArticleControls.css';
+/*@import './articles/ArticleControls.css';*/
 @import './articles/ArticleGrid.css';
 @import './articles/ArticleList.css';
 @import './articles/SearchBar.css';
@@ -25,9 +25,9 @@
 :root {
   --dark: #4f46e5;
   --main_color: #6366f1;
-  --white:#f8fafc;
+  --white: #f8fafc;
   --black: #000000;
-  
+
   /* Light theme variables */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
@@ -361,4 +361,3 @@ body[data-theme='dark'] .logoutButton {
 body[data-theme='dark'] .logoutButton:hover {
   background: rgba(248, 113, 113, 0.2);
 }
-

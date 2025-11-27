@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { articlesAPI } from '../api/api'
-// import SearchBar from '../components/articles/SearchBar'
-import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
-import AddToCollectionsModal from '../components/collections/AddToCollectionsModal'
+import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import FilterSortControls from '../components/articles/FilterSortControls'
+import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
@@ -13,7 +13,7 @@ import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import { useCollection } from "../context/CollectionContext";
 
 function Articles() {
-    const { selectedCollectionId } = useCollection();
+  const { selectedCollectionId } = useCollection();
 
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
 
@@ -22,7 +22,7 @@ function Articles() {
   //const [loading, setLoading] = useState(false)
 
   // Controles de búsqueda, filtros y orden
-  const [filterCriteria, setFilterCriteria] = useState({mode: 'all'});
+  const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' });
 
   // Paginación real
   const [pagination, setPagination] = useState({
@@ -59,7 +59,7 @@ function Articles() {
   const loadDocuments = async () => {
     try {
       setLoading(true)
-      
+
       console.log("Loading documents with filters:", filterCriteria, "and searchQuery:", searchQuery);
 
       const response = await articlesAPI.getArticles({
@@ -73,7 +73,7 @@ function Articles() {
         sort_by: sortCriteria,
       });
       console.log("Respuesta de artículos:", response);
-      
+
       setFilteredDocuments(response.data.articles)
       setPagination(prev => ({
         ...prev,
@@ -87,7 +87,7 @@ function Articles() {
     }
   }
 
-  
+
 
   const handleSort = (criteria) => {
     setSortCriteria(criteria)
@@ -113,10 +113,10 @@ function Articles() {
   const handleUploadSuccess = (message) => {
     // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
-    
+
     // Mostrar mensaje de éxito
     setUploadSuccessMessage(message || 'Archivo(s) subido(s) correctamente')
-    
+
     // Recargar artículos después de subir (solo si no es un error)
     if (!message || !message.toLowerCase().includes('error')) {
       setPagination(prev => ({ ...prev, offset: 0 }));
@@ -124,7 +124,7 @@ function Articles() {
       loadDocuments();
 
     }
-    
+
     // Limpiar el mensaje después de 4 segundos
     setTimeout(() => {
       setUploadSuccessMessage('')
@@ -168,20 +168,20 @@ function Articles() {
 
   const confirmDeleteSelected = async () => {
     const deletedCount = selectedArticles.length
-    
+
     try {
       // Eliminar los artículos
       await Promise.all(selectedArticles.map(id => articlesAPI.delete(id)))
       setSelectedArticles([])
       setShowDeleteModal(false)
-      
+
       // Recargar documentos para obtener el estado actualizado
-      const response = await articlesAPI.getArticles({ 
-        limit: pagination.limit, 
+      const response = await articlesAPI.getArticles({
+        limit: pagination.limit,
         offset: pagination.offset,
-        filters: {"title": searchQuery} 
+        filters: { "title": searchQuery }
       })
-      
+
       // Si la página actual está vacía y no es la primera página, ir a la anterior
       if (response.data.articles.length === 0 && pagination.offset > 0) {
         const newOffset = Math.max(0, pagination.offset - pagination.limit)
@@ -198,7 +198,7 @@ function Articles() {
           total: response.data.total
         }))
       }
-      
+
       setUploadSuccessMessage(`${deletedCount} artículo(s) eliminado(s) correctamente`)
       setTimeout(() => setUploadSuccessMessage(''), 4000)
     } catch (err) {
@@ -212,14 +212,14 @@ function Articles() {
   return (
     <div className="page-container">
       <div className="container">
-              
+
         {/* Header Panel - Formato común */}
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
               <h1 className="header-title">Todos Mis Artículos</h1>
               <span className="header-subtitle">
-               Gestiona y organiza tu biblioteca de artículos
+                Gestiona y organiza tu biblioteca de artículos
               </span>
             </div>
             <div className="header-stats">
@@ -238,38 +238,45 @@ function Articles() {
           </div>
         </div>
 
-        
+
         <div style={{ marginTop: '2rem' }}>
           <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         </div>
 
-        <ArticleControls 
-          onSort={handleSort} 
-          onFilter={handleFilter}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          pagination={pagination}
-          onChangePagination={setPagination}
-          selectedCount={selectedArticles.length}
-          totalCount={filteredDocuments.length}
-          onSelectAll={handleSelectAll}
-          onDeleteSelected={handleDeleteSelected}
-          onAddToCollections={handleAddToCollections}
-        />
-        
+        {selectedArticles.length > 0 ? (
+          <SelectionActions
+            selectedCount={selectedArticles.length}
+            onAddToCollections={handleAddToCollections}
+            onDeleteSelected={handleDeleteSelected}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+          />
+        ) : (
+          <FilterSortControls
+            onSort={handleSort}
+            onFilter={handleFilter}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+          />
+        )}
+
         {viewMode === 'list' ? (
-          <ArticleList 
-            documents={filteredDocuments} 
-            loading={loading} 
+          <ArticleList
+            documents={filteredDocuments}
+            loading={loading}
             error={error}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
           />
         ) : (
-          <ArticleGrid 
-            documents={filteredDocuments} 
-            loading={loading} 
+          <ArticleGrid
+            documents={filteredDocuments}
+            loading={loading}
             error={error}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
@@ -277,13 +284,13 @@ function Articles() {
         )}
 
         {/* Paginación debajo de los artículos */}
-        <Pagination 
+        <Pagination
           pagination={pagination}
           onChangePagination={setPagination}
         />
 
         {/* Botón flotante para subir artículos */}
-        <button 
+        <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
           title="Subir artículos"
@@ -324,14 +331,14 @@ function Articles() {
                 </p>
               </div>
               <div className="modal-footer">
-                <button 
-                  onClick={() => setShowDeleteModal(false)} 
+                <button
+                  onClick={() => setShowDeleteModal(false)}
                   className="btn-secondary"
                 >
                   Cancelar
                 </button>
-                <button 
-                  onClick={confirmDeleteSelected} 
+                <button
+                  onClick={confirmDeleteSelected}
                   className="btn-primary"
                 >
                   <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
@@ -343,10 +350,10 @@ function Articles() {
         )}
 
         {/* Modal de añadir a colecciones */}
-        <AddToCollectionsModal
+        <SaveToCollectionsModal
           isOpen={showCollectionsModal}
           onClose={() => setShowCollectionsModal(false)}
-          selectedArticles={selectedArticles}
+          articleIds={selectedArticles}
           onSuccess={handleCollectionsSuccess}
         />
       </div>

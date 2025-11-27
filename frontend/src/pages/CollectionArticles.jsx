@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { articlesAPI, collectionsAPI } from '../api/api'
 // import SearchBar from '../components/articles/SearchBar'
-import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
@@ -29,7 +28,7 @@ function CollectionArticles() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState({mode: 'all'});
+  const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' });
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
@@ -60,7 +59,7 @@ function CollectionArticles() {
       console.log("Loading documents for collection:", selectedCollectionId);
       const response = await articlesAPI.getArticles({
         collection_id: selectedCollectionId || undefined,
-        limit: pagination.limit, 
+        limit: pagination.limit,
         offset: pagination.offset,
         filters: {
           title: searchQuery || undefined,  // ← Título dentro de filters
@@ -70,7 +69,7 @@ function CollectionArticles() {
         sort_by: sortCriteria,
       });
       console.log("Respuesta de artículos:", response);
-      
+
       setFilteredDocuments(response.data.articles)
       setPagination(prev => ({
         ...prev,
@@ -110,10 +109,10 @@ function CollectionArticles() {
   const handleUploadSuccess = (message) => {
     // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
-    
+
     // Mostrar mensaje de éxito
     setUploadSuccessMessage(message || 'Archivo(s) subido(s) correctamente')
-    
+
     // Recargar artículos después de subir (solo si no es un error)
     if (!message || !message.toLowerCase().includes('error')) {
       setPagination(prev => ({ ...prev, offset: 0 }));
@@ -121,7 +120,7 @@ function CollectionArticles() {
       loadDocuments();
 
     }
-    
+
     // Limpiar el mensaje después de 4 segundos
     setTimeout(() => {
       setUploadSuccessMessage('')
@@ -153,26 +152,26 @@ function CollectionArticles() {
 
   const confirmRemoveFromCollection = async () => {
     const removedCount = selectedArticles.length
-    
+
     try {
       // Eliminar los artículos de la colección (no los elimina de la base de datos)
       await Promise.all(
-        selectedArticles.map(id => 
+        selectedArticles.map(id =>
           collectionsAPI.removeArticle(selectedCollectionId, id)
         )
       )
       setSelectedArticles([])
       setShowRemoveModal(false)
-      
+
       // Recargar documentos para obtener el estado actualizado
-      const response = await articlesAPI.getArticles({ 
+      const response = await articlesAPI.getArticles({
         collection_id: selectedCollectionId,
-        limit: pagination.limit, 
+        limit: pagination.limit,
         offset: pagination.offset,
-        filters: {"title": searchQuery},
+        filters: { "title": searchQuery },
         sort_by: sortCriteria
       })
-      
+
       // Si la página actual está vacía y no es la primera página, ir a la anterior
       if (response.data.articles.length === 0 && pagination.offset > 0) {
         const newOffset = Math.max(0, pagination.offset - pagination.limit)
@@ -189,7 +188,7 @@ function CollectionArticles() {
           total: response.data.total
         }))
       }
-      
+
       setUploadSuccessMessage(`${removedCount} artículo(s) eliminado(s) de la colección`)
       setTimeout(() => setUploadSuccessMessage(''), 4000)
     } catch (err) {
@@ -203,7 +202,7 @@ function CollectionArticles() {
   return (
     <div className="page-container">
       <div className="container">
-              
+
         {/* Header Panel - Formato común */}
         <div className="header-panel">
           <div className="header-content">
@@ -229,13 +228,13 @@ function CollectionArticles() {
           </div>
         </div>
 
-        
+
         <div style={{ marginTop: '2rem' }}>
           <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         </div>
 
-        <ArticleControls 
-          onSort={handleSort} 
+        <ArticleControls
+          onSort={handleSort}
           onFilter={handleFilter}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
@@ -247,20 +246,20 @@ function CollectionArticles() {
           onDeleteSelected={handleRemoveFromCollection}
           isCollectionView={true}
         />
-        
+
         {viewMode === 'list' ? (
-          <ArticleList 
-            documents={filteredDocuments} 
-            loading={loading} 
+          <ArticleList
+            documents={filteredDocuments}
+            loading={loading}
             error={error}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
           />
         ) : (
-          <ArticleGrid 
-            documents={filteredDocuments} 
-            loading={loading} 
+          <ArticleGrid
+            documents={filteredDocuments}
+            loading={loading}
             error={error}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
@@ -268,13 +267,13 @@ function CollectionArticles() {
         )}
 
         {/* Paginación debajo de los artículos */}
-        <Pagination 
+        <Pagination
           pagination={pagination}
           onChangePagination={setPagination}
         />
 
         {/* Botón flotante para subir artículos */}
-        <button 
+        <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
           title="Subir artículos"
@@ -315,14 +314,14 @@ function CollectionArticles() {
                 </p>
               </div>
               <div className="modal-footer">
-                <button 
-                  onClick={() => setShowRemoveModal(false)} 
+                <button
+                  onClick={() => setShowRemoveModal(false)}
                   className="btn-secondary"
                 >
                   Cancelar
                 </button>
-                <button 
-                  onClick={confirmRemoveFromCollection} 
+                <button
+                  onClick={confirmRemoveFromCollection}
                   className="btn-primary"
                 >
                   <i className="fas fa-folder-minus" style={{ marginRight: '0.5rem' }}></i>
