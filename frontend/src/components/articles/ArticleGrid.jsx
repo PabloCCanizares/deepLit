@@ -1,7 +1,7 @@
 import ArticleCard from './ArticleCard'
 import '../../styles/articles/ArticleGrid.css'
 
-function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle }) {
+function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onAddToCollectionsSingle, onDeleteArticle }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -38,6 +38,8 @@ function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selec
           baseRoute={baseRoute}
           selectedArticles={selectedArticles}
           onSelectArticle={onSelectArticle}
+          onAddToCollectionsSingle={onAddToCollectionsSingle}
+          onDeleteArticle={onDeleteArticle}
         />
       ))}
     </div>

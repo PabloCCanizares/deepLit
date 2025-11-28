@@ -40,6 +40,8 @@ function Articles() {
   const [selectedArticles, setSelectedArticles] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
+  const [pendingDeleteIds, setPendingDeleteIds] = useState([])
+  const [modalArticleIds, setModalArticleIds] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -151,12 +153,24 @@ function Articles() {
 
   const handleDeleteSelected = async () => {
     if (selectedArticles.length === 0) return
+    setPendingDeleteIds(selectedArticles)
     setShowDeleteModal(true)
   }
 
   const handleAddToCollections = () => {
     if (selectedArticles.length === 0) return
+    setModalArticleIds(selectedArticles)
     setShowCollectionsModal(true)
+  }
+
+  const handleAddSingleArticleToCollections = (articleId) => {
+    setModalArticleIds([articleId])
+    setShowCollectionsModal(true)
+  }
+
+  const handleDeleteArticle = (articleId) => {
+    setPendingDeleteIds([articleId])
+    setShowDeleteModal(true)
   }
 
   const handleCollectionsSuccess = (message) => {
@@ -167,12 +181,15 @@ function Articles() {
   }
 
   const confirmDeleteSelected = async () => {
-    const deletedCount = selectedArticles.length
+    const idsToDelete = pendingDeleteIds.length > 0 ? pendingDeleteIds : selectedArticles
+    const deletedCount = idsToDelete.length
 
     try {
       // Eliminar los artículos
-      await Promise.all(selectedArticles.map(id => articlesAPI.delete(id)))
-      setSelectedArticles([])
+      await Promise.all(idsToDelete.map(id => articlesAPI.delete(id)))
+      // limpiar selecciones que hayan sido eliminadas
+      setSelectedArticles(prev => prev.filter(id => !idsToDelete.includes(id)))
+      setPendingDeleteIds([])
       setShowDeleteModal(false)
 
       // Recargar documentos para obtener el estado actualizado
@@ -206,6 +223,7 @@ function Articles() {
       setUploadSuccessMessage('Error al eliminar artículos')
       setTimeout(() => setUploadSuccessMessage(''), 4000)
       setShowDeleteModal(false)
+      setPendingDeleteIds([])
     }
   }
 
@@ -272,6 +290,8 @@ function Articles() {
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
+            onAddToCollectionsSingle={handleAddSingleArticleToCollections}
+            onDeleteArticle={handleDeleteArticle}
           />
         ) : (
           <ArticleGrid
@@ -280,6 +300,8 @@ function Articles() {
             error={error}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
+            onAddToCollectionsSingle={handleAddSingleArticleToCollections}
+            onDeleteArticle={handleDeleteArticle}
           />
         )}
 
@@ -325,7 +347,7 @@ function Articles() {
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Estás seguro de que quieres eliminar {selectedArticles.length} artículo(s)?</p>
+                <p>¿Estás seguro de que quieres eliminar {pendingDeleteIds.length > 0 ? pendingDeleteIds.length : selectedArticles.length} artículo(s)?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   Esta acción no se puede deshacer.
                 </p>
@@ -353,7 +375,7 @@ function Articles() {
         <SaveToCollectionsModal
           isOpen={showCollectionsModal}
           onClose={() => setShowCollectionsModal(false)}
-          articleIds={selectedArticles}
+          articleIds={modalArticleIds}
           onSuccess={handleCollectionsSuccess}
         />
       </div>

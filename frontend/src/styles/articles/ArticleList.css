@@ -8,7 +8,7 @@
 
 .list-header {
   display: grid;
-  grid-template-columns: 40px 3fr 1.5fr 120px 120px 120px;
+  grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--dark);
@@ -27,7 +27,7 @@
 
 .list-row {
   display: grid;
-  grid-template-columns: 40px 3fr 1.5fr 120px 120px 120px;
+  grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e0e0e0;
@@ -131,12 +131,12 @@
 
 .list-col-actions {
   display: flex;
-  gap: 0.5rem;
-  justify-content: flex-start;
+  gap: 0.4rem;
+  justify-content: flex-end;
 }
 
 .list-action-btn {
-  padding: 0.4rem 0.8rem;
+  padding: 0.28rem 0.6rem;
   background: var(--dark);
   color: white;
   border: none;
@@ -144,7 +144,7 @@
   cursor: pointer;
   text-decoration: none;
   transition: background-color 0.2s ease;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +176,7 @@
 @media (max-width: 1024px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 2.5fr 1.5fr 100px 100px 100px;
+    grid-template-columns: 40px 1fr 1fr 80px 80px 100px;
     gap: 0.5rem;
     padding: 0.8rem 1rem;
   }
@@ -185,7 +185,7 @@
 @media (max-width: 768px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 2fr 1fr 80px 80px 80px;
+    grid-template-columns: 40px 1fr 1fr 80px 80px 80px;
     gap: 0.3rem;
     padding: 0.8rem 0.5rem;
     font-size: 0.9rem;
@@ -204,7 +204,7 @@
 @media (max-width: 480px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 1.5fr 1fr 60px 60px 80px;
+    grid-template-columns: 40px 1fr 1fr 60px 60px 80px;
     gap: 0.2rem;
     padding: 0.6rem 0.3rem;
     font-size: 0.8rem;

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import '../../styles/articles/ArticleCard.css'
 
-function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [], onSelectArticle }) {
+function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onAddToCollectionsSingle, onDeleteArticle }) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
@@ -45,6 +45,25 @@ function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [],
           <Link to={`${baseRoute}/${encodedId}/edit`} title="Editar">
             <i className="fas fa-edit"></i> Editar
           </Link>
+          {onAddToCollectionsSingle && (
+            <button
+              className="card-action-btn"
+              title="Añadir a colección(es)"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddToCollectionsSingle(id) }}
+            >
+              <i className="fas fa-folder-plus"></i>
+            </button>
+          )}
+
+          {onDeleteArticle && (
+            <button
+              className="card-action-btn"
+              title="Eliminar artículo"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteArticle(id) }}
+            >
+              <i className="fas fa-trash"></i>
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import '../../styles/articles/ArticleList.css'
 
-function ArticleList({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onSelectAll }) {
+function ArticleList({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onSelectAll, onAddToCollectionsSingle, onDeleteArticle }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -88,6 +88,25 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
               <Link to={`${baseRoute}/${id}/edit`} className="list-action-btn" title="Editar">
                 <i className="fas fa-edit"></i>
               </Link>
+              {onAddToCollectionsSingle && (
+                <button
+                  className="list-action-btn"
+                  title="Añadir a colección(es)"
+                  onClick={() => onAddToCollectionsSingle(id)}
+                >
+                  <i className="fas fa-folder-plus"></i>
+                </button>
+              )}
+
+              {onDeleteArticle && (
+                <button
+                  className="list-action-btn"
+                  title="Eliminar artículo"
+                  onClick={() => onDeleteArticle(id)}
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              )}
 {/*
               <button
                 className="save-article-btn"
