@@ -46,7 +46,7 @@
 }
 
 .action-icon-btn {
-    background: var(--dark);
+    background: var(--main_color);
     color: white;
     border: none;
     cursor: pointer;
@@ -63,7 +63,7 @@
 }
 
 .action-icon-btn:hover {
-    background: var(--main_color);
+    background: var(--dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
 }

@@ -1,17 +1,50 @@
+import '../../styles/dashboard/KeywordRanking.css'
+
 function KeywordRanking({ keywords }) {
   if (!keywords || keywords.length === 0) {
     return <p className="text-muted">No hay keywords disponibles</p>
   }
 
+  // keywords es un array de tuplas [palabra, frecuencia]
+  // Encontrar el máximo count para normalizar los tamaños
+  const maxCount = Math.max(...keywords.map(k => k[1]))
+  const minCount = Math.min(...keywords.map(k => k[1]))
+
+  // Generar colores variados
+  const colors = [
+    '#6366f1', // main_color
+    '#8b5cf6', // purple
+    '#ec4899', // pink
+    '#f59e0b', // orange
+    '#10b981', // green
+    '#06b6d4', // cyan
+    '#3b82f6', // blue
+    '#f43f5e', // red
+  ]
+
+  // Calcular tamaño de fuente basado en el count (entre 12px y 48px)
+  const getFontSize = (count) => {
+    if (maxCount === minCount) return 24
+    const normalized = (count - minCount) / (maxCount - minCount)
+    return 12 + normalized * 36 // De 12px a 48px
+  }
+
   return (
-    <ul className="keyword-list">
+    <div className="keyword-cloud">
       {keywords.map(([word, freq], index) => (
-        <li key={index} className="keyword-item">
-          <span className="keyword-word">{word}</span>
-          <span className="keyword-badge">{freq}</span>
-        </li>
+        <div
+          key={index}
+          className="keyword-cloud-item"
+          style={{
+            fontSize: `${getFontSize(freq)}px`,
+            color: colors[index % colors.length],
+          }}
+          title={`${word}: ${freq} apariciones`}
+        >
+          {word}
+        </div>
       ))}
-    </ul>
+    </div>
   )
 }
 

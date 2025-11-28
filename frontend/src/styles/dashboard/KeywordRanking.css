@@ -1,0 +1,47 @@
+.keyword-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+  border-radius: 12px;
+}
+
+.keyword-cloud-item {
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  user-select: none;
+  line-height: 1.2;
+}
+
+.keyword-cloud-item:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body[data-theme='dark'] .keyword-cloud {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+}
+
+body[data-theme='dark'] .keyword-cloud-item {
+  filter: brightness(1.2);
+}
+
+body[data-theme='dark'] .keyword-cloud-item:hover {
+  filter: brightness(1.4);
+}
+
+/* Empty state */
+.text-muted {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem;
+  font-style: italic;
+}

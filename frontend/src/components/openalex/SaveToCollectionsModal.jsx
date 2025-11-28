@@ -42,7 +42,7 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
     try {
       const preselected = []
       
-      // Para cada colección, verificar si contiene alguno de los artículos
+      // Para cada colección, verificar si contiene TODOS los artículos
       for (const collection of allCollections) {
         try {
           const idsRes = await collectionsAPI.getIdsbyCollection(collection._id)
@@ -50,13 +50,13 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
           if (idsRes.status === 200 || idsRes.data) {
             const collectionArticleIds = idsRes.data.article_ids || []
             
-            // Si alguno de los artículos ya está en esta colección, preseleccionar
-            const hasArticle = articleIds.some(id => 
+            // Solo preseleccionar si TODOS los artículos están en esta colección
+            const allArticlesInCollection = articleIds.every(id => 
               collectionArticleIds.includes(id) || 
               collectionArticleIds.some(colId => colId.includes(id) || id.includes(colId))
             )
             
-            if (hasArticle) {
+            if (allArticlesInCollection) {
               preselected.push(collection._id)
             }
           }
