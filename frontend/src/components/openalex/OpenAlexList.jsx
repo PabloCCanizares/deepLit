@@ -31,8 +31,8 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
   }
 
   return (
-    <div className="document-list">
-      <div className="list-header">
+    <div className="openalex-document-list">
+      <div className="openalex-list-header">
         <div className="list-col-select">
           {onSelectArticle && (
             <div 
@@ -121,7 +121,7 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         }
 
         return (
-          <div key={id} className={`list-row ${isSelected ? 'selected' : ''}`}>
+          <div key={id} className={`openalex-list-row ${isSelected ? 'selected' : ''}`}>
             <div className="list-col-select">
               {onSelectArticle && (
                 <div 

@@ -50,12 +50,30 @@ function Articles() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
+  const [totalArticles, setTotalArticles] = useState(0) // Total sin filtros
 
 
 
   useEffect(() => {
     loadDocuments()
   }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
+
+  // Cargar el total de artículos sin filtros al inicio
+  useEffect(() => {
+    const loadTotalArticles = async () => {
+      try {
+        const response = await articlesAPI.getArticles({
+          limit: 1,
+          offset: 0,
+          filters: { mode: 'all' },
+        })
+        setTotalArticles(response.data.total)
+      } catch (err) {
+        console.error('Error loading total articles:', err)
+      }
+    }
+    loadTotalArticles()
+  }, [])
 
 
   const loadDocuments = async () => {
@@ -81,7 +99,7 @@ function Articles() {
         ...prev,
         total: response.data.total
       }))
-      console.log("Artículos:", pagination.total);
+      console.log("Artículos recibidos:", response.data.articles.length, "Total del backend:", response.data.total);
     } catch (err) {
       setError(err.message || 'Error al cargar artículos')
     } finally {
@@ -112,7 +130,7 @@ function Articles() {
     setViewMode(mode)
   }
 
-  const handleUploadSuccess = (message) => {
+  const handleUploadSuccess = async (message) => {
     // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
 
@@ -123,8 +141,19 @@ function Articles() {
     if (!message || !message.toLowerCase().includes('error')) {
       setPagination(prev => ({ ...prev, offset: 0 }));
       // recargar directamente
-      loadDocuments();
-
+      await loadDocuments();
+      
+      // Recargar el total de artículos
+      try {
+        const totalResponse = await articlesAPI.getArticles({
+          limit: 1,
+          offset: 0,
+          filters: { mode: 'all' },
+        })
+        setTotalArticles(totalResponse.data.total)
+      } catch (err) {
+        console.error('Error reloading total:', err)
+      }
     }
 
     // Limpiar el mensaje después de 4 segundos
@@ -242,14 +271,12 @@ function Articles() {
             </div>
             <div className="header-stats">
               <div className="stat-item">
-                <span className="stat-number">
-                  {filterCriteria.mode === 'all' ? pagination.total : filteredDocuments.length}
-                </span>
+                <span className="stat-number">{pagination.total}</span>
                 <span className="stat-label">Filtrados</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
-                <span className="stat-number">{pagination.total}</span>
+                <span className="stat-number">{totalArticles}</span>
                 <span className="stat-label">Total</span>
               </div>
             </div>

@@ -1,4 +1,7 @@
-.document-list {
+/* ===========================
+   CONTENEDOR PRINCIPAL
+   =========================== */
+.openalex-document-list {
   margin-top: 2rem;
   background: white;
   border-radius: 8px;
@@ -8,10 +11,17 @@
   width: auto;
 }
 
-.list-header {
+body[data-theme='dark'] .openalex-document-list {
+  background: var(--card-bg);
+}
+
+/* ===========================
+   HEADER DE LA TABLA
+   =========================== */
+.openalex-list-header {
   display: grid;
-  grid-template-columns: 40px auto auto 80px auto;
-  gap: 1rem;
+  grid-template-columns: 40px 1fr 1fr 60px 120px;
+  gap: 1.5rem;
   padding: 1rem 1.5rem;
   background: var(--dark);
   color: white;
@@ -20,38 +30,68 @@
   align-items: center;
 }
 
-.list-header > div {
-  overflow: visible;
+body[data-theme='dark'] .openalex-list-header {
+  background: var(--main_color);
+}
+
+.openalex-list-header > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
   color: white;
 }
 
-.list-row {
+body[data-theme='dark'] .openalex-list-header > div {
+  color: white;
+}
+
+/* ===========================
+   FILAS DE LA TABLA
+   =========================== */
+.openalex-list-row {
   display: grid;
-  grid-template-columns: 40px auto auto 80px auto;
-  gap: 1rem;
+  grid-template-columns: 40px 1fr 1fr 60px 120px;
+  gap: 1.5rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e0e0e0;
   transition: all 0.2s ease;
   align-items: center;
-  color: var(--dark);
+  color: var(--main_color);
+  background: white;
 }
 
-.list-row.selected {
+body[data-theme='dark'] .openalex-list-row {
+  border-color: var(--border-color);
+  color: var(--main_color);
+  background: var(--card-bg);
+}
+
+.openalex-list-row:last-child {
+  border-bottom: none;
+}
+
+.openalex-list-row:hover {
+  background-color: #f5f5f5;
+}
+
+body[data-theme='dark'] .openalex-list-row:hover {
+  background-color: var(--bg-secondary);
+}
+
+.openalex-list-row.selected {
   background-color: rgba(99, 102, 241, 0.1);
   border-left: 4px solid var(--main_color);
   padding-left: calc(1.5rem - 4px);
 }
 
-.list-row:hover {
-  background-color: #f5f5f5;
-}
-
-.list-row.selected:hover {
+.openalex-list-row.selected:hover {
   background-color: rgba(99, 102, 241, 0.15);
 }
 
+/* ===========================
+   CHECKBOX DE SELECCIÓN
+   =========================== */
 .list-col-select {
   display: flex;
   align-items: center;
@@ -77,31 +117,27 @@
   font-size: 18px;
 }
 
-/* Checkbox en el header de la tabla */
-.list-header .article-checkbox-list {
+.openalex-list-header .article-checkbox-list {
   color: var(--text-secondary);
 }
 
-.list-header .article-checkbox-list:hover {
+.openalex-list-header .article-checkbox-list:hover {
   color: var(--primary-color);
 }
 
-/* Checkbox en filas seleccionadas */
-.list-row.selected .article-checkbox-list {
+.openalex-list-row.selected .article-checkbox-list {
   color: var(--primary-color);
 }
 
-.list-row:last-child {
-  border-bottom: none;
-}
-
+/* ===========================
+   COLUMNAS DE CONTENIDO
+   =========================== */
 .list-col-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .list-icon {
@@ -109,12 +145,18 @@
 }
 
 .list-title-link {
-  color: var(--dark);
+  color: var(--main_color);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: color 0.2s ease;
+  min-width: 0;
+  flex: 1;
+}
+
+body[data-theme='dark'] .list-title-link {
+  color: var(--main_color);
 }
 
 .list-title-link:hover {
@@ -127,9 +169,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--dark);
+  color: var(--main_color);
+  min-width: 0;
 }
 
+body[data-theme='dark'] .list-col-category,
+body[data-theme='dark'] .list-col-year {
+  color: var(--main_color);
+}
+
+/* ===========================
+   COLUMNA DE ACCIONES
+   =========================== */
 .list-col-actions {
   display: flex;
   gap: 0.4rem;
@@ -145,16 +196,23 @@
   cursor: pointer;
   text-decoration: none;
   transition: background-color 0.2s ease;
-  font-size: 0.82rem;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.list-action-btn i {
+  font-size: 14px !important;
 }
 
 .list-action-btn:hover {
   background: var(--main_color);
 }
 
+/* ===========================
+   BOTONES DE GUARDAR
+   =========================== */
 .save-article-btn {
   padding: 0.4rem 0.8rem;
   background: var(--dark);
@@ -162,37 +220,65 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease;
 }
 
+.save-article-btn i {
+  font-size: 14px !important;
+}
+
 .save-article-btn:hover {
   background: var(--main_color);
 }
 
-/* Responsive */
+.save-multiple-btn {
+  padding: 0.4rem 0.8rem;
+  background: var(--dark);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.save-multiple-btn i {
+  font-size: 14px !important;
+}
+
+.save-multiple-btn:hover {
+  background: var(--main_color);
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
 @media (max-width: 1024px) {
-  .list-header,
-  .list-row {
-    grid-template-columns: 40px auto auto 80px auto;
-    gap: 0.5rem;
+  .openalex-list-header,
+  .openalex-list-row {
+    grid-template-columns: 40px 1fr 1fr 60px 120px;
+    gap: 1rem;
     padding: 0.8rem 1rem;
   }
 }
 
 @media (max-width: 768px) {
-  .list-header,
-  .list-row {
-    grid-template-columns: 40px auto auto 70px auto;
-    gap: 0.3rem;
+  .openalex-list-header,
+  .openalex-list-row {
+    grid-template-columns: 40px 1fr 1fr 50px 100px;
+    gap: 0.5rem;
     padding: 0.8rem 0.5rem;
     font-size: 0.9rem;
   }
 
-  .list-header > div {
+  .openalex-list-header > div {
     font-size: 0.8rem;
   }
 
@@ -203,15 +289,15 @@
 }
 
 @media (max-width: 480px) {
-  .list-header,
-  .list-row {
-    grid-template-columns: 40px auto auto 60px auto;
-    gap: 0.2rem;
+  .openalex-list-header,
+  .openalex-list-row {
+    grid-template-columns: 40px 1fr 1fr 50px 100px;
+    gap: 0.3rem;
     padding: 0.6rem 0.3rem;
     font-size: 0.8rem;
   }
 
-  .list-header > div {
+  .openalex-list-header > div {
     font-size: 0.7rem;
   }
 
@@ -219,40 +305,4 @@
     padding: 0.2rem 0.4rem;
     font-size: 0.7rem;
   }
-
-  .list-col-title {
-    white-space: normal;
-    line-height: 1.2;
-  }
-}
-
-
-
-/*BOOKMARK*/
-
-.save-article-btn i {
-  font-size: 0.85rem;
-}
-
-/* Botón múltiples colecciones */
-.save-multiple-btn {
-  padding: 0.4rem 0.8rem;
-  background: var(--dark);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.save-multiple-btn:hover {
-  background: var(--main_color);
-}
-
-.save-multiple-btn i {
-  font-size: 0.85rem;
 }
