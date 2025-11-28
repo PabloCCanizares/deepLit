@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { articlesAPI, collectionsAPI } from '../api/api'
 // import SearchBar from '../components/articles/SearchBar'
+import ArticleControls from '../components/articles/ArticleControls'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import UploadOverlay from '../components/articles/UploadOverlay'
