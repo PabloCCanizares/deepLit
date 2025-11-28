@@ -133,15 +133,9 @@
   opacity: 0.8;
 }
 
-/* Saved bookmark button green state */
-.save-article-btn.saved {
-  background: #16a34a;
-  color: white;
-  border-color: #16a34a;
-}
-
-.save-article-btn.saved i {
-  color: white;
+/* Bookmark button */
+.save-article-btn i {
+  font-size: 0.85rem;
 }
 
 /* Responsive */

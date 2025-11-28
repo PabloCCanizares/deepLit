@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import '../../styles/openalex/OpenAlexCard.css'
 
 function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, savedArticles = [], onSave, onSaveMultiple }) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
-  const pages = document.pages || '-'
   const year = document.year || '-'
   const id = document._id || document.id
   const isSelected = selectedArticles.includes(id)
@@ -13,12 +12,15 @@ function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = []
   // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
   const encodedId = encodeURIComponent(id)
   let clean_id = id
-  const [saved, setSaved] = useState(savedArticles && (savedArticles.includes(id) || savedArticles.includes(clean_id)))
+  
+  // Usar ref para almacenar el estado inicial y no reinicializarlo
+  const initialSavedRef = useRef(null)
+  if (initialSavedRef.current === null) {
+    initialSavedRef.current = savedArticles && (savedArticles.includes(id) || savedArticles.includes(clean_id))
+  }
+  
+  const [saved, setSaved] = useState(initialSavedRef.current)
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    setSaved(savedArticles && (savedArticles.includes(id) || savedArticles.includes(clean_id)))
-  }, [savedArticles, id, clean_id])
 
   const handleCheckboxClick = (e) => {
     e.preventDefault()
@@ -47,7 +49,6 @@ function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = []
           <strong>Título:</strong> {title}
         </div>
         <div><strong>Categoría:</strong> {category}</div>
-        <div><strong>Páginas:</strong> {pages}</div>
         <div><strong>Año:</strong> {year}</div>
         <div className="lib-edit-btn">
           <Link to={`${baseRoute}/${encodedId}/edit`} title="Editar">
@@ -57,8 +58,23 @@ function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = []
           {onSave && (
             <button
               className={`save-article-btn ${saved ? 'saved' : ''}`}
-              title={saved ? 'Artículo guardado' : 'Guardar en colección actual'}
-              onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (!onSave) return; try { setSaving(true); const ok = await onSave(clean_id || id); if (ok) setSaved(true); } catch (err) { console.error(err) } finally { setSaving(false) } }}
+              title={saved ? 'Quitar de colección' : 'Guardar en colección actual'}
+              onClick={async (e) => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                if (!onSave) return; 
+                try { 
+                  setSaving(true);
+                  const result = await onSave(clean_id || id, saved); 
+                  if (result !== false) {
+                    setSaved(!saved);
+                  }
+                } catch (err) { 
+                  console.error(err) 
+                } finally { 
+                  setSaving(false) 
+                } 
+              }}
               disabled={saving}
             >
               <i className={saved ? 'fas fa-bookmark' : 'far fa-bookmark'}></i>

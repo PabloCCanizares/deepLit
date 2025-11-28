@@ -5,6 +5,7 @@ import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import OpenAlexControls from '../components/openalex/OpenAlexControls'
 import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
 import OpenAlexList from '../components/openalex/OpenAlexList'
+import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import '../styles/App.css'
 import { useCollection } from "../context/CollectionContext";
@@ -56,6 +57,15 @@ function OpenAlex() {
   const [pagination, setPagination] = useState(saved?.pagination || { limit: 10, offset: 0, total: 0 });
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [articleIdsToSave, setArticleIdsToSave] = useState([])
+  const [notification, setNotification] = useState('')
+
+  // Auto-ocultar notificación después de 3 segundos
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(''), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
   const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
   const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' });
   const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
@@ -145,18 +155,36 @@ function OpenAlex() {
     await openalexAPI.addToMyArticles(selectedArticles)
   }
 
-  // Guardar en la colección actual (botón simple)
-  const handleSaveArticle = async (id) => {
+  // Guardar o eliminar de la colección actual (botón simple toggle)
+  const handleSaveArticle = async (id, isCurrentlySaved = false) => {
     try {
-      const res = await openalexAPI.saveWork(id, selectedCollectionId);
-      // invalidar la cache aunque la respuesta no tenga exactamente {success:true}
-      if (res !== null) {
-        queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
+      if (isCurrentlySaved) {
+        // Eliminar de la colección
+        const res = await collectionsAPI.removeArticle(selectedCollectionId, id);
+        if (res !== null) {
+          setNotification('Artículo eliminado de la colección')
+          // Invalidar después de un pequeño delay para que el componente actualice primero
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
+          }, 100)
+        }
+        return true;
+      } else {
+        // Guardar en la colección
+        const res = await openalexAPI.saveWork(id, selectedCollectionId);
+        if (res !== null) {
+          setNotification('Artículo guardado en la colección')
+          // Invalidar después de un pequeño delay para que el componente actualice primero
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
+          }, 100)
+        }
+        return true;
       }
-      return true
     } catch (e) {
-      console.error("Error saving:", e);
-      return false
+      console.error("Error saving/removing:", e);
+      setNotification('Error: No se pudo completar la operación');
+      return false;
     }
   };
 
@@ -173,6 +201,9 @@ function OpenAlex() {
   const handleSaveSuccess = (message) => {
     setShowSaveModal(false)
     setArticleIdsToSave([])
+    setNotification(message || 'Artículos guardados exitosamente')
+    // Deseleccionar todos los artículos
+    setSelectedArticles([])
     // Invalidar todas las queries de savedArticles
     queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
   }
@@ -182,18 +213,29 @@ function OpenAlex() {
       <div className="container">
         <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
         
-        <OpenAlexControls 
-          onSort={handleSort} 
-          onFilter={handleFilter}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          pagination={pagination}
-          onChangePagination={setPagination}
-          selectedCount={selectedArticles.length}
-          totalCount={filteredArticles.length}
-          onSelectAll={handleSelectAll}
-          onAddToMyArticles={handleAddToMyArticles}
-        />
+        {selectedArticles.length > 0 ? (
+          <SelectionActions
+            selectedCount={selectedArticles.length}
+            onAddToCollections={() => handleOpenSaveModal(selectedArticles)}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+          />
+        ) : (
+          <OpenAlexControls 
+            onSort={handleSort} 
+            onFilter={handleFilter}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+            selectedCount={selectedArticles.length}
+            totalCount={filteredArticles.length}
+            onSelectAll={handleSelectAll}
+            onAddToMyArticles={handleAddToMyArticles}
+          />
+        )}
         
         {viewMode === 'list' ? (
           <OpenAlexList 

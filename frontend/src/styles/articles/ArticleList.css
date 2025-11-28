@@ -6,7 +6,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.list-header {
+.document-list .list-header {
   display: grid;
   grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
   gap: 1rem;
@@ -18,14 +18,14 @@
   align-items: center;
 }
 
-.list-header > div {
+.document-list .list-header > div {
   overflow: visible;
   white-space: nowrap;
   text-align: left;
   color: white;
 }
 
-.list-row {
+.document-list .list-row {
   display: grid;
   grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
   gap: 1rem;
@@ -36,17 +36,17 @@
   color: var(--dark);
 }
 
-.list-row.selected {
+.document-list .list-row.selected {
   background-color: rgba(99, 102, 241, 0.1);
   border-left: 4px solid var(--main_color);
   padding-left: calc(1.5rem - 4px);
 }
 
-.list-row:hover {
+.document-list .list-row:hover {
   background-color: #f5f5f5;
 }
 
-.list-row.selected:hover {
+.document-list .list-row.selected:hover {
   background-color: rgba(99, 102, 241, 0.15);
 }
 

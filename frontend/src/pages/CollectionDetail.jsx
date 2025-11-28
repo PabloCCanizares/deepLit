@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collectionsAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-import ArticleControls from '../components/articles/ArticleControls'
+import FilterSortControls from '../components/articles/FilterSortControls'
+import SelectionActions from '../components/articles/SelectionActions'
 import ArticleCard from '../components/articles/ArticleCard'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
@@ -252,19 +253,26 @@ function CollectionDetail() {
         </div>
 
         {/* Controles de artículos - Formato igual a Mis Artículos */}
-        <ArticleControls 
-          onSort={handleSort} 
-          onFilter={handleFilter}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          pagination={pagination}
-          onChangePagination={setPagination}
-          selectedCount={selectedArticles.length}
-          totalCount={filteredArticles.length}
-          onSelectAll={handleSelectAll}
-          onDeleteSelected={handleRemoveFromCollection}
-          isCollectionView={true}
-        />
+        {selectedArticles.length > 0 ? (
+          <SelectionActions
+            selectedCount={selectedArticles.length}
+            onDeleteSelected={handleRemoveFromCollection}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+            isCollectionView={true}
+          />
+        ) : (
+          <FilterSortControls
+            onSort={handleSort}
+            onFilter={handleFilter}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            pagination={pagination}
+            onChangePagination={setPagination}
+          />
+        )}
 
         {/* Vista de artículos */}
         {loading ? (

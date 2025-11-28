@@ -4,11 +4,13 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: table;
+  width: auto;
 }
 
 .list-header {
   display: grid;
-  grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
+  grid-template-columns: 40px auto auto 80px auto;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--dark);
@@ -27,7 +29,7 @@
 
 .list-row {
   display: grid;
-  grid-template-columns: 40px 1fr 1fr 80px 80px 120px;
+  grid-template-columns: 40px auto auto 80px auto;
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e0e0e0;
@@ -121,7 +123,6 @@
 }
 
 .list-col-category,
-.list-col-pages,
 .list-col-year {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,7 +177,7 @@
 @media (max-width: 1024px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 1fr 1fr 80px 80px 100px;
+    grid-template-columns: 40px auto auto 80px auto;
     gap: 0.5rem;
     padding: 0.8rem 1rem;
   }
@@ -185,7 +186,7 @@
 @media (max-width: 768px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 1fr 1fr 80px 80px 80px;
+    grid-template-columns: 40px auto auto 70px auto;
     gap: 0.3rem;
     padding: 0.8rem 0.5rem;
     font-size: 0.9rem;
@@ -204,7 +205,7 @@
 @media (max-width: 480px) {
   .list-header,
   .list-row {
-    grid-template-columns: 40px 1fr 1fr 60px 60px 80px;
+    grid-template-columns: 40px auto auto 60px auto;
     gap: 0.2rem;
     padding: 0.6rem 0.3rem;
     font-size: 0.8rem;
@@ -229,30 +230,14 @@
 
 /*BOOKMARK*/
 
-.save-article-btn.saved i {
-  color: var(--main_color);
-  transform: scale(1.2);
-  transition: 0.2s ease;
-}
-
-.save-article-btn.saved {
-  background: #16a34a;
-  color: white;
-  border-color: #16a34a;
-}
-
-.save-article-btn.saved i {
-  color: white;
-}
-
 .save-article-btn i {
-  transition: transform 0.2s ease, color 0.2s ease;
+  font-size: 0.85rem;
 }
 
 /* Botón múltiples colecciones */
 .save-multiple-btn {
   padding: 0.4rem 0.8rem;
-  background: var(--main_color);
+  background: var(--dark);
   color: white;
   border: none;
   border-radius: 4px;
@@ -265,8 +250,7 @@
 }
 
 .save-multiple-btn:hover {
-  background: var(--dark);
-  transform: scale(1.05);
+  background: var(--main_color);
 }
 
 .save-multiple-btn i {

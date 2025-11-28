@@ -52,16 +52,16 @@ function Sidebar({ isOpen, onClose }) {
             </Link>
           </div>
 
-          {/* Búsqueda y Análisis */}
+          {/* Trabajo y Análisis */}
           <div className="sidebarGroup">
-            <div className="sidebarGroupTitle">Búsqueda y Análisis</div>
+            <div className="sidebarGroupTitle">Trabajo y Análisis</div>
             <Link 
               to="/search" 
               className={`sidebarLink ${location.pathname === '/search' ? 'active' : ''}`}
               onClick={onClose}
             >
-              <i className="fas fa-search"></i>
-              <span>Búsqueda</span>
+              <i className="fas fa-briefcase"></i>
+              <span>Zona de Trabajo</span>
             </Link>
             <Link 
               to="/openalex" 

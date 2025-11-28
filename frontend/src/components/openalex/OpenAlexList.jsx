@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import '../../styles/openalex/OpenAlexList.css'
 
 function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave, onSaveMultiple }) {
@@ -46,7 +46,6 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         </div>
         <div className="list-col-title">Título</div>
         <div className="list-col-category">Categoría</div>
-        <div className="list-col-pages">Páginas</div>
         <div className="list-col-year">Año</div>
         <div className="list-col-actions">Opciones</div>
       </div>
@@ -54,7 +53,6 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
       {documents.map((doc) => {
         const title = doc.title || '-' //FIXME Cambiar por Untitled?
         const category = doc.category || '-'
-        const pages = doc.pages || '-'
         const year = doc.year || '-'
         const id = doc._id || doc.id
         const isSelected = selectedArticles.includes(id)
@@ -71,19 +69,19 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         const isSaved = savedArticles.includes(clean_id) || savedArticles.includes(id);
 
         function RowActions({itemId, initiallySaved}){
-          const [saved, setSaved] = useState(initiallySaved)
+          // Usar ref para mantener el valor inicial y no reinicializarlo
+          const initialSavedRef = useRef(initiallySaved)
+          const [saved, setSaved] = useState(initialSavedRef.current)
           const [saving, setSaving] = useState(false)
-
-          useEffect(() => {
-            setSaved(initiallySaved)
-          }, [initiallySaved])
 
           const handleSaveClick = async () => {
             if (!onSave) return
             try {
               setSaving(true)
-              const ok = await onSave(itemId)
-              if (ok) setSaved(true)
+              const result = await onSave(itemId, saved)
+              if (result !== false) {
+                setSaved(!saved)
+              }
             } catch (e) {
               console.error('save error', e)
             } finally {
@@ -103,7 +101,7 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
               </Link>
               <button
                 className={`save-article-btn ${saved ? 'saved' : ''}`}
-                title={saved ? 'Artículo guardado' : 'Guardar en colección actual'}
+                title={saved ? 'Quitar de colección' : 'Guardar en colección actual'}
                 onClick={handleSaveClick}
                 disabled={saving}
               >
@@ -141,9 +139,8 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
               </Link>
             </div>
             <div className="list-col-category">{category}</div>
-            <div className="list-col-pages">{pages}</div>
             <div className="list-col-year">{year}</div>
-            <RowActions itemId={clean_id} initiallySaved={isSaved} />
+            <RowActions key={clean_id} itemId={clean_id} initiallySaved={isSaved} />
           </div>
         )
       })}

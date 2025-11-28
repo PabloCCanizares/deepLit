@@ -47,7 +47,7 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
         <div className="list-col-category">Categoría</div>
         <div className="list-col-pages">Páginas</div>
         <div className="list-col-year">Año</div>
-        <div className="list-col-actions"></div>
+        <div className="list-col-actions">Opciones</div>
       </div>
       
       {documents.map((doc) => {
