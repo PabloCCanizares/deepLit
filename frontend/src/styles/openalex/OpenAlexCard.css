@@ -133,6 +133,17 @@
   opacity: 0.8;
 }
 
+/* Saved bookmark button green state */
+.save-article-btn.saved {
+  background: #16a34a;
+  color: white;
+  border-color: #16a34a;
+}
+
+.save-article-btn.saved i {
+  color: white;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
   .lib-item {

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import '../../styles/openalex/OpenAlexList.css'
 
 function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave, onSaveMultiple }) {
@@ -69,6 +70,58 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         
         const isSaved = savedArticles.includes(clean_id) || savedArticles.includes(id);
 
+        function RowActions({itemId, initiallySaved}){
+          const [saved, setSaved] = useState(initiallySaved)
+          const [saving, setSaving] = useState(false)
+
+          useEffect(() => {
+            setSaved(initiallySaved)
+          }, [initiallySaved])
+
+          const handleSaveClick = async () => {
+            if (!onSave) return
+            try {
+              setSaving(true)
+              const ok = await onSave(itemId)
+              if (ok) setSaved(true)
+            } catch (e) {
+              console.error('save error', e)
+            } finally {
+              setSaving(false)
+            }
+          }
+
+          const handleSaveMultiple = () => {
+            if (!onSaveMultiple) return
+            onSaveMultiple(itemId)
+          }
+
+          return (
+            <div className="list-col-actions">
+              <Link to={`${baseRoute}/${itemId}`} className="list-action-btn">
+                <i className="fas fa-eye"></i>
+              </Link>
+              <button
+                className={`save-article-btn ${saved ? 'saved' : ''}`}
+                title={saved ? 'Artículo guardado' : 'Guardar en colección actual'}
+                onClick={handleSaveClick}
+                disabled={saving}
+              >
+                <i className={saved ? 'fas fa-bookmark' : 'far fa-bookmark'}></i>
+              </button>
+              {onSaveMultiple && (
+                <button
+                  className="save-multiple-btn"
+                  title="Guardar en múltiples colecciones"
+                  onClick={handleSaveMultiple}
+                >
+                  <i className="fas fa-layer-group"></i>
+                </button>
+              )}
+            </div>
+          )
+        }
+
         return (
           <div key={id} className={`list-row ${isSelected ? 'selected' : ''}`}>
             <div className="list-col-select">
@@ -90,27 +143,7 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
             <div className="list-col-category">{category}</div>
             <div className="list-col-pages">{pages}</div>
             <div className="list-col-year">{year}</div>
-            <div className="list-col-actions">
-              <Link to={`${baseRoute}/${clean_id}`} className="list-action-btn">
-                <i className="fas fa-eye"></i>
-              </Link>
-            <button
-                className={`save-article-btn ${isSaved ? "saved" : ""}`}
-                title={isSaved ? "Artículo guardado" : "Guardar en colección actual"}
-                onClick={() => onSave(clean_id)}
-              >
-                <i className={isSaved ? "fas fa-bookmark" : "far fa-bookmark"}></i>
-              </button>
-              {onSaveMultiple && (
-                <button
-                  className="save-multiple-btn"
-                  title="Guardar en múltiples colecciones"
-                  onClick={() => onSaveMultiple(clean_id)}
-                >
-                  <i className="fas fa-layer-group"></i>
-                </button>
-              )}
-            </div>
+            <RowActions itemId={clean_id} initiallySaved={isSaved} />
           </div>
         )
       })}

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import '../../styles/openalex/OpenAlexCard.css'
 
-function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = [], onSelectArticle }) {
+function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, savedArticles = [], onSave, onSaveMultiple }) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
@@ -11,6 +12,13 @@ function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = []
   
   // Codificar el ID para usar en la URL (especialmente para IDs de OpenAlex que son URLs)
   const encodedId = encodeURIComponent(id)
+  let clean_id = id
+  const [saved, setSaved] = useState(savedArticles && (savedArticles.includes(id) || savedArticles.includes(clean_id)))
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setSaved(savedArticles && (savedArticles.includes(id) || savedArticles.includes(clean_id)))
+  }, [savedArticles, id, clean_id])
 
   const handleCheckboxClick = (e) => {
     e.preventDefault()
@@ -45,6 +53,27 @@ function OpenAlexCard({ document, baseRoute = '/openalex', selectedArticles = []
           <Link to={`${baseRoute}/${encodedId}/edit`} title="Editar">
             <i className="fas fa-edit"></i> Editar
           </Link>
+
+          {onSave && (
+            <button
+              className={`save-article-btn ${saved ? 'saved' : ''}`}
+              title={saved ? 'Artículo guardado' : 'Guardar en colección actual'}
+              onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (!onSave) return; try { setSaving(true); const ok = await onSave(clean_id || id); if (ok) setSaved(true); } catch (err) { console.error(err) } finally { setSaving(false) } }}
+              disabled={saving}
+            >
+              <i className={saved ? 'fas fa-bookmark' : 'far fa-bookmark'}></i>
+            </button>
+          )}
+
+          {onSaveMultiple && (
+            <button
+              className="save-multiple-btn"
+              title="Guardar en múltiples colecciones"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSaveMultiple(clean_id || id) }}
+            >
+              <i className="fas fa-layer-group"></i>
+            </button>
+          )}
         </div>
       </div>
     </div>

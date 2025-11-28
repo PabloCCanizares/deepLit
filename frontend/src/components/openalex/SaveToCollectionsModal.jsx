@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collectionsAPI } from '../../api/api'
+import { collectionsAPI, openalexAPI } from '../../api/api'
 import '../../styles/openalex/SaveToCollectionsModal.css'
 
 function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess }) {
@@ -54,15 +54,30 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
       setSaving(true)
       setError(null)
 
-      // Añadir todos los artículos a todas las colecciones seleccionadas
-      const promises = []
+      // Añadir todos los artículos a todas las colecciones seleccionadas.
+      // Si la API responde que el artículo no existe en la BD, intentar
+      // guardar el work de OpenAlex directamente en esa colección usando
+      // openalexAPI.saveWork(articleId, collectionId).
+      const ops = []
       for (const collectionId of selectedCollections) {
         for (const articleId of articleIds) {
-          promises.push(collectionsAPI.addArticle(collectionId, articleId))
+          ops.push((async () => {
+            try {
+              return await collectionsAPI.addArticle(collectionId, articleId)
+            } catch (err) {
+              const msg = err && err.message ? err.message.toString().toLowerCase() : ''
+              // Si el error indica que no existe, intentar guardar desde OpenAlex
+              if (msg.includes('no encontrado') || msg.includes('not found') || err.status === 404) {
+                // Guardar el work en la colección (backend manejará creación + asociación)
+                return await openalexAPI.saveWork(articleId, collectionId)
+              }
+              throw err
+            }
+          })())
         }
       }
 
-      await Promise.all(promises)
+      await Promise.all(ops)
 
       const message = articleIds.length === 1
         ? `Artículo guardado en ${selectedCollections.length} colección(es)`

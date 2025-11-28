@@ -55,7 +55,7 @@ function OpenAlex() {
   const [selectedArticles, setSelectedArticles] = useState([])
   const [pagination, setPagination] = useState(saved?.pagination || { limit: 10, offset: 0, total: 0 });
   const [showSaveModal, setShowSaveModal] = useState(false)
-  const [articleToSave, setArticleToSave] = useState(null)
+  const [articleIdsToSave, setArticleIdsToSave] = useState([])
   const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
   const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' });
   const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
@@ -149,24 +149,30 @@ function OpenAlex() {
   const handleSaveArticle = async (id) => {
     try {
       const res = await openalexAPI.saveWork(id, selectedCollectionId);
-      if (res.success) {
+      // invalidar la cache aunque la respuesta no tenga exactamente {success:true}
+      if (res !== null) {
         queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
       }
+      return true
     } catch (e) {
       console.error("Error saving:", e);
+      return false
     }
   };
 
   // Abrir modal para guardar en múltiples colecciones
-  const handleOpenSaveModal = (id) => {
-    setArticleToSave(id)
+  // acepta un id singular o un array de ids
+  const handleOpenSaveModal = (idOrIds) => {
+    if (!idOrIds) return
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds]
+    setArticleIdsToSave(ids)
     setShowSaveModal(true)
   }
 
   // Cuando el modal termina de guardar
   const handleSaveSuccess = (message) => {
     setShowSaveModal(false)
-    setArticleToSave(null)
+    setArticleIdsToSave([])
     // Invalidar todas las queries de savedArticles
     queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
   }
@@ -210,6 +216,9 @@ function OpenAlex() {
             baseRoute="/openalex"
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
+            savedArticles={savedArticles}
+            onSave={handleSaveArticle}
+            onSaveMultiple={handleOpenSaveModal}
           />
         )}
 
@@ -222,7 +231,7 @@ function OpenAlex() {
         <SaveToCollectionsModal
           isOpen={showSaveModal}
           onClose={() => setShowSaveModal(false)}
-          articleId={articleToSave}
+          articleIds={articleIdsToSave}
           onSuccess={handleSaveSuccess}
         />
       </div>

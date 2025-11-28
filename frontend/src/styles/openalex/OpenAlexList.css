@@ -235,6 +235,16 @@
   transition: 0.2s ease;
 }
 
+.save-article-btn.saved {
+  background: #16a34a;
+  color: white;
+  border-color: #16a34a;
+}
+
+.save-article-btn.saved i {
+  color: white;
+}
+
 .save-article-btn i {
   transition: transform 0.2s ease, color 0.2s ease;
 }
