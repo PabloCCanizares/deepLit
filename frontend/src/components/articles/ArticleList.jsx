@@ -94,7 +94,7 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
                   title="Añadir a colección(es)"
                   onClick={() => onAddToCollectionsSingle(id)}
                 >
-                  <i className="fas fa-folder-plus"></i>
+                  <i className="fas fa-layer-group"></i>
                 </button>
               )}
 

@@ -330,3 +330,11 @@
     transform: translateY(0);
   }
 }
+
+
+
+.collectionButton.disabled {
+  opacity: 0.4;          /* Difuminado */
+  pointer-events: none;   /* Opcional, si quieres bloquear clic totalmente */
+  cursor: not-allowed;
+}

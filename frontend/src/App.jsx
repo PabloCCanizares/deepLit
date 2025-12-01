@@ -24,9 +24,9 @@ import CollectionArticles from './pages/CollectionArticles'
 function App() {
   return (
     <Router>
-      <ThemeProvider>                       {/* ⬅ Añadido */}
+      <ThemeProvider>                      
         <AuthProvider>
-          <CollectionProvider>             {/* ⬅ Añadido */}
+          <CollectionProvider>             
             <Routes>
 
               {/* Rutas públicas */}

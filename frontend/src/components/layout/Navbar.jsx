@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useCollection } from "../../context/CollectionContext";
 import '../../styles/App.css'
+import { useLocation } from 'react-router-dom';
+
 
 function Navbar({ toggleSidebar }) {
   const { user, logout, profileImageUrl } = useAuth();
@@ -13,6 +15,8 @@ function Navbar({ toggleSidebar }) {
   const userMenuRef = useRef(null);
   const collectionMenuRef = useRef(null);
   const { collections, selectedCollectionId, changeCollection  } = useCollection();
+  const location = useLocation();
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -41,6 +45,13 @@ function Navbar({ toggleSidebar }) {
     setShowCollectionMenu(false);
   };
 
+  const isCollectionButtonEnabled = [
+    "/search",
+    "/openalex",
+    "/dashboard"
+  ].includes(location.pathname);
+
+  
   const selectedCollection = collections.find(c => c._id === selectedCollectionId);
 
   return (
@@ -64,8 +75,12 @@ function Navbar({ toggleSidebar }) {
           {/* Collection selector*/}
           <div className="collectionSelector" ref={collectionMenuRef}>
             <button 
-              className="collectionButton"
-              onClick={() => setShowCollectionMenu(!showCollectionMenu)}
+              className={`collectionButton ${!isCollectionButtonEnabled ? 'disabled' : ''}`}
+              onClick={() => {
+                if (isCollectionButtonEnabled) {
+                  setShowCollectionMenu(!showCollectionMenu)
+                }
+              }}
             >
               <span>{selectedCollection ? selectedCollection.name : 'Sin colección'}</span>
               <i className="fas fa-chevron-down"></i>
