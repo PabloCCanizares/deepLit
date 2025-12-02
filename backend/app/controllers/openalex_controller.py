@@ -72,3 +72,31 @@ class OpenAlexController:
         )
 
 
+    async def unsave_openalex_article_by_id(
+        self,
+        openalex_id: str,
+        collection_id: Optional[str],
+        current_user: dict
+    ) -> StandardResponse:
+        """
+        Quitar el guardarado de artículo de OpenAlex por ID en una colección específica.
+        Si el artículo no está guardado en más de una colección, se elimina.
+        """
+        user_id = current_user.get("_id")
+
+        if collection_id:
+            exists = await self.collection_service.collection_exists(user_id, collection_id)
+            if not exists:
+                return StandardResponse(
+                    success=False,
+                    message="Colección no encontrada",
+                    data={}
+                )
+
+        saved_article_id = await self.service.unsave_openalex_article_by_id(openalex_id, collection_id, user_id)
+        
+        return StandardResponse(
+            success=True,
+            message="Artículo de OpenAlex guardado correctamente",
+            data=saved_article_id
+        )

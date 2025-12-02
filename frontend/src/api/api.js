@@ -244,10 +244,11 @@ export const openalexAPI = {
     },
 
     unsaveWork: async (id, collection_id) => {
-      return apiFetch(`/openalex/${id}/unsave`, {
-        method: 'POST',
-        body: JSON.stringify({collection_id: collection_id})
-      });
+      const url = collection_id
+          ? `/openalex/${id}/unsave?collection_id=${collection_id}`
+          : `/openalex/${id}/unsave`;
+
+      return apiFetch(url, { method: 'POST' });
     },
 
 };

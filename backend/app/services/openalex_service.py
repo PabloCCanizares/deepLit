@@ -8,7 +8,10 @@ import pyalex
 from pyalex import config, Works, Authors, Sources, Institutions, Topics, Publishers, Funders
 from app.core import NotFoundError
 from app.repositories import ArticleRepository
+from app.repositories import CollectionRepository
+from app.core import NotFoundError, AuthorizationError
 import json
+
  
 class OpenAlexService:
     
@@ -18,6 +21,7 @@ class OpenAlexService:
         config.retry_backoff_factor = 0.1
         config.retry_http_codes = [429, 500, 503]
         self.article_repo = ArticleRepository()
+        self.collection_repo = CollectionRepository() 
 
     async def save_openalex_article_by_id(
         self,
@@ -31,14 +35,58 @@ class OpenAlexService:
         article = await self.get_by_id(openalex_id)
 
         article["id_user"] = id_user
-        if collection_id:
-            article["collection_ids"] = [collection_id]
 
-        # Se guarda el artículo en la base de datos
-        article_id = await self.article_repo.create(article)
+        article_id = article["_id"]
+
+        # Si el artículo ya existe, solo se añade a la colección (si se proporciona)
+        if await self.article_repo.find_by_id(article_id):
+            if collection_id:
+                await self.collection_repo.add_article_to_collection(collection_id, article_id)
+        # Si no existe, se crea uno nuevo
+        else:
+            if collection_id:
+                article["collection_ids"] = [collection_id]
+            else:
+                article["collection_ids"] = [id_user]
+            # Se guarda el artículo en la base de datos
+            article_id = await self.article_repo.create(article)
 
         return article_id
 
+
+    async def unsave_openalex_article_by_id(
+        self,
+        openalex_id: str,
+        collection_id: Optional[str],
+        id_user: str
+    ) -> Dict:
+        """
+        
+        """
+        article = await self.article_repo.find_by_id(openalex_id)
+        article_id = article["_id"]
+        article_id_user = article["id_user"]
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        if article_id_user != id_user:
+            raise AuthorizationError("No tienes permiso para modificar este artículo")
+
+        
+        article_collection_ids = article.get("collection_ids", [])
+        
+        # Casuística compleja: FIXME explicacion
+        if article_id_user in article_collection_ids and collection_id is None:
+            elim = await self.collection_repo.remove_article_from_collection(article_id_user, article_id)
+            if elim:
+                article_collection_ids.remove(article_id_user)
+
+        if len(article_collection_ids) > 1 :
+            result = await self.collection_repo.remove_article_from_collection(collection_id, article_id)
+        else:
+            result = await self.article_repo.delete(article_id)
+
+
+        return result
         
 
     
