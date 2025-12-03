@@ -7,18 +7,29 @@ from fastapi import Depends
 from app.services.auth_service import AuthService
 from app.models import UserRegister, UserLogin
 from app.core import StandardResponse
-
+from app.services.collection_service import CollectionService
 
 class AuthController:
     
     def __init__(self, service: AuthService = Depends()):
         self.service = service
+        self.collection_service = CollectionService()
     
     async def register(self, register_data: UserRegister) -> StandardResponse:
         """
         Registrar nuevo usuario.
         """
         user = await self.service.register(register_data)
+        if user:
+            await self.collection_service.create(
+                user_id=user["user_id"],
+                name="Artículos sin colección",
+                description="Artículos sin colección",
+                color="#FFD700",
+                image=None,
+                collection_id=user["user_id"]
+            )
+
         return StandardResponse(
             success=True,
             message="Usuario registrado exitosamente",

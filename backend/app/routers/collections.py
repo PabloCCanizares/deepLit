@@ -241,6 +241,37 @@ async def get_ids_from_collection(
     controller: CollectionsController = Depends()
 ):
     """
-    Obtener colección con sus artículos (con paginación).
+    Obtener colección con sus ids.
     """
     return await controller.get_ids_from_collection(collection_id=collection_id, current_user=current_user)
+
+
+
+@router.get(
+    "/ids",
+    response_model=StandardResponse,
+    summary="Obtener colección 'Sin colección' con artículos",
+    responses=create_response_examples(
+        success_example={ # FIXME arreglar mensajes
+            "message": "Colección con artículos recuperada correctamente",
+            "data": {
+                "_id": "id_user",
+                "name": "Machine Learning",
+                "article_count": 2,
+                "articles": [
+                    {"_id": "article_1", "title": "Paper 1"},
+                    {"_id": "article_2", "title": "Paper 2"}
+                ]
+            }
+        }
+    )
+)
+async def get_ids_from_collection(
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Obtener colección 'Sin coleccion' con sus ids.
+    """
+
+    return await controller.get_ids_from_collection(current_user=current_user)

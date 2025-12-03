@@ -181,11 +181,15 @@ class CollectionsController:
         )
 
 
-    async def get_ids_from_collection(self, collection_id: str, current_user: dict) -> StandardResponse:
+    async def get_ids_from_collection(self, current_user: dict, collection_id: Optional[str] = None) -> StandardResponse:
         """
         Obtener los IDs de los artículos en una colección.
         """
-        article_ids = await self.service.get_ids_from_collection(collection_id=collection_id, user_id=current_user["_id"])
+
+        if collection_id is None:
+            article_ids = await self.service.get_ids_from_collection(collection_id=current_user["_id"], user_id=current_user["_id"])
+        else:
+            article_ids = await self.service.get_ids_from_collection(collection_id=collection_id, user_id=current_user["_id"])
         
         return StandardResponse(
             success=True,

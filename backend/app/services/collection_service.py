@@ -18,13 +18,16 @@ class CollectionService:
         self.article_repo = ArticleRepository()
         self.storage_service = StorageService()
     
-    async def create(self, user_id: str, name: str, description: str = None, color: str = "#3B82F6", image = None) -> Dict:
+    async def create(self, user_id: str, name: str, description: str = None, color: str = "#3B82F6", image = None, collection_id : str = None) -> Dict:
         """
         Crear una nueva colección.
         """
         # Generar ID único
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        collection_id = f"col_{name.lower().replace(' ', '_')}_{timestamp}"
+        
+        # La colección personal 'Sin colección' usa el user_id como collection_id
+        if collection_id != user_id:
+            collection_id = f"col_{name.lower().replace(' ', '_')}_{timestamp}"
         
         collection_data = {
             "_id": collection_id,
@@ -101,6 +104,9 @@ class CollectionService:
         if collection.get("id_user") != user_id:
             raise AuthorizationError("No tienes permiso para acceder a esta colección")
         
+        if collection["_id"] == user_id:
+            raise AuthorizationError("No se puede obtener la colección 'Sin colección' con artículos.")
+        
         # Obtener conteo y artículos de la colección
         article_count = await self.collection_repo.count_articles_in_collection(collection_id)
         articles = await self.collection_repo.get_articles_in_collection(
@@ -120,14 +126,18 @@ class CollectionService:
         """
         collections = await self.collection_repo.find_by_user(user_id)
         
+        colecciones_filtradas = []
         # Añadir conteo de artículos a cada colección
         for collection in collections:
-            article_count = await self.collection_repo.count_articles_in_collection(
-                collection["_id"]
-            )
-            collection["article_count"] = article_count
+            if collection["_id"] != user_id:  # Excluir colección 'Sin colección'
+                article_count = await self.collection_repo.count_articles_in_collection(
+                    collection["_id"]
+                )
+                collection["article_count"] = article_count
+
+                colecciones_filtradas.append(collection)
         
-        return collections
+        return colecciones_filtradas
     
     async def add_article_to_collection(
         self, 
@@ -275,6 +285,8 @@ class CollectionService:
         # Verificar que existe y pertenece al usuario
         collection = await self.collection_repo.find_by_id(collection_id)
         
+        print(f"Getting article IDs for collection: {collection_id}, user: {user_id}")
+
         if not collection:
             raise NotFoundError("Colección no encontrada")
         

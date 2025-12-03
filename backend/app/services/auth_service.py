@@ -29,12 +29,13 @@ class AuthService:
             "created_at": datetime.utcnow()
         }
         
-        await self.user_repo.create(user_dict)
+        user_id = await self.user_repo.create(user_dict)
         
         # 3. Devolver info del usuario (sin password)
         return {
             "email": register_data.email,
-            "name": register_data.name
+            "name": register_data.name,
+            "user_id": user_id  
         }
     
     async def login(self, login_data: UserLogin) -> dict:
