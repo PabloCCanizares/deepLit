@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+
 import { collectionsAPI, openalexAPI } from '../api/api'
+import { useCollection } from "../context/CollectionContext";
+import { usePagination } from '../hooks/usePagination';
+
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-import OpenAlexControls from '../components/openalex/OpenAlexControls'
 import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
 import OpenAlexList from '../components/openalex/OpenAlexList'
+// import OpenAlexControls from '../components/openalex/OpenAlexControls'
+import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
-import '../styles/App.css'
-import { useCollection } from "../context/CollectionContext";
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+
+import '../styles/App.css'
 
 // Variable de módulo para evitar doble lectura en StrictMode
 let cachedParams = undefined
@@ -54,10 +59,30 @@ function OpenAlex() {
   
   // Estados para filtros y paginación (inicializados desde sessionStorage si existe)
   const [selectedArticles, setSelectedArticles] = useState([])
-  const [pagination, setPagination] = useState(saved?.pagination || { limit: 10, offset: 0, total: 0 });
+  const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
+  const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' })
+  const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
+  const [viewMode, setViewMode] = useState(saved?.viewMode || 'list')
+
+  const [pagination, setPagination] = useState(
+    saved?.pagination || { limit: 10, offset: 0, total: 0 }
+  )
+
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [articleIdsToSave, setArticleIdsToSave] = useState([])
   const [notification, setNotification] = useState('')
+  
+  const {
+    currentPage,
+    totalPages,
+    setPage,
+    nextPage,
+    prevPage,
+    setLimit
+  } = usePagination(pagination, setPagination)
+
+
+  /* ----------useEffects ----------- */
 
   // Auto-ocultar notificación después de 3 segundos
   useEffect(() => {
@@ -66,10 +91,7 @@ function OpenAlex() {
       return () => clearTimeout(timer)
     }
   }, [notification])
-  const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
-  const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' });
-  const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
-  const [viewMode, setViewMode] = useState(saved?.viewMode || 'list')
+
   
   // Guardar parámetros en sessionStorage cuando cambien
   useEffect(() => {
@@ -84,6 +106,16 @@ function OpenAlex() {
     // Resetear cache de params para la próxima navegación
     resetCachedParams()
   }, [pagination, sortCriteria, filterCriteria, searchQuery, viewMode])
+  
+
+  // Limpiar selección cuando cambia la página
+  useEffect(() => {
+    setSelectedArticles([])
+  }, [pagination.offset])
+
+
+  
+  /* ---------- Data --------*/
 
   // React Query
   const { data, isLoading, error } = useQuery({
@@ -119,13 +151,26 @@ function OpenAlex() {
   const savedArticles = savedData?.article_ids || []
 
   // Actualizar total cuando cambie
-  if (total !== pagination.total) {
-    setPagination(prev => ({ ...prev, total }))
+  useEffect(() => {
+    if (total !== pagination.total) {
+      setPagination(prev => ({ ...prev, total }))
+    }
+  }, [total])
+
+ 
+
+
+  // Handlers 
+
+  const handleSort = (criteria) => {
+    setSortCriteria(criteria)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
-  // Handlers (sin cambios)
-  const handleSort = (criteria) => setSortCriteria(criteria)
-  const handleFilter = (filter) => setFilterCriteria(filter)
+  const handleFilter = (filter) => {
+    setFilterCriteria(filter)
+    setPagination(prev => ({ ...prev, offset: 0 }))
+  }
   
   const handleSearch = (query) => {
     setSearchQuery(query)
@@ -143,17 +188,17 @@ function OpenAlex() {
   }
 
   const handleSelectAll = () => {
-    setSelectedArticles(
-      selectedArticles.length === filteredArticles.length 
-        ? [] 
-        : filteredArticles.map(article => article._id || article.id)
-    )
+    if (selectedArticles.length === filteredDocuments.length) {
+      setSelectedArticles([])
+    } else {
+      setSelectedArticles(filteredDocuments.map(doc => doc._id || doc.id))
+    }
   }
 
-  const handleAddToMyArticles = async () => {
-    if (selectedArticles.length === 0) return
-    await openalexAPI.addToMyArticles(selectedArticles)
-  }
+  // const handleAddToMyArticles = async () => {
+  //   if (selectedArticles.length === 0) return
+  //   await openalexAPI.addToMyArticles(selectedArticles)
+  // }
 
   // Guardar o eliminar de la colección actual (botón simple toggle)
   const handleSaveArticle = async (id, isCurrentlySaved = false) => {
@@ -219,21 +264,15 @@ function OpenAlex() {
             onAddToCollections={() => handleOpenSaveModal(selectedArticles)}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
           />
         ) : (
-          <OpenAlexControls 
+          <FilterSortControls 
             onSort={handleSort} 
             onFilter={handleFilter}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
-            selectedCount={selectedArticles.length}
-            totalCount={filteredArticles.length}
-            onSelectAll={handleSelectAll}
-            onAddToMyArticles={handleAddToMyArticles}
+            currentLimit={pagination.limit}
+            onLimitChange={setLimit}
           />
         )}
         
@@ -264,9 +303,12 @@ function OpenAlex() {
           />
         )}
 
-        <Pagination 
-          pagination={pagination}
-          onChangePagination={setPagination}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={prevPage}
+          onNext={nextPage}
+          onPageChange={setPage}
         />
 
         {/* Modal para guardar en múltiples colecciones */}

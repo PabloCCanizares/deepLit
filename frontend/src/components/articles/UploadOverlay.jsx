@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { uploadAPI } from '../../api/api';
 import '../../styles/articles/UploadOverlay.css';
 
-const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id }) => {
+const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}) => {
   // Referencias para los inputs de archivo
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -58,9 +58,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id }) => {
         onUploadSuccess('Archivo subido correctamente');
       }
     } catch (error) {
-      if (onUploadSuccess) {
-        onUploadSuccess(`Error al subir archivo: ${error.message}`);
-      }
+      onUploadSuccess(`Error al subir archivo: ${error.message}`);
     } finally {
       event.target.value = '';
     }

@@ -3,12 +3,10 @@ import '../../styles/articles/SelectionActions.css'
 function SelectionActions({
     selectedCount,
     onAddToCollections,
-    onDeleteSelected,
+    onDeleteSelected = false,
     isCollectionView = false,
     viewMode,
-    onViewModeChange,
-    pagination,
-    onChangePagination
+    onViewModeChange
 }) {
     return (
         <div className="selection-actions-container">

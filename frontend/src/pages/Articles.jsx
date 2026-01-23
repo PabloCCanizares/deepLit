@@ -1,84 +1,105 @@
 import { useState, useEffect } from 'react'
+
 import { articlesAPI } from '../api/api'
+import { usePagination } from '../hooks/usePagination'
+
+import SearchBarDebounced from '../components/articles/SearchBarDebounced'
+import UploadOverlay from '../components/articles/UploadOverlay'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
-import UploadOverlay from '../components/articles/UploadOverlay'
-import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
 import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
+import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
-import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-import { useCollection } from "../context/CollectionContext";
 
 function Articles() {
-  const { selectedCollectionId } = useCollection();
 
-  const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
+  const [documents, setDocuments] = useState([])
+  const [selectedArticles, setSelectedArticles] = useState([])
 
-
-
-  //const [loading, setLoading] = useState(false)
-
-  // Controles de búsqueda, filtros y orden
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortCriteria, setSortCriteria] = useState('year-desc')
   const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' });
+  const [viewMode, setViewMode] = useState('list')
 
-  // Paginación real
   const [pagination, setPagination] = useState({
     limit: 10,
     offset: 0,
     total: 0,
   });
 
+  const [totalArticles, setTotalArticles] = useState(0) // Total sin filtros
 
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-
-
-  //const [documents, setDocuments] = useState([])
-  const [filteredDocuments, setFilteredDocuments] = useState([])
-  const [selectedArticles, setSelectedArticles] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState([])
   const [modalArticleIds, setModalArticleIds] = useState([])
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [sortCriteria, setSortCriteria] = useState('year-desc')
-  //const [filterCriteria, setFilterCriteria] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState('list')
-  const [uploadSuccessMessage, setUploadSuccessMessage] = useState('')
-  const [totalArticles, setTotalArticles] = useState(0) // Total sin filtros
+  const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
+  const [notification, setNotification] = useState('')
 
+
+  const {
+    currentPage,
+    totalPages,
+    setPage,
+    nextPage,
+    prevPage,
+    setLimit
+  } = usePagination(pagination, setPagination)
+
+
+  useEffect(() => {
+    if (!notification) return
+    const timer = setTimeout(() => setNotification(''), 4000)
+    return () => clearTimeout(timer)
+  }, [notification])
+
+
+  // Cargar el total de artículos sin filtros al inicio
+  // useEffect(() => {
+  //   const loadTotalArticles = async () => {
+  //     try {
+  //       const response = await articlesAPI.getArticles({
+  //         limit: 1,
+  //         offset: 0,
+  //         filters: { mode: 'all' },
+  //       })
+  //       setTotalArticles(response.data.total)
+  //     } catch (err) {
+  //       console.error('Error loading total articles:', err)
+  //     }
+  //   }
+  //   loadTotalArticles()
+  // }, [])
 
 
   useEffect(() => {
     loadDocuments()
-  }, [pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria])
+  }, [
+    pagination.offset,
+    pagination.limit, 
+    searchQuery,
+    sortCriteria,
+    filterCriteria
+  ])
 
-  // Cargar el total de artículos sin filtros al inicio
   useEffect(() => {
-    const loadTotalArticles = async () => {
-      try {
-        const response = await articlesAPI.getArticles({
-          limit: 1,
-          offset: 0,
-          filters: { mode: 'all' },
-        })
-        setTotalArticles(response.data.total)
-      } catch (err) {
-        console.error('Error loading total articles:', err)
-      }
-    }
-    loadTotalArticles()
-  }, [])
+    setSelectedArticles([])
+  }, [pagination.offset])
+
 
 
   const loadDocuments = async () => {
     try {
       setLoading(true)
+      setError(null)
 
       console.log("Loading documents with filters:", filterCriteria, "and searchQuery:", searchQuery);
 
@@ -86,7 +107,7 @@ function Articles() {
         limit: pagination.limit,
         offset: pagination.offset,
         filters: {
-          title: searchQuery || undefined,  // ← Título dentro de filters
+          title: searchQuery || undefined, 
           ...filterCriteria,
         },
 
@@ -94,7 +115,8 @@ function Articles() {
       });
       console.log("Respuesta de artículos:", response);
 
-      setFilteredDocuments(response.data.articles)
+      setDocuments(response.data.articles)
+      setTotalArticles(response.data.total)
       setPagination(prev => ({
         ...prev,
         total: response.data.total
@@ -108,16 +130,16 @@ function Articles() {
   }
 
 
+  // Handlers 
 
   const handleSort = (criteria) => {
     setSortCriteria(criteria)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
-  const handleFilter = (newFilter) => {
-    setFilterCriteria(prev => ({
-      ...prev,
-      ...newFilter,  // sobrescribe solo los campos que vienen
-    }));
+  const handleFilter = (filter) => {
+    setFilterCriteria(filter)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleSearch = (query) => {
@@ -126,65 +148,38 @@ function Articles() {
     setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
-  const handleViewModeChange = (mode) => {
-    setViewMode(mode)
+  const handleViewModeChange = (mode) => setViewMode(mode)
+
+  {/* SELECCIÓN DE ARTÍCULOS*/}
+
+  const handleSelectArticle = (articleId) => {
+    setSelectedArticles(prev => 
+      prev.includes(articleId) 
+        ? prev.filter(id => id !== articleId)
+        : [...prev, articleId]
+    )
   }
+
+  const handleSelectAll = () => {
+    if (selectedArticles.length === documents.length) {
+      setSelectedArticles([])
+    } else {
+      setSelectedArticles(documents.map(doc => doc._id || doc.id))
+    }
+  }
+
+  {/* SUBIR ARTÍCULOS*/}
 
   const handleUploadSuccess = async (message) => {
     // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
-
     // Mostrar mensaje de éxito
-    setUploadSuccessMessage(message || 'Archivo(s) subido(s) correctamente')
-
-    // Recargar artículos después de subir (solo si no es un error)
-    if (!message || !message.toLowerCase().includes('error')) {
-      setPagination(prev => ({ ...prev, offset: 0 }));
-      // recargar directamente
-      await loadDocuments();
-      
-      // Recargar el total de artículos
-      try {
-        const totalResponse = await articlesAPI.getArticles({
-          limit: 1,
-          offset: 0,
-          filters: { mode: 'all' },
-        })
-        setTotalArticles(totalResponse.data.total)
-      } catch (err) {
-        console.error('Error reloading total:', err)
-      }
-    }
-
-    // Limpiar el mensaje después de 4 segundos
-    setTimeout(() => {
-      setUploadSuccessMessage('')
-    }, 4000)
+    setNotification(message || 'Archivo(s) subido(s) correctamente')
+    setPagination(prev => ({ ...prev, offset: 0 }))
+    await loadDocuments();
   }
 
-  const handleSelectArticle = (articleId) => {
-    setSelectedArticles(prev => {
-      if (prev.includes(articleId)) {
-        return prev.filter(id => id !== articleId)
-      } else {
-        return [...prev, articleId]
-      }
-    })
-  }
-
-  const handleSelectAll = () => {
-    if (selectedArticles.length === filteredDocuments.length) {
-      setSelectedArticles([])
-    } else {
-      setSelectedArticles(filteredDocuments.map(doc => doc._id || doc.id))
-    }
-  }
-
-  const handleDeleteSelected = async () => {
-    if (selectedArticles.length === 0) return
-    setPendingDeleteIds(selectedArticles)
-    setShowDeleteModal(true)
-  }
+  {/* AÑADIR ARTÍCULOS A LAS COLECCIONES*/}
 
   const handleAddToCollections = () => {
     if (selectedArticles.length === 0) return
@@ -197,62 +192,47 @@ function Articles() {
     setShowCollectionsModal(true)
   }
 
+  const handleCollectionsSuccess = (message) => {
+    setShowCollectionsModal(false)
+    setSelectedArticles([])
+    setNotification(message || 'Artículos añadidos a colecciones correctamente')
+  }
+
+
+  {/* BORRADO DE ARTÍCULOS*/}
+
   const handleDeleteArticle = (articleId) => {
     setPendingDeleteIds([articleId])
     setShowDeleteModal(true)
   }
 
-  const handleCollectionsSuccess = (message) => {
-    setShowCollectionsModal(false)
-    setSelectedArticles([])
-    setUploadSuccessMessage(message || 'Artículos añadidos a colecciones correctamente')
-    setTimeout(() => setUploadSuccessMessage(''), 4000)
+  const handleDeleteSelected = async () => {
+    if (selectedArticles.length === 0) return
+    setPendingDeleteIds(selectedArticles)
+    setShowDeleteModal(true)
   }
 
   const confirmDeleteSelected = async () => {
-    const idsToDelete = pendingDeleteIds.length > 0 ? pendingDeleteIds : selectedArticles
-    const deletedCount = idsToDelete.length
 
+    const ids = pendingDeleteIds
+    
     try {
-      // Eliminar los artículos
-      await Promise.all(idsToDelete.map(id => articlesAPI.delete(id)))
-      // limpiar selecciones que hayan sido eliminadas
-      setSelectedArticles(prev => prev.filter(id => !idsToDelete.includes(id)))
-      setPendingDeleteIds([])
-      setShowDeleteModal(false)
+      await Promise.all(ids.map(id => articlesAPI.delete(id)))
+      setNotification(`${ids.length} artículo(s) eliminado(s)`)
+      
+      const newOffset =
+        documents.length === ids.length && pagination.offset > 0
+          ? pagination.offset - pagination.limit
+          : pagination.offset
 
-      // Recargar documentos para obtener el estado actualizado
-      const response = await articlesAPI.getArticles({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        filters: { "title": searchQuery }
-      })
-
-      // Si la página actual está vacía y no es la primera página, ir a la anterior
-      if (response.data.articles.length === 0 && pagination.offset > 0) {
-        const newOffset = Math.max(0, pagination.offset - pagination.limit)
-        setPagination(prev => ({
-          ...prev,
-          offset: newOffset,
-          total: response.data.total
-        }))
-      } else {
-        // Actualizar con los datos nuevos
-        setFilteredDocuments(response.data.articles)
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.total
-        }))
-      }
-
-      setUploadSuccessMessage(`${deletedCount} artículo(s) eliminado(s) correctamente`)
-      setTimeout(() => setUploadSuccessMessage(''), 4000)
-    } catch (err) {
-      console.error('Error deleting articles:', err)
-      setUploadSuccessMessage('Error al eliminar artículos')
-      setTimeout(() => setUploadSuccessMessage(''), 4000)
+      setPagination(prev => ({ ...prev, offset: Math.max(0, newOffset) }))
+    } catch (e) {
+      setNotification('Error al eliminar artículos')
+    } finally {
       setShowDeleteModal(false)
       setPendingDeleteIds([])
+      setSelectedArticles([])
+      await loadDocuments()
     }
   }
 
@@ -271,7 +251,7 @@ function Articles() {
             </div>
             <div className="header-stats">
               <div className="stat-item">
-                <span className="stat-number">{pagination.total}</span>
+                <span className="stat-number">{documents.length}</span>
                 <span className="stat-label">Filtrados</span>
               </div>
               <div className="stat-divider"></div>
@@ -295,8 +275,6 @@ function Articles() {
             onDeleteSelected={handleDeleteSelected}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
           />
         ) : (
           <FilterSortControls
@@ -304,14 +282,14 @@ function Articles() {
             onFilter={handleFilter}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
+            currentLimit={pagination.limit}
+            onLimitChange={setLimit}
           />
         )}
 
         {viewMode === 'list' ? (
           <ArticleList
-            documents={filteredDocuments}
+            documents={documents}
             loading={loading}
             error={error}
             selectedArticles={selectedArticles}
@@ -322,7 +300,7 @@ function Articles() {
           />
         ) : (
           <ArticleGrid
-            documents={filteredDocuments}
+            documents={documents}
             loading={loading}
             error={error}
             selectedArticles={selectedArticles}
@@ -334,15 +312,17 @@ function Articles() {
 
         {/* Paginación debajo de los artículos */}
         <Pagination
-          pagination={pagination}
-          onChangePagination={setPagination}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={prevPage}
+          onNext={nextPage}
+          onPageChange={setPage}
         />
 
         {/* Botón flotante para subir artículos */}
         <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
-          title="Subir artículos"
         >
           <i className="fas fa-cloud-upload-alt"></i>
         </button>
@@ -352,14 +332,13 @@ function Articles() {
           isOpen={isUploadOverlayOpen}
           onClose={() => setIsUploadOverlayOpen(false)}
           onUploadSuccess={handleUploadSuccess}
-          collection_id={selectedCollectionId}
         />
 
         {/* Mensaje de éxito de carga */}
-        {uploadSuccessMessage && (
-          <div className={`upload-success-notification ${uploadSuccessMessage.toLowerCase().includes('error') ? 'error' : ''}`}>
-            <i className={`fas ${uploadSuccessMessage.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-            <span>{uploadSuccessMessage}</span>
+        {notification && (
+          <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
+            <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
+            <span>{notification}</span>
           </div>
         )}
 
