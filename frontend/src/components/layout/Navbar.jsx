@@ -1,18 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useCollection } from "../../context/CollectionContext";
+import AiAssistant from '../ai_assistant/AiAssistant'
 import '../../styles/App.css'
 import { useLocation } from 'react-router-dom';
 
 
 function Navbar({ toggleSidebar }) {
-  const { user, logout, profileImageUrl } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCollectionMenu, setShowCollectionMenu] = useState(false);
-  const userMenuRef = useRef(null);
   const collectionMenuRef = useRef(null);
   const { collections, selectedCollectionId, changeCollection  } = useCollection();
   const location = useLocation();
@@ -20,9 +17,6 @@ function Navbar({ toggleSidebar }) {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setShowUserMenu(false);
-      }
       if (collectionMenuRef.current && !collectionMenuRef.current.contains(event.target)) {
         setShowCollectionMenu(false);
       }
@@ -33,12 +27,6 @@ function Navbar({ toggleSidebar }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  const handleLogout = () => {
-    logout();
-    // No necesitamos redirigir manualmente - PrivateRoute lo hará automáticamente
-    // cuando detecte que user === null
-  };
 
   const handleCollectionChange = (collectionId) => {
     changeCollection(collectionId);
@@ -55,23 +43,24 @@ function Navbar({ toggleSidebar }) {
   const selectedCollection = collections.find(c => c._id === selectedCollectionId);
 
   return (
-    <nav className="navbar">
-      <div className="navbarContainer">
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button 
-            className="sidebarToggle" 
-            onClick={toggleSidebar}
-            aria-label="Toggle sidebar"
-          >
-            <i className="fas fa-bars"></i>
-          </button>
+    <>
+      <nav className="navbar">
+        <div className="navbarContainer">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button 
+              className="sidebarToggle" 
+              onClick={toggleSidebar}
+              aria-label="Toggle sidebar"
+            >
+              <i className="fas fa-bars"></i>
+            </button>
 
-          <Link to="/" className="navbarBrand">
-            <span className="deepLit-d">deep</span><span className="deepLit-lit">Lit</span>
-          </Link>
-        </div>
+            <Link to="/" className="navbarBrand">
+              <span className="deepLit-d">deep</span><span className="deepLit-lit">Lit</span>
+            </Link>
+          </div>
 
-        <div className="navbarMenu">
+          <div className="navbarMenu">
           {/* Collection selector*/}
           <div className="collectionSelector" ref={collectionMenuRef}>
             <button 
@@ -124,54 +113,13 @@ function Navbar({ toggleSidebar }) {
             </button>
           </div>
 
-          {/* User menu */}
-          <div className="userMenu" ref={userMenuRef}>
-            <button 
-              className="userButton"
-              onClick={() => setShowUserMenu(!showUserMenu)}
-            >
-              {profileImageUrl ? (
-                <img 
-                  src={profileImageUrl} 
-                  alt="Perfil"
-                  className="userProfileImage"
-                />
-              ) : (
-                <i className="fas fa-user-circle"></i>
-              )}
-              <span>{user?.name || user?.email || 'Usuario'}</span>
-            </button>
-            
-            {showUserMenu && (
-              <div className="userDropdown">
-                <div className="userInfo">
-                  {profileImageUrl && (
-                    <img 
-                      src={profileImageUrl} 
-                      alt="Perfil"
-                      className="userDropdownImage"
-                    />
-                  )}
-                  <div>
-                    <strong>{user?.name || 'Usuario'}</strong>
-                    <small>{user?.email}</small>
-                  </div>
-                </div>
-                <hr />
-                <Link to="/profile" className="profileLink">
-                  <i className="fas fa-user-cog"></i>
-                  Mi Perfil
-                </Link>
-                <button onClick={handleLogout} className="logoutButton">
-                  <i className="fas fa-sign-out-alt"></i>
-                  Cerrar Sesión
-                </button>
-              </div>
-            )}
+            <AiAssistant />
+
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+    </>
   )
 }
 

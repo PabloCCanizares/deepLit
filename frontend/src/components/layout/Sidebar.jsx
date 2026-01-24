@@ -81,7 +81,7 @@ function Sidebar({ isOpen, onClose }) {
             className={`sidebarLink ${location.pathname === '/profile' ? 'active' : ''}`}
             onClick={onClose}
           >
-            <i className="fas fa-user-cog"></i>
+            <i className="fas fa-user"></i>
             <span>Perfil</span>
           </Link>
           <Link 

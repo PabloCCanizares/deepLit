@@ -368,6 +368,37 @@
   cursor: not-allowed;
 }
 
+.profileLogoutSection {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+.profileLogoutButton {
+  padding: 0.85rem 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.profileLogoutButton:hover:not(:disabled) {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.profileLogoutButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Password Form */
 .profilePasswordForm {
   background-color: #f8fafc;

@@ -1,0 +1,129 @@
+/* ======= AI Assistant (Blue Glass Update) ======= */
+
+.ai-chat-interface {
+  position: fixed;
+  top: 80px;
+  right: 0;
+  width: 360px;
+  height: 550px;
+  max-height: 80vh;
+  
+  /* === LIQUID GLASS === */
+  background: color-mix(in srgb, var(--main_color) 75%, transparent);
+  backdrop-filter: blur(5px); 
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px var(--shadow);
+  border-radius: 20px 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+  
+  /* Animación */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-20px) scale(0.9);
+  transform-origin: top right;
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.ai-chat-interface.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.chat-header {
+  display: none;
+}
+
+.chat-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+}
+
+.message {
+  margin-bottom: 15px;
+  max-width: 85%;
+}
+
+.message p {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.4;
+}
+
+/* 2. MENSAJES DEL BOT: Ahora blancos translúcidos */
+.message.bot p {
+  background: rgba(255, 255, 255, 0.2); /* Blanco al 20% */
+  color: var(--white);
+  border-bottom-left-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil */
+}
+
+
+.chat-footer {
+  padding: 15px;
+  display: flex;
+  gap: 10px;
+  /* Línea divisoria blanca suave */
+  border-top: 1px solid rgba(255, 255, 255, 0.2); 
+}
+
+/* 4. INPUT DE TEXTO*/
+.chat-footer textarea {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15); /* Fondo claro transparente */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 15px;
+  border-radius: 20px;
+  outline: none;
+  color: var(--white); /* Texto blanco al escribir */
+  resize: none;
+  line-height: 1.4;
+  max-height: calc(1.4em * 2 + 20px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+/* Placeholder color (el texto de ayuda) */
+.chat-footer textarea::placeholder {
+  color: var(--white);
+}
+
+.chat-footer textarea:focus {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.chat-footer textarea::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* BOTÓN DE ENVIAR */
+.send-btn {
+  color: var(--white);  
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.send-btn svg {
+  width: 18px;
+  height: 18px;
+  margin-left: 2px; 
+}
+
+.send-btn:hover {
+  transform: scale(1.4);
+}

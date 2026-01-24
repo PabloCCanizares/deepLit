@@ -59,6 +59,34 @@
   gap: 1rem;
 }
 
+.botButton {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  z-index: 1001;
+}
+
+.botButton:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+.botButton i {
+  font-size: 2.5rem;
+  color: var(--white);
+}
+
+
 .collectionSelector {
   position: relative;
 }
@@ -182,159 +210,4 @@
 .userMenu {
   position: relative;
   margin-right: 2rem;
-}
-
-.userButton {
-  background: transparent;
-  border: none;
-  color: white;
-  padding: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.userButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.userButton i {
-  font-size: 2.5rem;
-  color: white;
-}
-
-.userProfileImage {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  object-position: center;
-  border: 2px solid #4f46e5;
-  border-radius: 50%;
-}
-
-.userButton span {
-  display: none;
-}
-
-.userDropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background: white;
-  border: 1px solid rgba(99, 102, 241, 0.1);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  min-width: 200px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.2s ease;
-}
-
-.userInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding-bottom: 0.75rem;
-  align-items: center;
-}
-
-.userInfo strong {
-  color: #1e293b;
-}
-
-.userInfo small {
-  color: #64748b;
-}
-
-.userDropdownImage {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center;
-  border: 2px solid #4f46e5;
-}
-
-.profileLink {
-  background: none;
-  border: none;
-  color: #4f46e5;
-  padding: 0.5rem;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-.profileLink:hover {
-  background: rgba(79, 70, 229, 0.1);
-}
-
-.userDropdown hr {
-  border: none;
-  border-top: 1px solid rgba(99, 102, 241, 0.1);
-  margin: 0.5rem 0;
-}
-
-.logoutButton {
-  background: none;
-  border: none;
-  color: #dc2626;
-  padding: 0.5rem;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-}
-
-.logoutButton:hover {
-  background: #fee2e2;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-
-.collectionButton.disabled {
-  opacity: 0.4;          /* Difuminado */
-  pointer-events: none;   /* Opcional, si quieres bloquear clic totalmente */
-  cursor: not-allowed;
 }

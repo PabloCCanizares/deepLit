@@ -6,6 +6,9 @@
 @import './layout/Navbar.css';
 @import './layout/Sidebar.css';
 
+/* ======= IMPORTAR ESTILOS DE AI ASSISTANT ======= */
+@import './ai_assistant/AiAssistant.css';
+
 /* ======= IMPORTAR ESTILOS DE DASHBOARD ======= */
 @import './dashboard/Dashboard.css';
 @import './dashboard/StatCard.css';

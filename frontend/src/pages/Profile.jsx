@@ -4,7 +4,7 @@ import '../styles/App.css'
 import '../styles/profile/Profile.css'
 
 function Profile() {
-  const { user, updateProfile, changePassword, profileImageUrl } = useAuth();
+  const { user, updateProfile, changePassword, profileImageUrl, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showMessage, setShowMessage] = useState(false);
@@ -156,6 +156,10 @@ function Profile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   if (!user) {
@@ -413,6 +417,16 @@ function Profile() {
               </div>
             </div>
           )}
+
+          <div className="profileLogoutSection">
+            <button
+              className="profileLogoutButton"
+              onClick={handleLogout}
+              disabled={loading}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </div>
     </div>
