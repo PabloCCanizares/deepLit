@@ -4,8 +4,8 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
 # Base de datos
-motor==3.3.2
-pymongo==4.6.1
+pymongo>=4.12.0
+motor>=3.6.0
 
 # Autenticación
 python-jose[cryptography]==3.3.0
@@ -28,3 +28,10 @@ openpyxl==3.1.2
 
 #PyAlex
 pyalex==0.18.0
+
+#Agentes
+langchain               
+langchain-core         
+langchain-ollama        
+langgraph              
+langgraph-checkpoint-mongodb

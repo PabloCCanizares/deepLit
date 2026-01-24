@@ -75,7 +75,7 @@ function AiAssistant() {
 
         <div className="chat-body">
           <div className="message bot">
-            <p>Hola, soy tu asistente IA. ¿En qué puedo ayudarte mientras navegas?</p>
+            <p>Hola, soy tu asistente IA. ¿En qué puedo ayudarte?</p>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ function AiAssistant() {
           </div>
           <textarea
             rows={1}
-            placeholder="Escribe tu CONSULTA..."
+            placeholder="Escribe tu consulta..."
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}
