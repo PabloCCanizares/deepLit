@@ -4,8 +4,11 @@ import '../../styles/App.css'
 function AiAssistant() {
   const [showChat, setShowChat] = useState(false)
   const [message, setMessage] = useState('')
+  const [showTools, setShowTools] = useState(false)
   const chatRef = useRef(null)
   const chatButtonRef = useRef(null)
+  const toolButtonRef = useRef(null)
+  const toolMenuRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -18,13 +21,23 @@ function AiAssistant() {
       ) {
         setShowChat(false)
       }
+
+      if (
+        showTools &&
+        toolMenuRef.current &&
+        !toolMenuRef.current.contains(event.target) &&
+        toolButtonRef.current &&
+        !toolButtonRef.current.contains(event.target)
+      ) {
+        setShowTools(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showChat])
+  }, [showChat, showTools])
 
   const handleSend = () => {
     if (!message.trim()) {
@@ -67,9 +80,39 @@ function AiAssistant() {
         </div>
 
         <div className="chat-footer">
+          <div className="tools-dropdown">
+            <button
+              className="tools-btn"
+              aria-label="Abrir herramientas"
+              title="Herramientas"
+              aria-expanded={showTools}
+              onClick={() => setShowTools((prev) => !prev)}
+              ref={toolButtonRef}
+            >
+              <i className="fas fa-tools"></i>
+            </button>
+            <div
+              className={`tools-menu ${showTools ? 'active' : ''}`}
+              ref={toolMenuRef}
+              role="menu"
+            >
+              <button className="tools-item" type="button" role="menuitem">
+                <i className="fas fa-brain"></i>
+                <span>Deep research</span>
+              </button>
+              <button className="tools-item" type="button" role="menuitem">
+                <i className="fas fa-globe"></i>
+                <span>Web research</span>
+              </button>
+              <button className="tools-item" type="button" role="menuitem">
+                <i className="fa-solid fa-diagram-project"></i>
+                <span>Nexus</span>
+              </button>
+            </div>
+          </div>
           <textarea
             rows={1}
-            placeholder="Escribe tu mensaje..."
+            placeholder="Escribe tu CONSULTA..."
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}

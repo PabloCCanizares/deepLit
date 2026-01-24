@@ -4,15 +4,16 @@
   position: fixed;
   top: 80px;
   right: 0;
+  bottom: 0;
   width: 360px;
-  height: 550px;
-  max-height: 80vh;
+  height: calc(100vh - 80px);
+  max-height: none;
   
-  /* === LIQUID GLASS === */
+  /*LIQUID GLASS */
   background: color-mix(in srgb, var(--main_color) 75%, transparent);
   backdrop-filter: blur(5px); 
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--shadow);
   box-shadow: 0 20px 40px var(--shadow);
   border-radius: 20px 0 0 20px;
   display: flex;
@@ -57,32 +58,101 @@
   line-height: 1.4;
 }
 
-/* 2. MENSAJES DEL BOT: Ahora blancos translúcidos */
+/* MENSAJES DEL BOT*/
 .message.bot p {
-  background: rgba(255, 255, 255, 0.2); /* Blanco al 20% */
+  background: rgba(255, 255, 255, 0.2); 
   color: var(--white);
   border-bottom-left-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil */
+  border: 1px solid var(--shadow); 
 }
-
 
 .chat-footer {
   padding: 15px;
   display: flex;
   gap: 10px;
-  /* Línea divisoria blanca suave */
-  border-top: 1px solid rgba(255, 255, 255, 0.2); 
+  border-top: 1px solid var(--shadow); 
 }
 
-/* 4. INPUT DE TEXTO*/
+/* HERRAMIENTAS */
+.tools-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tools-btn {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--shadow);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.tools-btn:hover {
+  transform: scale(1.08);
+}
+
+.tools-menu {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: color-mix(in srgb, var(--main_color) 85%, transparent);
+  border: 1px solid var(--shadow);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 180px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.tools-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tools-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--white);
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.tools-item i {
+  color: var(--white);
+}
+
+.tools-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/*INPUT DE TEXTO*/
 .chat-footer textarea {
   flex: 1;
-  background: rgba(255, 255, 255, 0.15); /* Fondo claro transparente */
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15); 
+  border: 1px solid var(--shadow);
   padding: 10px 15px;
   border-radius: 20px;
   outline: none;
-  color: var(--white); /* Texto blanco al escribir */
+  color: var(--white);
   resize: none;
   line-height: 1.4;
   max-height: calc(1.4em * 2 + 20px);
@@ -90,7 +160,6 @@
   scrollbar-width: none;
 }
 
-/* Placeholder color (el texto de ayuda) */
 .chat-footer textarea::placeholder {
   color: var(--white);
 }
