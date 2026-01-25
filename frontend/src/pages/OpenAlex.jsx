@@ -13,6 +13,7 @@ import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import Toast from '../components/common/Toast'
 
 import '../styles/App.css'
 
@@ -84,13 +85,7 @@ function OpenAlex() {
 
   /* ----------useEffects ----------- */
 
-  // Auto-ocultar notificación después de 3 segundos
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(''), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [notification])
+  // Nota: El Toast maneja su propio timer de 2 segundos
 
   
   // Guardar parámetros en sessionStorage cuando cambien
@@ -188,10 +183,10 @@ function OpenAlex() {
   }
 
   const handleSelectAll = () => {
-    if (selectedArticles.length === filteredDocuments.length) {
+    if (selectedArticles.length === filteredArticles.length) {
       setSelectedArticles([])
     } else {
-      setSelectedArticles(filteredDocuments.map(doc => doc._id || doc.id))
+      setSelectedArticles(filteredArticles.map(doc => doc._id || doc.id))
     }
   }
 
@@ -207,7 +202,7 @@ function OpenAlex() {
         // Eliminar de la colección
         const res = await collectionsAPI.removeArticle(selectedCollectionId, id);
         if (res !== null) {
-          setNotification('Artículo eliminado de la colección')
+          setNotification('Artículo eliminado')
           // Invalidar después de un pequeño delay para que el componente actualice primero
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
@@ -218,7 +213,7 @@ function OpenAlex() {
         // Guardar en la colección
         const res = await openalexAPI.saveWork(id, selectedCollectionId);
         if (res !== null) {
-          setNotification('Artículo guardado en la colección')
+          setNotification('Artículo guardado')
           // Invalidar después de un pequeño delay para que el componente actualice primero
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
@@ -228,7 +223,7 @@ function OpenAlex() {
       }
     } catch (e) {
       console.error("Error saving/removing:", e);
-      setNotification('Error: No se pudo completar la operación');
+      setNotification('Error al procesar la solicitud');
       return false;
     }
   };
@@ -317,6 +312,13 @@ function OpenAlex() {
           onClose={() => setShowSaveModal(false)}
           articleIds={articleIdsToSave}
           onSuccess={handleSaveSuccess}
+        />
+
+        {/* Toast de notificación */}
+        <Toast 
+          message={notification} 
+          onClose={() => setNotification('')} 
+          duration={1000}
         />
       </div>
     </div>
