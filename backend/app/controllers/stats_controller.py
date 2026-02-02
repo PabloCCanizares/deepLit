@@ -49,6 +49,9 @@ class StatsController:
 
         articles_by_year = await self.article_service.get_article_count_grouped_by_year(user_id, collection_id)
         
+        # PASO 4: Obtener ranking de keywords
+        sorted_keywords = await self.article_service.get_keywords_ranking(user_id, collection_id)
+        
         # TODO: Añadir más estadísticas cuando estén implementadas
         # - Referencias totales
         # - Promedio de referencias por documento
@@ -60,7 +63,8 @@ class StatsController:
                 "document_count": document_count,
                 "article_count": article_count,
                 "labels_by_year": articles_by_year["labels"],
-                "values_by_year": articles_by_year["values"]
+                "values_by_year": articles_by_year["values"],
+                "sorted_keywords": sorted_keywords
             }
         )
 

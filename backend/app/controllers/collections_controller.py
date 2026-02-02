@@ -184,10 +184,11 @@ class CollectionsController:
     async def get_ids_from_collection(self, current_user: dict, collection_id: Optional[str] = None) -> StandardResponse:
         """
         Obtener los IDs de los artículos en una colección.
+        Si collection_id es None, devuelve los IDs de "Mis Artículos".
         """
-
         if collection_id is None:
-            article_ids = await self.service.get_ids_from_collection(collection_id=current_user["_id"], user_id=current_user["_id"])
+            # Mis Artículos = artículos donde collection_ids contiene user_id
+            article_ids = await self.service.get_my_article_ids(user_id=current_user["_id"])
         else:
             article_ids = await self.service.get_ids_from_collection(collection_id=collection_id, user_id=current_user["_id"])
         
@@ -195,4 +196,44 @@ class CollectionsController:
             success=True,
             message="IDs de artículos recuperados correctamente",
             data={"article_ids": article_ids}
+        )
+
+    async def delete(
+        self,
+        collection_id: str,
+        current_user: dict
+    ) -> StandardResponse:
+        """
+        Eliminar una colección.
+        Los artículos no se eliminan, solo se desvinculan de la colección.
+        """
+        result = await self.service.delete(
+            collection_id=collection_id,
+            user_id=current_user["_id"]
+        )
+        
+        return StandardResponse(
+            success=True,
+            message="Colección eliminada exitosamente. Los artículos siguen disponibles.",
+            data={"deleted": result}
+        )
+
+    async def delete_many(
+        self,
+        collection_ids: list,
+        current_user: dict
+    ) -> StandardResponse:
+        """
+        Eliminar múltiples colecciones.
+        Los artículos no se eliminan.
+        """
+        count = await self.service.delete_many(
+            collection_ids=collection_ids,
+            user_id=current_user["_id"]
+        )
+        
+        return StandardResponse(
+            success=True,
+            message=f"{count} colección(es) eliminada(s) exitosamente. Los artículos siguen disponibles.",
+            data={"deleted_count": count}
         )

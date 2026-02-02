@@ -157,6 +157,35 @@ class ArticleRepository:
 
 
 
+    async def get_keywords_aggregated(self, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
+        """
+        Obtener keywords agrupadas y contadas para un usuario.
+        Devuelve lista de {keyword, count} ordenada por count descendente.
+        """
+        # Filtro base
+        match_filter = {"id_user": user_id}
+
+        # Si se especifica collection_id
+        if collection_id:
+            match_filter["collection_ids"] = {"$in": [collection_id]}
+
+        # Pipeline de agregación
+        # keywords es un array de objetos {key: string, score: number}
+        pipeline = [
+            {"$match": match_filter},
+            {"$unwind": "$keywords"},  # Descomponer el array de keywords
+            {"$group": {
+                "_id": "$keywords.key",  # Agrupar por el campo 'key' del keyword
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"count": -1}},  # Ordenar por count descendente
+            {"$limit": 50}  # Limitar a las 50 más frecuentes
+        ]
+
+        cursor = self.collection.aggregate(pipeline)
+        results = await cursor.to_list(length=None)
+        return results
+
     async def get_article_ids_by_collection(self, collection_id: str) -> List[str]:
         """
         Devuelve una lista de IDs de artículos que pertenecen a una colección.

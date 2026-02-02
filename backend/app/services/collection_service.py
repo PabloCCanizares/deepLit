@@ -84,6 +84,56 @@ class CollectionService:
             return True
         return False
 
+    async def delete(self, collection_id: str, user_id: str) -> bool:
+        """
+        Eliminar una colección.
+        Los artículos NO se eliminan, solo se quita el collection_id de ellos.
+        """
+        # Verificar que existe y pertenece al usuario
+        collection = await self.collection_repo.find_by_id(collection_id)
+        
+        if not collection:
+            raise NotFoundError("Colección no encontrada")
+        
+        if collection.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para eliminar esta colección")
+        
+        # Eliminar imagen si existe
+        image_url = collection.get("image_url")
+        if image_url:
+            try:
+                self.storage_service.delete_file(image_url, storage_location="collections")
+            except Exception:
+                pass  # Si falla al eliminar la imagen, continuar
+        
+        # Eliminar la colección
+        return await self.collection_repo.delete(collection_id)
+
+    async def delete_many(self, collection_ids: List[str], user_id: str) -> int:
+        """
+        Eliminar múltiples colecciones.
+        Verifica que todas pertenezcan al usuario.
+        Los artículos NO se eliminan.
+        """
+        # Verificar que todas las colecciones pertenecen al usuario
+        valid_ids = []
+        for cid in collection_ids:
+            collection = await self.collection_repo.find_by_id(cid)
+            if collection and collection.get("id_user") == user_id:
+                # Eliminar imagen si existe
+                image_url = collection.get("image_url")
+                if image_url:
+                    try:
+                        self.storage_service.delete_file(image_url, storage_location="collections")
+                    except Exception:
+                        pass
+                valid_ids.append(cid)
+        
+        if not valid_ids:
+            return 0
+        
+        return await self.collection_repo.delete_many(valid_ids)
+
 
     async def get_collection_with_articles(
         self, 
@@ -285,8 +335,6 @@ class CollectionService:
         # Verificar que existe y pertenece al usuario
         collection = await self.collection_repo.find_by_id(collection_id)
         
-        print(f"Getting article IDs for collection: {collection_id}, user: {user_id}")
-
         if not collection:
             raise NotFoundError("Colección no encontrada")
         
@@ -296,4 +344,12 @@ class CollectionService:
         # Obtener artículos de la colección
         article_ids = await self.article_repo.get_article_ids_by_collection(collection_id)
                 
+        return article_ids
+
+    async def get_my_article_ids(self, user_id: str) -> List[str]:
+        """
+        Obtener IDs de todos los artículos del usuario (Mis Artículos).
+        Busca artículos donde collection_ids contiene el user_id.
+        """
+        article_ids = await self.article_repo.get_article_ids_by_collection(user_id)
         return article_ids

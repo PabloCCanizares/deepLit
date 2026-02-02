@@ -5,7 +5,7 @@ from datetime import datetime
 from app.repositories import ArticleRepository
 from app.models import QueryBody
 from app.core import NotFoundError, AuthorizationError
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 
 
@@ -70,6 +70,20 @@ class ArticleService:
             "values": values
         }
     
+    async def get_keywords_ranking(self, user_id: str, collection_id: Optional[str] = None) -> List:
+        """
+        Obtener ranking de keywords como lista de tuplas [keyword, count].
+        """
+        results = await self.article_repo.get_keywords_aggregated(user_id, collection_id)
+        
+        # Convertir a formato esperado por el frontend: [[keyword, count], ...]
+        keywords = []
+        for item in results:
+            if item["_id"] is not None:
+                keywords.append([item["_id"], item["count"]])
+        
+        return keywords
+
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> Dict:
         """
         Recuperar artículos del usuario actual.

@@ -96,3 +96,33 @@ class CollectionRepository:
         })
         return collection
 
+    async def delete(self, collection_id: str) -> bool:
+        """
+        Eliminar una colección.
+        Nota: No elimina los artículos, solo quita el collection_id de ellos.
+        """
+        # Primero quitar el collection_id de todos los artículos que lo tengan
+        await self.articles_collection.update_many(
+            {"collection_ids": collection_id},
+            {"$pull": {"collection_ids": collection_id}}
+        )
+        
+        # Luego eliminar la colección
+        result = await self.collection.delete_one({"_id": collection_id})
+        return result.deleted_count > 0
+
+    async def delete_many(self, collection_ids: List[str]) -> int:
+        """
+        Eliminar múltiples colecciones.
+        Devuelve el número de colecciones eliminadas.
+        """
+        # Quitar los collection_ids de todos los artículos
+        await self.articles_collection.update_many(
+            {"collection_ids": {"$in": collection_ids}},
+            {"$pull": {"collection_ids": {"$in": collection_ids}}}
+        )
+        
+        # Eliminar las colecciones
+        result = await self.collection.delete_many({"_id": {"$in": collection_ids}})
+        return result.deleted_count
+

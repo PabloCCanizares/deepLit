@@ -31,6 +31,7 @@ class OpenAlexService:
     ) -> Dict:
         """
         Guardar artículo de OpenAlex por ID en una colección específica.
+        Siempre añade a "Mis Artículos" (id_user) además de la colección especificada.
         """
         article = await self.get_by_id(openalex_id)
 
@@ -38,14 +39,19 @@ class OpenAlexService:
 
         article_id = article["_id"]
 
-        # Si el artículo ya existe, solo se añade a la colección (si se proporciona)
-        if await self.article_repo.find_by_id(article_id):
+        # Si el artículo ya existe, añadirlo a las colecciones
+        existing_article = await self.article_repo.find_by_id(article_id)
+        if existing_article:
+            # Siempre añadir a "Mis Artículos" (id_user)
+            await self.collection_repo.add_article_to_collection(id_user, article_id)
+            # Si hay colección específica, añadirlo también
             if collection_id:
                 await self.collection_repo.add_article_to_collection(collection_id, article_id)
         # Si no existe, se crea uno nuevo
         else:
             if collection_id:
-                article["collection_ids"] = [collection_id]
+                # Añadir tanto a la colección específica como a "Mis Artículos" (id_user)
+                article["collection_ids"] = [collection_id, id_user]
             else:
                 article["collection_ids"] = [id_user]
             # Se guarda el artículo en la base de datos
@@ -61,30 +67,35 @@ class OpenAlexService:
         id_user: str
     ) -> Dict:
         """
-        
+        Quitar artículo de una colección o eliminarlo completamente.
+        - Si collection_id es None: quita de "Mis Artículos" (id_user)
+        - Si el artículo queda sin colecciones: se elimina de la base de datos
         """
         article = await self.article_repo.find_by_id(openalex_id)
-        article_id = article["_id"]
-        article_id_user = article["id_user"]
         if not article:
             raise NotFoundError("Artículo no encontrado")
-        if article_id_user != id_user:
+        
+        article_id = article["_id"]
+        article_owner = article.get("id_user")
+        
+        if article_owner != id_user:
             raise AuthorizationError("No tienes permiso para modificar este artículo")
 
-        
         article_collection_ids = article.get("collection_ids", [])
         
-        # Casuística compleja: FIXME explicacion
-        if article_id_user in article_collection_ids and collection_id is None:
-            elim = await self.collection_repo.remove_article_from_collection(article_id_user, article_id)
-            if elim:
-                article_collection_ids.remove(article_id_user)
-
-        if len(article_collection_ids) > 1 :
-            result = await self.collection_repo.remove_article_from_collection(collection_id, article_id)
-        else:
+        # Determinar de qué colección quitar
+        target_collection = collection_id if collection_id else id_user
+        
+        # Quitar de la colección especificada (o de "Mis Artículos" si no se especifica)
+        if target_collection in article_collection_ids:
+            await self.collection_repo.remove_article_from_collection(target_collection, article_id)
+            article_collection_ids.remove(target_collection)
+        
+        # Si el artículo ya no pertenece a ninguna colección, eliminarlo completamente
+        if len(article_collection_ids) == 0:
             result = await self.article_repo.delete(article_id)
-
+        else:
+            result = True
 
         return result
         

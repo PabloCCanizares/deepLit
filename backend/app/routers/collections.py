@@ -8,10 +8,12 @@ Endpoints básicos:
 - POST   /collections/{id}/articles               - Añadir artículo a colección
 - DELETE /collections/{id}/articles/{article_id}  - Quitar artículo de colección
 - PUT    /collections/{id}                        - Actualizar colección
+- DELETE /collections/{id}                        - Eliminar colección
+- DELETE /collections/batch                       - Eliminar múltiples colecciones
 - GET    /collections/{id}/image                  - Obtener imagen de colección
 """
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, Response
-from typing import Optional
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, Response, Body
+from typing import Optional, List
 from app.controllers.collections_controller import CollectionsController
 from app.models.collection import CollectionCreate, CollectionUpdate, AddArticleToCollection
 from app.core.auth import get_current_user
@@ -194,6 +196,75 @@ async def update_collection(
     return await controller.update(collection_id, update_data, current_user)
 
 
+@router.delete(
+    "/batch",
+    response_model=StandardResponse,
+    summary="Eliminar múltiples colecciones",
+    responses=create_response_examples(
+        success_example={
+            "message": "3 colección(es) eliminada(s) exitosamente. Los artículos siguen disponibles.",
+            "data": {"deleted_count": 3}
+        }
+    )
+)
+async def delete_collections_batch(
+    collection_ids: List[str] = Body(..., embed=True),
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Eliminar múltiples colecciones a la vez.
+    Los artículos NO se eliminan, solo se desvinculan de las colecciones.
+    """
+    return await controller.delete_many(collection_ids, current_user)
+
+
+@router.get(
+    "/ids",
+    response_model=StandardResponse,
+    summary="Obtener IDs de artículos en 'Mis Artículos'",
+    responses=create_response_examples(
+        success_example={
+            "message": "IDs de artículos recuperados correctamente",
+            "data": {
+                "article_ids": ["W123", "W456", "W789"]
+            }
+        }
+    )
+)
+async def get_my_article_ids(
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Obtener IDs de artículos en 'Mis Artículos' (colección del usuario).
+    """
+    return await controller.get_ids_from_collection(current_user=current_user)
+
+
+@router.delete(
+    "/{collection_id}",
+    response_model=StandardResponse,
+    summary="Eliminar colección",
+    responses=create_response_examples(
+        success_example={
+            "message": "Colección eliminada exitosamente. Los artículos siguen disponibles.",
+            "data": {"deleted": True}
+        }
+    )
+)
+async def delete_collection(
+    collection_id: str,
+    current_user: dict = Depends(get_current_user),
+    controller: CollectionsController = Depends()
+):
+    """
+    Eliminar una colección.
+    Los artículos NO se eliminan, solo se desvinculan de la colección.
+    """
+    return await controller.delete(collection_id, current_user)
+
+
 @router.get(
     "/{collection_id}/image",
     summary="Obtener imagen de colección",
@@ -219,18 +290,12 @@ async def get_collection_image(
 @router.get(
     "/{collection_id}/ids",
     response_model=StandardResponse,
-    summary="Obtener colección con artículos",
+    summary="Obtener IDs de artículos de una colección",
     responses=create_response_examples(
-        success_example={ # FIXME arreglar mensajes
-            "message": "Colección con artículos recuperada correctamente",
+        success_example={
+            "message": "IDs de artículos recuperados correctamente",
             "data": {
-                "_id": "col_ml_20241111120000",
-                "name": "Machine Learning",
-                "article_count": 2,
-                "articles": [
-                    {"_id": "article_1", "title": "Paper 1"},
-                    {"_id": "article_2", "title": "Paper 2"}
-                ]
+                "article_ids": ["W123", "W456", "W789"]
             }
         }
     )
@@ -241,37 +306,6 @@ async def get_ids_from_collection(
     controller: CollectionsController = Depends()
 ):
     """
-    Obtener colección con sus ids.
+    Obtener IDs de artículos de una colección específica.
     """
     return await controller.get_ids_from_collection(collection_id=collection_id, current_user=current_user)
-
-
-
-@router.get(
-    "/ids",
-    response_model=StandardResponse,
-    summary="Obtener colección 'Sin colección' con artículos",
-    responses=create_response_examples(
-        success_example={ # FIXME arreglar mensajes
-            "message": "Colección con artículos recuperada correctamente",
-            "data": {
-                "_id": "id_user",
-                "name": "Machine Learning",
-                "article_count": 2,
-                "articles": [
-                    {"_id": "article_1", "title": "Paper 1"},
-                    {"_id": "article_2", "title": "Paper 2"}
-                ]
-            }
-        }
-    )
-)
-async def get_ids_from_collection(
-    current_user: dict = Depends(get_current_user),
-    controller: CollectionsController = Depends()
-):
-    """
-    Obtener colección 'Sin coleccion' con sus ids.
-    """
-
-    return await controller.get_ids_from_collection(current_user=current_user)
