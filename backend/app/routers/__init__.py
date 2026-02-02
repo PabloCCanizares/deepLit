@@ -20,6 +20,6 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(stats.router)
     app.include_router(openalex.router)
     app.include_router(collections.router)
-    #app.include_router(ai_assistant.router)
+    app.include_router(ai_assistant.router)
 
 __all__ = ["include_routers"]

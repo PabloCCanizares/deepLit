@@ -45,6 +45,11 @@ from app.models.collection import (
     AddArticleToCollection
 )
 
+# AI Assistant models
+from app.models.ai_assistant import (
+    ChatRequest
+)
+
 __all__ = [
     # Auth (autenticación)
     "UserRegister",
@@ -66,5 +71,8 @@ __all__ = [
     # Collection
     "CollectionCreate",
     "AddArticleToCollection",
+
+    # AI Assistant
+    "ChatRequest",
 ]
 

@@ -311,6 +311,18 @@ export const collectionsAPI = {
   }
 };
 
+export const aiAssistantAPI = {
+  chat: async (message, selected_mode) => {
+    return apiFetch('/ai-assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        selected_mode: selected_mode || null
+      })
+    });
+  }
+};
+
 
 // Exportar por defecto para import por defecto
 export default {
@@ -320,6 +332,7 @@ export default {
   articles: articlesAPI,
   openalex: openalexAPI,
   collections: collectionsAPI,
+  aiAssistant: aiAssistantAPI,
 
 };
 

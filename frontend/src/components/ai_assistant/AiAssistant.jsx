@@ -1,14 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
+import { aiAssistantAPI } from '../../api/api'
 import '../../styles/App.css'
 
 function AiAssistant() {
   const [showChat, setShowChat] = useState(false)
   const [message, setMessage] = useState('')
   const [showTools, setShowTools] = useState(false)
+  const [messages, setMessages] = useState([
+    { role: 'bot', content: 'Hola, soy tu asistente IA. ¿En qué puedo ayudarte?' }
+  ])
+  const [isSending, setIsSending] = useState(false)
+  const [selectedTool, setSelectedTool] = useState(null)
   const chatRef = useRef(null)
   const chatButtonRef = useRef(null)
   const toolButtonRef = useRef(null)
   const toolMenuRef = useRef(null)
+  const chatBodyRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -39,11 +46,42 @@ function AiAssistant() {
     }
   }, [showChat, showTools])
 
-  const handleSend = () => {
-    if (!message.trim()) {
+  useEffect(() => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight
+    }
+  }, [messages, showChat])
+
+  const tools = [
+    { id: 'deep_researcher', label: 'Deep research', icon: 'fas fa-brain' },
+    { id: 'web_searcher', label: 'Web research', icon: 'fas fa-globe' },
+    { id: 'nexus', label: 'Nexus', icon: 'fa-solid fa-diagram-project' }
+  ]
+
+  const activeTool = tools.find((tool) => tool.id === selectedTool) || null
+
+  const handleSend = async () => {
+    const trimmed = message.trim()
+    if (!trimmed || isSending) {
       return
     }
+
     setMessage('')
+    setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
+
+    try {
+      setIsSending(true)
+      const response = await aiAssistantAPI.chat(trimmed, selectedTool)
+      const reply = response?.data?.reply || 'No pude generar una respuesta.'
+      setMessages((prev) => [...prev, { role: 'bot', content: reply }])
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'bot', content: 'Ocurrió un error al contactar el asistente.' }
+      ])
+    } finally {
+      setIsSending(false)
+    }
   }
 
   const handleKeyDown = (event) => {
@@ -73,10 +111,15 @@ function AiAssistant() {
       >
         <div className="chat-header"></div>
 
-        <div className="chat-body">
-          <div className="message bot">
-            <p>Hola, soy tu asistente IA. ¿En qué puedo ayudarte?</p>
-          </div>
+        <div className="chat-body" ref={chatBodyRef}>
+          {messages.map((item, index) => (
+            <div key={index} className={`message ${item.role}`}>
+              <p>{item.content}</p>
+            </div>
+          ))}
+          {isSending && (
+            <div className="typing-indicator">Escribiendo...</div>
+          )}
         </div>
 
         <div className="chat-footer">
@@ -89,25 +132,44 @@ function AiAssistant() {
               onClick={() => setShowTools((prev) => !prev)}
               ref={toolButtonRef}
             >
-              <i className="fas fa-tools"></i>
+              <i className={activeTool ? `${activeTool.icon} tool-icon-selected` : 'fas fa-tools'}></i>
             </button>
             <div
               className={`tools-menu ${showTools ? 'active' : ''}`}
               ref={toolMenuRef}
               role="menu"
             >
-              <button className="tools-item" type="button" role="menuitem">
-                <i className="fas fa-brain"></i>
-                <span>Deep research</span>
-              </button>
-              <button className="tools-item" type="button" role="menuitem">
-                <i className="fas fa-globe"></i>
-                <span>Web research</span>
-              </button>
-              <button className="tools-item" type="button" role="menuitem">
-                <i className="fa-solid fa-diagram-project"></i>
-                <span>Nexus</span>
-              </button>
+              {selectedTool && (
+                <button
+                  className="tools-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setSelectedTool(null)
+                    setShowTools(false)
+                  }}
+                >
+                  <i className="fas fa-ban"></i>
+                  <span>Sin herramienta</span>
+                </button>
+              )}
+              {tools
+                .filter((tool) => tool.id !== selectedTool)
+                .map((tool) => (
+                  <button
+                    key={tool.id}
+                    className="tools-item"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setSelectedTool(tool.id)
+                      setShowTools(false)
+                    }}
+                  >
+                    <i className={tool.icon}></i>
+                    <span>{tool.label}</span>
+                  </button>
+                ))}
             </div>
           </div>
           <textarea
@@ -117,7 +179,12 @@ function AiAssistant() {
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button className="send-btn" onClick={handleSend} aria-label="Enviar mensaje">
+          <button
+            className="send-btn"
+            onClick={handleSend}
+            aria-label="Enviar mensaje"
+            disabled={isSending}
+          >
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M2.01 21L23 12 2.01 3 2 10L17 12L2 14L2.01 21Z" fill="currentColor"/>
             </svg>
