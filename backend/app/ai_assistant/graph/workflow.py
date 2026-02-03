@@ -3,11 +3,10 @@ from .state import AgentState
 from ..agents.specific_agents.master_router import master_decider
 from ..agents.specific_agents.cleaner import clean_text
 from ..agents.specific_agents.chat_bot import chat_bot
-from ..agents.specific_agents.deep_researcher import deep_researcher_node
+from ..agents.specific_agents.deep_researcher import deep_research
 from ..agents.specific_agents.web_researcher import web_researcher_node
 from ..agents.specific_agents.nexus import nexus_node
-from ..agents.specific_agents.meta_data_researcher import meta_data_researcher_node
-from motor.motor_asyncio import AsyncIOMotorClient
+from ..agents.specific_agents.metadata_researcher import metadata_research
 from pymongo import MongoClient 
 from langgraph.checkpoint.mongodb import MongoDBSaver 
 from app.config import settings
@@ -33,8 +32,8 @@ workflow = StateGraph(AgentState)
 workflow.add_node("master", master_decider)
 workflow.add_node("cleaner", clean_text)
 workflow.add_node("chatbot", chat_bot)
-workflow.add_node("meta_data_researcher", meta_data_researcher_node)
-workflow.add_node("deep_researcher", deep_researcher_node)
+workflow.add_node("metadata_researcher", metadata_research)
+workflow.add_node("deep_researcher", deep_research)
 workflow.add_node("web_searcher", web_researcher_node)
 workflow.add_node("nexus", nexus_node)
 
@@ -46,7 +45,7 @@ workflow.add_conditional_edges(
     route_decision,    
     {                  
         "chatbot": "chatbot",
-        "meta_data_researcher": "meta_data_researcher",
+        "metadata_researcher": "metadata_researcher",
         "deep_researcher": "deep_researcher",
         "web_searcher": "web_searcher",
         "nexus": "nexus"
@@ -55,7 +54,7 @@ workflow.add_conditional_edges(
 
 workflow.add_edge("cleaner", "master")
 workflow.add_edge("chatbot", END)
-workflow.add_edge("meta_data_researcher", END)
+workflow.add_edge("metadata_researcher", END)
 workflow.add_edge("deep_researcher", END)
 workflow.add_edge("web_searcher", END)
 workflow.add_edge("nexus", END)

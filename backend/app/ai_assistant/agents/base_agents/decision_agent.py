@@ -1,6 +1,6 @@
-from .base_agent import BaseAgent
 from enum import Enum
 from pydantic import create_model, Field
+from .base_agent import BaseAgent
 
 class DecisionAgent(BaseAgent):
     def __init__(self, valid_outputs, modelo, temperatura, system_prompt):

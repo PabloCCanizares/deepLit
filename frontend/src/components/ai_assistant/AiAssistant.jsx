@@ -118,7 +118,7 @@ function AiAssistant() {
             </div>
           ))}
           {isSending && (
-            <div className="typing-indicator">Escribiendo...</div>
+            <div className="typing-indicator">Pensando...</div>
           )}
         </div>
 

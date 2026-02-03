@@ -5,7 +5,6 @@ from ..config import CHATBOT_CONFIG
 
 agent = LanguageAgent(**CHATBOT_CONFIG, system_prompt=CHATBOT_PROMPT)
 
-# ---FUNCIÓN QUE DESEMPEÑA EL SENDER ---
 def chat_bot(state):
     input = state["user_message"]
     history = state.get("history", [])

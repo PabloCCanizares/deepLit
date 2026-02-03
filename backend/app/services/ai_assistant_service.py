@@ -27,7 +27,7 @@ class AiAssistantService:
         thread_id = user_id or user_name
         config = {"configurable": {"thread_id": str(thread_id)}}
 
-        result = app.invoke(state, config=config)
+        result = await app.ainvoke(state, config=config)
 
         return {
             "reply": result["data"],

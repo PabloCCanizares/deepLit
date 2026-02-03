@@ -4,7 +4,6 @@ from ..config import MASTER_CONFIG
 
 agent = DecisionAgent(**MASTER_CONFIG, system_prompt=MASTER_PROMPT)
 
-# ---FUNCIÓN QUE DESEMPEÑA EL CHECKER ---
 def master_decider(state):
     output = None
     input = state["user_message"]

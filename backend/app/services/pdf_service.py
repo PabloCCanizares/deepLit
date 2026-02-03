@@ -3,6 +3,7 @@ Servicio de PDFs.
 """
 import base64
 from datetime import datetime
+from pathlib import Path
 from app.repositories import PdfRepository
 from app.models import PdfUpload
 from app.services import StorageService
@@ -13,7 +14,6 @@ class PdfService:
     def __init__(self):
         self.pdf_repo = PdfRepository()
         self.storage = StorageService()
-        # ✅ SOLO su repository, NO tiene article_repo ni article_service
     
     async def save_pdf(self, pdf_data: PdfUpload, user_id: str) -> str:
         """
@@ -40,12 +40,14 @@ class PdfService:
             filename=unique_filename,
             storage_location="uploads"
         )
+        absolute_path = str(Path(save_path).resolve())
         
         # Crear registro en BD
         pdf_dict = {
             "_id": unique_id,
             "id_user": user_id,
-            "filename": unique_filename
+            "filename": unique_filename,
+            "file_path": absolute_path,
         }
         
         await self.pdf_repo.create(pdf_dict)
