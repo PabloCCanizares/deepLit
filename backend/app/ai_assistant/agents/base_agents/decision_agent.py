@@ -1,26 +1,28 @@
-from enum import Enum
-from pydantic import create_model, Field
 from .base_agent import BaseAgent
 
 class DecisionAgent(BaseAgent):
+    """
+    Agente que decide entre múltiples opciones.
+    Usa parsing manual para compatibilidad con Gemini (no soporta bien with_structured_output).
+    """
     def __init__(self, valid_outputs, modelo, temperatura, system_prompt):
         super().__init__(modelo=modelo, temperatura=temperatura, system_prompt=system_prompt)
-        esquema = self.create_schema(valid_outputs)
-        self.llm = self.llm.with_structured_output(esquema)
-    
-    def create_schema(self, valid_outputs):
-        DynamicEnum = Enum('DynamicEnum', {opt: opt for opt in valid_outputs}, type=str)
-
-        RouteQuery = create_model(
-            'RouteQuery',
-            destination=(
-                DynamicEnum, 
-                Field(..., description=f"Decide una opción entre: {', '.join(valid_outputs)}")
-            )
-        )
-
-        return RouteQuery 
+        self.valid_outputs = valid_outputs
          
     def invoke(self, prompt):
-        return self.get_model().invoke(prompt).destination.value
+        # Añadir instrucción clara al prompt para que responda solo con una palabra
+        decision_prompt = self.create_prompt(
+            f"{prompt}\n\nIMPORTANTE: Responde ÚNICAMENTE con una de estas opciones, sin explicación: {', '.join(self.valid_outputs)}"
+        )
+        
+        # Obtener respuesta del modelo
+        response = self.llm.invoke(decision_prompt).content.strip().lower()
+        
+        # Buscar cuál de las opciones válidas está en la respuesta
+        for option in self.valid_outputs:
+            if option.lower() in response:
+                return option
+        
+        # Fallback: primera opción (chatbot)
+        return self.valid_outputs[0]
     

@@ -1,5 +1,4 @@
 from langchain_community.document_loaders.pdf import PyMuPDFLoader
-from langchain_community.document_loaders.parsers import RapidOCRBlobParser
 from pathlib import Path
 from pymongo import MongoClient
 from ..base_agents.rag_agent import RagAgent
@@ -37,8 +36,6 @@ def load_document(record, file_path):
 	file_path = Path(file_path)
 	loader = PyMuPDFLoader(str(file_path), 
 					mode="page", 
-					images_inner_format="markdown-img", 
-					images_parser=RapidOCRBlobParser(), 
 					extract_tables="markdown"
 					)
 	docs = loader.load()

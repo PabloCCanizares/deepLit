@@ -2,11 +2,11 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from .base_agent import BaseAgent
 
 class RagAgent(BaseAgent):
-    def __init__(self, modelo, temperatura, system_prompt, text_splitter, embbedings):
+    def __init__(self, modelo, temperatura, system_prompt, text_splitter, embeddings):
         super().__init__(modelo=modelo, temperatura=temperatura, system_prompt=system_prompt)
         self.text_splitter = text_splitter
-        self.embbedings = embbedings
-        self.vector_store = InMemoryVectorStore(embedding=embbedings)
+        self.embeddings = embeddings
+        self.vector_store = InMemoryVectorStore(embedding=embeddings)
         self.documents = []
     
     def invoke(self, prompt):

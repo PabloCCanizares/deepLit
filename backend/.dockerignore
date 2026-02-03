@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Storage local (se usa volumen en producción)
+storage/uploads/*
+storage/profiles/*
+storage/collections/*
+!storage/uploads/.gitkeep
+!storage/profiles/.gitkeep
+!storage/collections/.gitkeep
+
+# Tests
+tests/
+*.test.py
+
+# Documentación
+*.md
+!README.md
+
+# Archivos temporales
+*.pdf
+*.xlsx
+*.json
+

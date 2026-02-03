@@ -30,8 +30,9 @@ openpyxl==3.1.2
 pyalex==0.18.0
 
 #Agentes
-langchain               
-langchain-core         
-langchain-ollama        
-langgraph              
-langgraph-checkpoint-mongodb
+langchain==0.3.14
+langchain-core==0.3.52
+langchain-google-genai==2.0.0
+langgraph==0.2.60
+langgraph-checkpoint-mongodb==0.1.4
+langchain-community==0.3.14

@@ -1,11 +1,11 @@
-from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from ..config import DEFAULT_MODEL, DEFAULT_TEMPERATURE
 from ..prompts import DEFAULT_SYSTEM_PROMPT
 
 class BaseAgent:
     def __init__(self, modelo=DEFAULT_MODEL, temperatura=DEFAULT_TEMPERATURE, system_prompt=DEFAULT_SYSTEM_PROMPT):
-        self.llm = ChatOllama(model=modelo, temperature=temperatura) 
+        self.llm = ChatGoogleGenerativeAI(model=modelo, temperature=temperatura) 
         self.system_prompt = system_prompt
     
     def get_model(self):

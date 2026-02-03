@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000"
     
     # ============================================
+    # LLM (Google Gemini)
+    # ============================================
+    GOOGLE_API_KEY: str  # OBLIGATORIA en .env
+    
+    # ============================================
     # STORAGE (Almacenamiento de archivos)
     # ============================================
     # Directorio base para todos los archivos

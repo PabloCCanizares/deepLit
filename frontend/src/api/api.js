@@ -1,6 +1,6 @@
 // API Configuration
-// En desarrollo, Vite proxy redirige /api → http://localhost:8000
-// En producción, configurar en .env: VITE_API_URL=https://tu-api.com
+// En desarrollo: Vite proxy redirige /api → http://localhost:8000
+// En producción: Vercel rewrite redirige /api → tu backend en Railway
 const API_BASE = '/api';
 
 // Helper function to get auth token
