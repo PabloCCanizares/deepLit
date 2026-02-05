@@ -19,7 +19,8 @@ def deep_research(state):
 
 	# RAG
 	load_documents()
-	rag = agent.retrive(user_message=input, docs=DOCUMENTOS)
+	agent.process_documents(docs=DOCUMENTOS)
+	rag = agent.retrive(user_message=input)
     
 	prompt_rag = input + rag
 

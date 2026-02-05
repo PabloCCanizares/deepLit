@@ -14,7 +14,7 @@ class PdfService:
     def __init__(self):
         self.pdf_repo = PdfRepository()
         self.storage = StorageService()
-    
+        
     async def save_pdf(self, pdf_data: PdfUpload, user_id: str) -> str:
         """
         Guardar PDF en disco y crear registro en base de datos.
@@ -52,8 +52,14 @@ class PdfService:
         
         await self.pdf_repo.create(pdf_dict)
         
-        return unique_id
-    
+        return unique_id, absolute_path
+
+    async def save_embbedings(self, pdf_id: str, embbedings: list) -> dict:
+        """
+        Busca el PDF por id y guarda los chunks en el documento.
+        """
+        return await self.pdf_repo.update(pdf_id, {"embbedings": embbedings})
+
     async def get_document_count(self, user_id: str) -> int:
         """
         Contar PDFs del usuario.

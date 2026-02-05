@@ -1,12 +1,12 @@
 """
 Controlador de PDFs.
 """
-import base64
 from fastapi import Depends
 from app.services.pdf_service import PdfService
 from app.services.article_service import ArticleService
 from app.services.extraction_service import ExtractionService
 from app.services.collection_service import CollectionService
+from app.ai_assistant.agents.specific_agents.pdf_processor import process_pdf
 from app.models import PdfUpload
 from app.core import StandardResponse
 from typing import Optional
@@ -41,19 +41,19 @@ class PdfsController:
                     message="Colección no encontrada",
                     data={}
                 )
-            
+        
         # PASO 1: Guardar PDF (PdfService)
-        pdf_id = await self.pdf_service.save_pdf(pdf_data, user_id)
+        pdf_id, absolute_path = await self.pdf_service.save_pdf(pdf_data, user_id)
         
-        # PASO 2: Extraer características (ExtractionService)
-        pdf_bytes = base64.b64decode(pdf_data.content)
-        features = await self.extraction_service.extract_features(pdf_bytes)
+        # PASO 2: Procesar el PDF
+        processed_info = process_pdf(absolute_path)
+        _ = await self.pdf_service.save_embbedings(pdf_id=pdf_id, embbedings=processed_info["embbedings"])
         
-        # PASO 3: Crear artículo con referencia al PDF (ArticleService)
+        # PASO 4: Crear artículo con referencia al PDF (ArticleService)
         article_id = await self.article_service.create_from_pdf_features(
             pdf_id=pdf_id,
             user_id=user_id,
-            features=features,
+            features=processed_info["metadata"],
             collection_id=collection_id
         )
         
@@ -64,7 +64,7 @@ class PdfsController:
                 "id_pdf": pdf_id,
                 "article": {
                     "_id": article_id,
-                    **features
+                    **processed_info["metadata"]
                 }
             }
         )

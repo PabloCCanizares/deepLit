@@ -8,16 +8,18 @@ class RagAgent(BaseAgent):
         self.embbedings = embbedings
         self.vector_store = InMemoryVectorStore(embedding=embbedings)
         self.documents = []
-    
-    def invoke(self, prompt):
+
+    def invoke(self, prompt, structured_output=False):
+        if structured_output:
+            return self.get_model().invoke(prompt).model_dump()
         return self.get_model().invoke(prompt).content
 
     def process_documents(self, docs):
         splits = self.text_splitter.split_documents(docs)
         self.vector_store.add_documents(documents=splits)
+        return self.vector_store.store
 
-    def retrive(self, user_message, docs):
-        self.process_documents(docs)
+    def retrive(self, user_message):
         retrieved_docs = self.vector_store.similarity_search(user_message, k=5) # k -> Cuantos chunks recuperar
         retrieved_text = "\n\n".join(
             (f"[Fuente: Pág {doc.metadata.get('page', '?')}] {doc.page_content}")

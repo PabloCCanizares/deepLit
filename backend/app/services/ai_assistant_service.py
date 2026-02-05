@@ -4,7 +4,7 @@ Servicio del asistente IA.
 Responsabilidad: ejecutar el agente y devolver la respuesta.
 """
 from typing import Dict, Optional
-from app.ai_assistant.graph.workflow import app
+from app.ai_assistant.agents_graph.workflow import app
 
 
 class AiAssistantService:

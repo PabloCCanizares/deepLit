@@ -11,6 +11,9 @@ class BaseAgent:
     def get_model(self):
         return self.llm
     
+    def set_structured_output(self, esquema):
+        self.llm = self.llm.with_structured_output(esquema)
+        
     def create_prompt(self, message):
         prompt = [
             SystemMessage(content=self.system_prompt), 

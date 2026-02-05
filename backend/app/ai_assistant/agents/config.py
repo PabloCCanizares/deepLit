@@ -42,3 +42,15 @@ DEEP_RESEARCHER_CONFIG = {
 		),
     "embbedings": OllamaEmbeddings(model="nomic-embed-text"),
 }
+
+PDF_PROCESSOR_CONFIG = {
+    "modelo": "gemma3:12b", 
+    "temperatura": 0,
+    "text_splitter": RecursiveCharacterTextSplitter(
+		chunk_size=1000,  # chunk size (characters)
+		chunk_overlap=200,  # chunk overlap (characters)
+		add_start_index=True,  # track index in original document
+		),
+    "embbedings": OllamaEmbeddings(model="nomic-embed-text"),
+}
+
