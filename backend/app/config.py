@@ -5,7 +5,7 @@ Carga automáticamente variables desde .env y las valida.
 Si falta alguna variable obligatoria o el tipo es incorrecto, la app no arranca.
 """
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -51,10 +51,15 @@ class Settings(BaseSettings):
     # ============================================
     # Directorio base para todos los archivos
     STORAGE_BASE_DIR: str = "./storage"
-    
     UPLOADS_DIR: str = "uploads"
     PROFILES_DIR: str = "profiles"
     COLLECTIONS_DIR: str = "collections"
+
+    # ============================================
+    # AI ASSISTANT
+    # ============================================
+    OFFLINE: bool = False
+    GOOGLE_API_KEY: Optional[str] = None  
     
     class Config:
         env_file = ".env"

@@ -3,8 +3,8 @@ from pydantic import create_model, Field
 from .base_agent import BaseAgent
 
 class DecisionAgent(BaseAgent):
-    def __init__(self, valid_outputs, modelo, temperatura, system_prompt):
-        super().__init__(modelo=modelo, temperatura=temperatura, system_prompt=system_prompt)
+    def __init__(self, valid_outputs, modelo, temperatura, system_prompt, offline):
+        super().__init__(modelo=modelo, temperatura=temperatura, system_prompt=system_prompt, offline=offline)
         esquema = self.create_schema(valid_outputs)
         self.llm = self.llm.with_structured_output(esquema)
     

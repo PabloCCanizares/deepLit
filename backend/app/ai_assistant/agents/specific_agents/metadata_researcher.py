@@ -2,15 +2,15 @@ from pymongo import MongoClient
 from langchain_core.documents import Document
 from ..base_agents.rag_agent import RagAgent
 from ..prompts import METADATA_RESEARCHER
-from ..config import METADATA_CONFIG
+from ..config import get_metadata_config, CLIENT, DATABASE
 
-CLIENT = MongoClient("mongodb://localhost:27017/")
-ARTICLES_COLLECTION = CLIENT["deeplit"]["articles"]
+ARTICLES_COLLECTION = CLIENT[DATABASE]["articles"]
 DOCUMENTOS = []
 
-agent = RagAgent(**METADATA_CONFIG, system_prompt=METADATA_RESEARCHER)
-
 def metadata_research(state):
+	config = get_metadata_config()
+	agent = RagAgent(**config, system_prompt=METADATA_RESEARCHER)
+
 	input = state["user_message"]
 	history = state.get("history", [])
 	load_documents()
@@ -27,7 +27,7 @@ def metadata_research(state):
 	agent.print_agent_execution(agent="METADATA RESEARCHER", input=prompt_final, output=output)
 
 	return {"data": output, "history": new_history, "previous_agent": "metadata_researcher", "next_agent": None,}
- 
+
 
 def load_documents():
 	mongo_docs = list(ARTICLES_COLLECTION.find({}))
@@ -46,4 +46,4 @@ def load_documents():
 
 		doc_final = Document(page_content=content)
 		DOCUMENTOS.append(doc_final)
-            
+

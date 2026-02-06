@@ -92,7 +92,11 @@ const ArticleView = () => {
           <h3>Información General</h3>
           <div className="documentField">
             <label>Autor(es):</label>
-            <span>{document.authors || 'No especificado'}</span>
+            <span>
+              {Array.isArray(document.authors)
+                ? document.authors.join(', ')
+                : (document.authors || 'No especificado')}
+            </span>
           </div>
           <div className="documentField">
             <label>Año:</label>
@@ -110,6 +114,25 @@ const ArticleView = () => {
             <div className="documentField">
               <label>Tipo:</label>
               <span>{document.type}</span>
+            </div>
+          )}
+          {document.keywords && document.keywords.length > 0 && (
+            <div className="documentField">
+              <label>Palabras Clave:</label>
+              <span>
+                {Array.isArray(document.keywords)
+                  ? document.keywords
+                      .map(item => {
+                        // Manejar diferentes formatos de keywords
+                        if (typeof item === 'string') return item;
+                        if (item && item.key) return item.key;
+                        if (item && item.display_name) return item.display_name;
+                        return String(item);
+                      })
+                      .filter(k => k) // Eliminar valores vacíos
+                      .join(', ')
+                  : 'No especificado'}
+              </span>
             </div>
           )}
           {document.acronym && (
@@ -152,19 +175,6 @@ const ArticleView = () => {
           <div className="documentSection">
             <h3>Observaciones</h3>
             <p className="documentAbstract">{document.observations}</p>
-          </div>
-        )}
-
-        {document.keywords && (
-          <div className="documentSection">
-            <h3>Palabras Clave</h3>
-              <div className="documentKeywords">
-                {document.keywords?.map((item, index) => (
-                  <span key={index} className="keyword-badge">
-                    {item.key}
-                  </span>
-                ))}
-              </div>
           </div>
         )}
 

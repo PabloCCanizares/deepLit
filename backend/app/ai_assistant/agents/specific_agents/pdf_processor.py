@@ -5,7 +5,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from ..base_agents.rag_agent import RagAgent
 from ..prompts import PDF_PROCESSOR_PROMPT
-from ..config import PDF_PROCESSOR_CONFIG
+from ..config import get_pdf_processor_config
 
 class Metadata(BaseModel):
     doi: Optional[str] = Field(None, description="DOI del documento si se encuentra.")
@@ -20,22 +20,22 @@ class Metadata(BaseModel):
     citations: Optional[int] = Field(None, description="Número total de citas si se menciona en el documento.")
     summary: str = Field(None, description="Un resumen generado del contenido.")
 
-agent = RagAgent(**PDF_PROCESSOR_CONFIG, system_prompt=PDF_PROCESSOR_PROMPT)
-agent.set_structured_output(Metadata) #importante para que la salida sea json
 
-def process_pdf(file_path):
+
+def process_pdf(file_path, offline=None):
+    config = get_pdf_processor_config(offline)
+    agent = RagAgent(**config, system_prompt=PDF_PROCESSOR_PROMPT)
+    agent.set_structured_output(Metadata)
+
     # RAG
     docs = load_document(file_path=file_path)
     number_pages = len(docs)
     embbedings = agent.process_documents(docs=docs)
-    if number_pages > 5:
-        docs = docs[:3] + docs[-2:]
     pdf_text = "\nEl texto del pdf es: ".join([d.page_content for d in docs])
     prompt = agent.create_prompt(message=pdf_text)
     output = agent.invoke(prompt, structured_output=True)
     output["pages"] = number_pages
     agent.print_agent_execution(agent="PDF PROCESSOR", input=prompt, output=output)
-
     return {'metadata': output, 'embbedings': embbedings}
 
 def load_document(file_path):

@@ -1,10 +1,11 @@
 from ..base_agents.decision_agent import DecisionAgent
 from ..prompts import MASTER_PROMPT
-from ..config import MASTER_CONFIG
-
-agent = DecisionAgent(**MASTER_CONFIG, system_prompt=MASTER_PROMPT)
+from ..config import get_master_config
 
 def master_decider(state):
+    config = get_master_config()
+    agent = DecisionAgent(**config, system_prompt=MASTER_PROMPT)
+
     output = None
     input = state["user_message"]
 

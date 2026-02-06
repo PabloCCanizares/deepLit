@@ -1,56 +1,98 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pymongo import MongoClient
 from langchain_ollama import OllamaEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from app.config import settings
+from app.services.runtime_config_service import RuntimeConfigService
 
+CLIENT = MongoClient("mongodb://localhost:27017/")
+DATABASE = "deeplit"
 
-DEFAULT_MODEL = "llama3.1"
-DEFAULT_TEMPERATURE = 0
+DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(chunk_size=1000,  chunk_overlap=200, add_start_index=True)
+DEFAULT_OFFLINE_EMBBEDING_MODEL = "nomic-embed-text"
+DEFAULT_ONLINE_EMBBEDING_MODEL = "models/gemini-embedding-001"
 
-CLEANER_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0
-}
+def get_embeddings(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
 
-CHATBOT_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0
-}
+    if offline:
+        return OllamaEmbeddings(model=DEFAULT_OFFLINE_EMBBEDING_MODEL)
+    else:
+        if not settings.GOOGLE_API_KEY:
+            raise ValueError("GOOGLE_API_KEY no está configurada")
+        return GoogleGenerativeAIEmbeddings(
+            model= DEFAULT_ONLINE_EMBBEDING_MODEL,
+            google_api_key=settings.GOOGLE_API_KEY
+        )
 
-MASTER_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0, 
-    "valid_outputs": ['chatbot', 'metadata_researcher', 'deep_researcher', 'web_searcher', 'nexus']
-}
+def get_model_name(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
 
-METADATA_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0,
-    "text_splitter": RecursiveCharacterTextSplitter(
-		chunk_size=1000,  # chunk size (characters)
-		chunk_overlap=200,  # chunk overlap (characters)
-		add_start_index=True,  # track index in original document
-		),
-    "embbedings": OllamaEmbeddings(model="nomic-embed-text"),
-}
+    if offline:
+        return "gemma3:12b"
+    else:
+        return "gemini-2.0-flash"
 
-DEEP_RESEARCHER_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0,
-    "text_splitter": RecursiveCharacterTextSplitter(
-		chunk_size=1000,  # chunk size (characters)
-		chunk_overlap=200,  # chunk overlap (characters)
-		add_start_index=True,  # track index in original document
-		),
-    "embbedings": OllamaEmbeddings(model="nomic-embed-text"),
-}
+def get_cleaner_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "offline": offline
+    }
 
-PDF_PROCESSOR_CONFIG = {
-    "modelo": "gemma3:12b", 
-    "temperatura": 0,
-    "text_splitter": RecursiveCharacterTextSplitter(
-		chunk_size=1000,  # chunk size (characters)
-		chunk_overlap=200,  # chunk overlap (characters)
-		add_start_index=True,  # track index in original document
-		),
-    "embbedings": OllamaEmbeddings(model="nomic-embed-text"),
-}
+def get_chatbot_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "offline": offline
+    }
+
+def get_master_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "valid_outputs": ['chatbot', 'metadata_researcher', 'deep_researcher', 'web_searcher', 'nexus'],
+        "offline": offline
+    }
+
+def get_metadata_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "text_splitter": DEFAULT_TEXT_SPLITTER,
+        "embbedings": get_embeddings(offline),
+        "offline": offline
+    }
+
+def get_deep_researcher_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "text_splitter": DEFAULT_TEXT_SPLITTER,
+        "embbedings": get_embeddings(offline),
+        "offline": offline
+    }
+
+def get_pdf_processor_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "text_splitter": DEFAULT_TEXT_SPLITTER,
+        "embbedings": get_embeddings(offline),
+        "offline": offline
+    }
 

@@ -117,9 +117,10 @@ INSTRUCCIONES:
    - Referencias citadas (obras/autores en la bibliografía).
 
 3. Si algún campo no se encuentra, indícalo como "No disponible". 
+4. En campos largos como summary o abstract, cópialo entero, no solo una parte.
+
 
 IMPORTANTE: Ten en cuenta que al ser un articulo cientifico, los distintos campos suelen estar mencionados explicítamente.
-  -Por ejemplo: RESUMEN -resumen del articulo- ABSTRACT -abstract del articulo-
-  -Por lo que simplemente te tienes que fijas donde empieza y acaba cada
+IMPORTANTE: En el campo abstract y summary, si aparecen explicitamente copialos enteros. Si no aparecen, geenra tu el resumen y el abstract
 IMPORTANTE: Debes proporcionar todos los campos ya sea con el valor encontrado o con "No disponible"
 """
