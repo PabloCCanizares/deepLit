@@ -41,6 +41,9 @@ class BaseAgent:
             AIMessage(content=ai_output)
         ]
 
+    def let_web_search(self):
+        self.llm = self.llm.bind_tools([{"google_search": {}}])
+
     def print_agent_execution(self, agent, input, output):
         print("==============================")
         print(agent)

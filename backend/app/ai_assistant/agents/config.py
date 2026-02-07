@@ -63,6 +63,15 @@ def get_master_config(offline=None):
         "offline": offline
     }
 
+def get_web_searcher_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "offline": offline
+    }
+
 def get_metadata_config(offline=None):
     if offline is None:
         offline = RuntimeConfigService.get_offline_mode()

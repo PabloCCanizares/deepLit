@@ -4,7 +4,7 @@ from ..agents.specific_agents.master_router import master_decider
 from ..agents.specific_agents.cleaner import clean_text
 from ..agents.specific_agents.chat_bot import chat_bot
 from ..agents.specific_agents.deep_researcher import deep_research
-from ..agents.specific_agents.web_researcher import web_researcher_node
+from ..agents.specific_agents.web_researcher import web_search
 from ..agents.specific_agents.nexus import nexus_node
 from ..agents.specific_agents.metadata_researcher import metadata_research
 from pymongo import MongoClient 
@@ -34,7 +34,7 @@ workflow.add_node("cleaner", clean_text)
 workflow.add_node("chatbot", chat_bot)
 workflow.add_node("metadata_researcher", metadata_research)
 workflow.add_node("deep_researcher", deep_research)
-workflow.add_node("web_searcher", web_researcher_node)
+workflow.add_node("web_searcher", web_search)
 workflow.add_node("nexus", nexus_node)
 
 workflow.set_entry_point("cleaner") # Que empiece siempre por el nodo master
