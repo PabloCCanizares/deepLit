@@ -8,6 +8,45 @@ from app.core import NotFoundError, AuthorizationError
 from typing import List, Dict, Optional, Any
 
 
+# Campos esperados para un artículo completo con sus valores por defecto
+ARTICLE_DEFAULT_FIELDS = {
+    "doi": "No disponible",
+    "title": "Sin título",
+    "relevance_score": None,
+    "year": "No disponible",
+    "category": "No disponible",
+    "type": "No disponible",
+    "pages": "No disponible",
+    "pdf_url": None,
+    "landing_page_url": None,
+    "keywords": [],
+    "referenced_works": [],
+    "related_works": [],
+    "counts_by_year": [],
+    "abstract": "No disponible",
+    "authors": [],
+    "citations": None,
+    "summary": "No disponible",
+    "acronym": "No disponible",
+    "link": None,
+    "citation": "No disponible",
+    "observations": ""
+}
+
+
+def normalize_article(article_data: Dict) -> Dict:
+    """
+    Normaliza un diccionario de artículo, rellenando los campos faltantes
+    con valores predeterminados.
+    """
+    normalized = article_data.copy()
+    
+    for field, default_value in ARTICLE_DEFAULT_FIELDS.items():
+        if field not in normalized or normalized[field] is None:
+            normalized[field] = default_value
+    
+    return normalized
+
 
 class ArticleService:
     
@@ -27,13 +66,15 @@ class ArticleService:
         # Generar ID del artículo
         article_id = f"article_{pdf_id}"
         
+        # Normalizar features para rellenar campos faltantes
+        normalized_features = normalize_article(features)
         
         # Preparar datos del artículo
         article_dict = {
             "_id": article_id,
             "id_user": user_id,
             "id_pdf": pdf_id,
-            **features  # title, abstract, authors, year, keywords, etc.
+            **normalized_features  # title, abstract, authors, year, keywords, etc.
         }
 
         if collection_id:

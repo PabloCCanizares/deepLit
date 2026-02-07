@@ -10,6 +10,7 @@ from app.core import NotFoundError
 from app.repositories import ArticleRepository
 from app.repositories import CollectionRepository
 from app.core import NotFoundError, AuthorizationError
+from app.services.article_service import normalize_article
 import json
 
  
@@ -329,6 +330,8 @@ class OpenAlexService:
             "counts_by_year": article.get("counts_by_year", []),
             "abstract": article["abstract"]
         }
-            
+        
+        # Normalizar para asegurar que todos los campos estén presentes
+        article_final = normalize_article(article_final)
         
         return article_final
