@@ -49,6 +49,9 @@ class PdfsController:
         # PASO 2: Procesar el PDF
         processed_info = process_pdf(absolute_path)
         _ = await self.pdf_service.save_embbedings(pdf_id=pdf_id, embbedings=processed_info["embbedings"])
+
+        serializable_docs = [doc.model_dump() for doc in processed_info["docs"]]
+        _ = await self.pdf_service.save_docs(pdf_id=pdf_id, docs=serializable_docs)
         create_knowledge_graph(docs=processed_info["docs"])
         
         # PASO 4: Crear artículo con referencia al PDF (ArticleService)

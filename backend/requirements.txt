@@ -10,35 +10,37 @@ motor>=3.6.0
 # Autenticación
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
 
 # Utilidades
 python-dotenv==1.0.0
 pydantic==2.10.3
-pydantic-settings==2.6.1
+pydantic-settings==2.12.0
 email-validator==2.1.0
 
 
 # Procesamiento de PDFs
 PyPDF2==3.0.1
-PyMuPDF
-rapidocr-onnxruntime
+PyMuPDF==1.26.7
+rapidocr-onnxruntime==1.2.3
 
 #Procesamiento Excels
-pandas==2.1.4
-numpy<2
+pandas==2.2.3
+numpy>=2,<3
 openpyxl==3.1.2
 
 #PyAlex
 pyalex==0.18.0
 
 #Agentes
-langchain-core
-langchain-community
-langchain-ollama
-langchain-google-genai
-langchain-text-splitters
-langgraph
-langgraph-checkpoint-mongodb
-langchain-neo4j
-faiss-cpu
-neo4j
+langchain-core==1.2.9
+langchain-community==0.4.1
+langchain-experimental
+langchain-ollama==1.0.1
+langchain-google-genai==4.2.0
+langchain-text-splitters==1.1.0
+langgraph==1.0.8
+langgraph-checkpoint-mongodb==0.3.1
+langchain-neo4j==0.8.0
+faiss-cpu==1.13.2
+neo4j==6.1.0

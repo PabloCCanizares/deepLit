@@ -59,6 +59,12 @@ class PdfService:
         Busca el PDF por id y guarda los chunks en el documento.
         """
         return await self.pdf_repo.update(pdf_id, {"embbedings": embbedings})
+    
+    async def save_docs(self, pdf_id: str, docs: list) -> dict:
+        """
+        Busca el PDF por id y guarda los docs en el documento.
+        """
+        return await self.pdf_repo.update(pdf_id, {"docs": docs})
 
     async def get_document_count(self, user_id: str) -> int:
         """
