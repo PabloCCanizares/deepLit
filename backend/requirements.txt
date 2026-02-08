@@ -10,7 +10,6 @@ motor>=3.6.0
 # Autenticación
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-bcrypt==3.2.2
 
 # Utilidades
 python-dotenv==1.0.0
@@ -21,20 +20,25 @@ email-validator==2.1.0
 
 # Procesamiento de PDFs
 PyPDF2==3.0.1
+PyMuPDF
+rapidocr-onnxruntime
 
 #Procesamiento Excels
 pandas==2.1.4
+numpy<2
 openpyxl==3.1.2
 
 #PyAlex
 pyalex==0.18.0
 
 #Agentes
-langchain
 langchain-core
 langchain-community
 langchain-ollama
 langchain-google-genai
+langchain-text-splitters
 langgraph
 langgraph-checkpoint-mongodb
+langchain-neo4j
 faiss-cpu
+neo4j

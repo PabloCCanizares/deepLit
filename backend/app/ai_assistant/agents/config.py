@@ -53,6 +53,15 @@ def get_chatbot_config(offline=None):
         "offline": offline
     }
 
+def get_knowledge_graph_config(offline=None):
+    if offline is None:
+        offline = RuntimeConfigService.get_offline_mode()
+    return {
+        "modelo": get_model_name(offline),
+        "temperatura": 0,
+        "offline": offline
+    }
+
 def get_master_config(offline=None):
     if offline is None:
         offline = RuntimeConfigService.get_offline_mode()

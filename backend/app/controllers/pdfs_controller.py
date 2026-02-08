@@ -7,6 +7,7 @@ from app.services.article_service import ArticleService
 from app.services.extraction_service import ExtractionService
 from app.services.collection_service import CollectionService
 from app.ai_assistant.agents.specific_agents.pdf_processor import process_pdf
+from app.ai_assistant.agents.specific_agents.knowledge_graph import create_knowledge_graph
 from app.models import PdfUpload
 from app.core import StandardResponse
 from typing import Optional
@@ -48,6 +49,7 @@ class PdfsController:
         # PASO 2: Procesar el PDF
         processed_info = process_pdf(absolute_path)
         _ = await self.pdf_service.save_embbedings(pdf_id=pdf_id, embbedings=processed_info["embbedings"])
+        create_knowledge_graph(docs=processed_info["docs"])
         
         # PASO 4: Crear artículo con referencia al PDF (ArticleService)
         article_id = await self.article_service.create_from_pdf_features(

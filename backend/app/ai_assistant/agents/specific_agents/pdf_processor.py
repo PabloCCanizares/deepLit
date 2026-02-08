@@ -36,7 +36,7 @@ def process_pdf(file_path, offline=None):
     output = agent.invoke(prompt, structured_output=True)
     output["pages"] = number_pages
     agent.print_agent_execution(agent="PDF PROCESSOR", input=prompt, output=output)
-    return {'metadata': output, 'embbedings': embbedings}
+    return {'docs': docs, 'metadata': output, 'embbedings': embbedings}
 
 def load_document(file_path):
     file_path = Path(file_path)
