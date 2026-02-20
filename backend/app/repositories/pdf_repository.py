@@ -35,3 +35,7 @@ class PdfRepository:
         # Devolver el PDF actualizado
         return await self.collection.find_one({"_id": pdf_id})
     
+    async def delete(self, pdf_id: str) -> bool:
+        """Eliminar un PDF por ID"""
+        result = await self.collection.delete_one({"_id": pdf_id})
+        return result.deleted_count > 0

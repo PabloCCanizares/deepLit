@@ -7,6 +7,7 @@ class AgentState(TypedDict):
     Define la información con la que se comunican los agentes
     """
     user: Optional[str] 
+    user_id: Optional[str]
     user_message: Optional[str]
     history: Annotated[list[AnyMessage], add_messages]
     data: Optional[str]

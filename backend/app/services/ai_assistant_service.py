@@ -21,6 +21,7 @@ class AiAssistantService:
         state = {
             "user_message": message,
             "user": user_name,
+            "user_id": user_id,
             "selected_mode": selected_mode
         }
 

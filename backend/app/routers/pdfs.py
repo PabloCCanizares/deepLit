@@ -3,7 +3,7 @@ Rutas de PDFs.
 
 Endpoints para gestionar PDFs (subir, consultar, eliminar).
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from app.controllers import PdfsController
 from app.models import PdfUpload
 from app.core import StandardResponse, create_response_examples, get_current_user
@@ -44,12 +44,14 @@ router = APIRouter(prefix="/pdfs", tags=["PDFs"])
 )
 async def create_pdf(
     pdf_data: PdfUpload,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     controller: PdfsController = Depends()
 ):
     """
     Subir un PDF y extraer su contenido automáticamente.
+    El procesamiento pesado se ejecuta en segundo plano.
     """
-    print(current_user, "collectionId:", pdf_data.collection_id)
-    return await controller.upload_pdf(pdf_data, current_user, pdf_data.collection_id)
+    return await controller.upload_pdf(pdf_data, current_user, background_tasks)
+
 
