@@ -61,6 +61,13 @@ class Settings(BaseSettings):
     OFFLINE: bool = False
     GOOGLE_API_KEY: Optional[str] = None  
     
+    # ============================================
+    # NEO4J (Knowledge Graph) — opcional
+    # ============================================
+    NEO4J_URL: Optional[str] = None
+    NEO4J_USERNAME: Optional[str] = None
+    NEO4J_PASSWORD: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

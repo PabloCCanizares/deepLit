@@ -78,14 +78,64 @@ class ArticleService:
         }
 
         if collection_id:
-            # Aquí asignamos una lista que contiene el ID al nuevo campo "collection_ids"
             article_dict["collection_ids"] = [collection_id]
 
-        
         # Guardar en base de datos
         result_id = await self.article_repo.create(article_dict)
                 
         return result_id
+    
+    async def create_processing_article(
+        self,
+        pdf_id: str,
+        user_id: str,
+        filename: str,
+        collection_id: Optional[str] = None
+    ) -> str:
+        """
+        Crear artículo placeholder con status='processing'.
+        Se mostrará en la lista mientras se procesan los metadatos.
+        """
+        article_id = f"article_{pdf_id}"
+        
+        article_dict = {
+            "_id": article_id,
+            "id_user": user_id,
+            "id_pdf": pdf_id,
+            "title": filename,
+            "status": "processing",
+            "year": "No disponible",
+            "category": "No disponible",
+            "pages": "No disponible",
+        }
+        
+        if collection_id:
+            article_dict["collection_ids"] = [collection_id]
+        
+        await self.article_repo.create(article_dict)
+        return article_id
+    
+    async def update_from_processing(
+        self,
+        article_id: str,
+        user_id: str,
+        features: Dict
+    ) -> Dict:
+        """
+        Actualizar artículo después del procesamiento en background.
+        Cambia status a 'ready' e inyecta la metadata extraída.
+        """
+        normalized = normalize_article(features)
+        normalized["status"] = "ready"
+        
+        updated = await self.article_repo.update(article_id, normalized)
+        return updated
+    
+    async def force_delete(self, article_id: str) -> bool:
+        """
+        Eliminar artículo sin verificación de usuario (para rollback interno).
+        """
+        return await self.article_repo.delete(article_id)
     
     async def get_article_count(self, user_id: str, collection_id: Optional[str] = None) -> int:
         """

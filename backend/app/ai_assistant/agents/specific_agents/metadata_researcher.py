@@ -1,11 +1,9 @@
-from pymongo import MongoClient
 from langchain_core.documents import Document
 from ..base_agents.rag_agent import RagAgent
 from ..prompts import METADATA_RESEARCHER
 from ..config import get_metadata_config, CLIENT, DATABASE
 
 ARTICLES_COLLECTION = CLIENT[DATABASE]["articles"]
-DOCUMENTOS = []
 
 def metadata_research(state):
 	config = get_metadata_config()
@@ -13,11 +11,13 @@ def metadata_research(state):
 
 	input = state["user_message"]
 	history = state.get("history", [])
-	load_documents()
+	user_id = state.get("user_id")
 
-	agent.process_documents(DOCUMENTOS)
+	# Cargar solo documentos del usuario actual
+	documentos = load_documents(user_id=user_id)
+	agent.process_documents(documentos)
 
-	prompt_rag = agent.retrive(user_message=input, docs=[])
+	prompt_rag = agent.retrive(user_message=input)
 
 	prompt_final = agent.create_prompt(message=prompt_rag)
 	output = agent.invoke(prompt_final)
@@ -29,8 +29,15 @@ def metadata_research(state):
 	return {"data": output, "history": new_history, "previous_agent": "metadata_researcher", "next_agent": None,}
 
 
-def load_documents():
-	mongo_docs = list(ARTICLES_COLLECTION.find({}))
+def load_documents(user_id=None):
+	"""
+	Carga documentos de la colección articles de MongoDB.
+	Si se proporciona user_id, filtra solo los artículos de ese usuario.
+	"""
+	query = {"id_user": user_id} if user_id else {}
+	mongo_docs = list(ARTICLES_COLLECTION.find(query))
+
+	documentos = []
 	for doc in mongo_docs:
 		content = (
 			f"TÍTULO: {doc.get('title')}\n"
@@ -45,5 +52,6 @@ def load_documents():
 		)
 
 		doc_final = Document(page_content=content)
-		DOCUMENTOS.append(doc_final)
+		documentos.append(doc_final)
 
+	return documentos

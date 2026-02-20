@@ -22,7 +22,7 @@ class Metadata(BaseModel):
 
 
 
-def process_pdf(file_path, offline=None):
+def process_pdf(file_path, article_id=None, user_id=None, offline=None):
     config = get_pdf_processor_config(offline)
     agent = RagAgent(**config, system_prompt=PDF_PROCESSOR_PROMPT)
     agent.set_structured_output(Metadata)
@@ -30,13 +30,19 @@ def process_pdf(file_path, offline=None):
     # RAG
     docs = load_document(file_path=file_path)
     number_pages = len(docs)
-    embbedings = agent.process_documents(docs=docs)
+    agent.process_documents(docs=docs)
+
+    # Persistir FAISS index a disco (por user_id/article_id)
+    if article_id and user_id:
+        faiss_index_path = str(Path(__file__).resolve().parents[4] / "storage" / "faiss_indexes" / str(user_id) / article_id)
+        agent.save_index(faiss_index_path)
+
     pdf_text = "\nEl texto del pdf es: ".join([d.page_content for d in docs])
     prompt = agent.create_prompt(message=pdf_text)
     output = agent.invoke(prompt, structured_output=True)
     output["pages"] = number_pages
     agent.print_agent_execution(agent="PDF PROCESSOR", input=prompt, output=output)
-    return {'docs': docs, 'metadata': output, 'embbedings': embbedings}
+    return {'docs': docs, 'metadata': output}
 
 def load_document(file_path):
     file_path = Path(file_path)

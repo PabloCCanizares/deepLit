@@ -8,7 +8,7 @@ from app.services.runtime_config_service import RuntimeConfigService
 CLIENT = MongoClient("mongodb://localhost:27017/")
 DATABASE = "deeplit"
 
-DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(chunk_size=1000,  chunk_overlap=200, add_start_index=True)
+DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300, add_start_index=True)
 DEFAULT_OFFLINE_EMBBEDING_MODEL = "nomic-embed-text"
 DEFAULT_ONLINE_EMBBEDING_MODEL = "models/gemini-embedding-001"
 
@@ -31,7 +31,7 @@ def get_model_name(offline=None):
         offline = RuntimeConfigService.get_offline_mode()
 
     if offline:
-        return "gemma3:12b"
+        return "gemma3:4b"
     else:
         return "gemini-2.0-flash"
 
@@ -88,7 +88,7 @@ def get_metadata_config(offline=None):
         "modelo": get_model_name(offline),
         "temperatura": 0,
         "text_splitter": DEFAULT_TEXT_SPLITTER,
-        "embbedings": get_embeddings(offline),
+        "embedding_model": get_embeddings(offline),
         "offline": offline
     }
 
@@ -99,7 +99,7 @@ def get_deep_researcher_config(offline=None):
         "modelo": get_model_name(offline),
         "temperatura": 0,
         "text_splitter": DEFAULT_TEXT_SPLITTER,
-        "embbedings": get_embeddings(offline),
+        "embedding_model": get_embeddings(offline),
         "offline": offline
     }
 
@@ -110,7 +110,7 @@ def get_pdf_processor_config(offline=None):
         "modelo": get_model_name(offline),
         "temperatura": 0,
         "text_splitter": DEFAULT_TEXT_SPLITTER,
-        "embbedings": get_embeddings(offline),
+        "embedding_model": get_embeddings(offline),
         "offline": offline
     }
 
