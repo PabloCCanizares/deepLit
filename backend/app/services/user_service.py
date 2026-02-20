@@ -23,10 +23,16 @@ class UserService:
         self,
         email: str,
         name: str = None,
-        profile_image: str = None
+        profile_image: str = None,
+        position: str = None,
+        specialization: str = None,
+        workgroup: str = None,
+        degree: str = None,
+        university: str = None,
+        experience: str = None
     ) -> dict:
         """
-        Actualizar nombre e/o imagen de perfil del usuario.
+        Actualizar campos del perfil del usuario.
         """
         # Obtener usuario una sola vez al inicio
         user = await self.user_repo.find_by_email(email)
@@ -35,6 +41,24 @@ class UserService:
         
         if name is not None:
             update_data["name"] = name
+
+        if position is not None:
+            update_data["position"] = position
+
+        if specialization is not None:
+            update_data["specialization"] = specialization
+
+        if workgroup is not None:
+            update_data["workgroup"] = workgroup
+
+        if degree is not None:
+            update_data["degree"] = degree
+
+        if university is not None:
+            update_data["university"] = university
+
+        if experience is not None:
+            update_data["experience"] = experience
         
         if profile_image is not None:
             # Eliminar imagen antigua si existe
@@ -51,7 +75,13 @@ class UserService:
             return {
                 "email": user.get("email"),
                 "name": user.get("name"),
-                "profile_image": user.get("profile_image")
+                "profile_image": user.get("profile_image"),
+                "position": user.get("position", ""),
+                "specialization": user.get("specialization", ""),
+                "workgroup": user.get("workgroup", ""),
+                "degree": user.get("degree", ""),
+                "university": user.get("university", ""),
+                "experience": user.get("experience", "")
             }
         
         # Actualizar solo los campos enviados
@@ -60,7 +90,13 @@ class UserService:
         return {
             "email": updated_user.get("email"),
             "name": updated_user.get("name"),
-            "profile_image": updated_user.get("profile_image")
+            "profile_image": updated_user.get("profile_image"),
+            "position": updated_user.get("position", ""),
+            "specialization": updated_user.get("specialization", ""),
+            "workgroup": updated_user.get("workgroup", ""),
+            "degree": updated_user.get("degree", ""),
+            "university": updated_user.get("university", ""),
+            "experience": updated_user.get("experience", "")
         }
     
     async def _save_profile_image(self, email: str, base64_data: str) -> str:

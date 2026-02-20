@@ -268,6 +268,7 @@ body[data-theme='dark'] .searchInput::placeholder {
 /* Profile page */
 body[data-theme='dark'] .profileCard {
   background: var(--card-bg);
+  border-color: var(--border-color);
   box-shadow: 0 4px 12px var(--shadow);
 }
 
@@ -275,6 +276,15 @@ body[data-theme='dark'] .profileCardTitle,
 body[data-theme='dark'] .profileLabel,
 body[data-theme='dark'] .profileUserName {
   color: var(--text-primary);
+}
+
+body[data-theme='dark'] .profileUserEmail,
+body[data-theme='dark'] .profileImageHint {
+  color: var(--text-secondary);
+}
+
+body[data-theme='dark'] .profileCardHeader {
+  border-bottom-color: var(--border-color);
 }
 
 body[data-theme='dark'] .profileInput,
@@ -315,6 +325,25 @@ body[data-theme='dark'] .profileButtonSecondary:hover:not(:disabled) {
   background: var(--bg-secondary);
 }
 
+body[data-theme='dark'] .profileEditButton {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+body[data-theme='dark'] .profileEditButton:hover {
+  background: rgba(99, 102, 241, 0.28);
+}
+
+body[data-theme='dark'] .profileSaveButton {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+body[data-theme='dark'] .profileCancelButton {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
 body[data-theme='dark'] .profileMessage.success {
   background-color: #064e3b;
   color: #a7f3d0;
@@ -328,6 +357,10 @@ body[data-theme='dark'] .profileMessage.error {
 }
 
 body[data-theme='dark'] .profileDivider {
+  border-top-color: var(--border-color);
+}
+
+body[data-theme='dark'] .profileLogoutSection {
   border-top-color: var(--border-color);
 }
 

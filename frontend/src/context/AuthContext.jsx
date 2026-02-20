@@ -99,13 +99,13 @@ export const AuthProvider = ({ children }) => {
     setProfileImageUrl(null);
   };
 
-  const updateProfile = async (name, profileImage) => {
-    const response = await authAPI.updateProfile(name, profileImage);
+  const updateProfile = async (profileData = {}) => {
+    const response = await authAPI.updateProfile(profileData);
     setUser(response.data);
     
     // Si se actualizó la imagen, usar el base64 directamente
-    if (profileImage) {
-      setProfileImageUrl(profileImage);
+    if (profileData.profile_image) {
+      setProfileImageUrl(profileData.profile_image);
     }
     
     return response.data;

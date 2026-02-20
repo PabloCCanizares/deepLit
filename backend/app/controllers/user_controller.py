@@ -31,7 +31,13 @@ class UserController:
                 "_id": str(current_user.get("_id")),
                 "email": current_user.get("email"),
                 "name": current_user.get("name", ""),
-                "profile_image": current_user.get("profile_image", None)
+                "profile_image": current_user.get("profile_image", None),
+                "position": current_user.get("position", ""),
+                "specialization": current_user.get("specialization", ""),
+                "workgroup": current_user.get("workgroup", ""),
+                "degree": current_user.get("degree", ""),
+                "university": current_user.get("university", ""),
+                "experience": current_user.get("experience", "")
             }
         )
     
@@ -46,7 +52,13 @@ class UserController:
         result = await self.service.update_profile(
             email=current_user["email"],
             name=update_data.name,
-            profile_image=update_data.profile_image
+            profile_image=update_data.profile_image,
+            position=update_data.position,
+            specialization=update_data.specialization,
+            workgroup=update_data.workgroup,
+            degree=update_data.degree,
+            university=update_data.university,
+            experience=update_data.experience
         )
         return StandardResponse(
             success=True,

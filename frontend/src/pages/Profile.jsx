@@ -3,6 +3,17 @@ import { useAuth } from '../context/AuthContext'
 import '../styles/App.css'
 import '../styles/profile/Profile.css'
 
+const getProfileDataFromUser = (userData) => ({
+  name: userData?.name || '',
+  email: userData?.email || '',
+  position: userData?.position || '',
+  specialization: userData?.specialization || '',
+  workgroup: userData?.workgroup || '',
+  degree: userData?.degree || '',
+  university: userData?.university || '',
+  experience: userData?.experience || ''
+});
+
 function Profile() {
   const { user, updateProfile, changePassword, profileImageUrl, logout } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -11,16 +22,7 @@ function Profile() {
   
   // Estado para edición de perfil
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    position: user?.position || '',
-    specialization: user?.specialization || '',
-    workgroup: user?.workgroup || '',
-    degree: user?.degree || '',
-    university: user?.university || '',
-    experience: user?.experience || ''
-  });
+  const [profileData, setProfileData] = useState(getProfileDataFromUser(user));
   
   // Estado para cambio de contraseña
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -32,7 +34,6 @@ function Profile() {
 
   // Estado para imagen de perfil
   const [previewImage, setPreviewImage] = useState(null);
-  const [newImageBase64, setNewImageBase64] = useState(null);
   
   // Usar la imagen del servidor o el preview local
   const displayImage = previewImage || profileImageUrl;
@@ -40,16 +41,7 @@ function Profile() {
   // Sincronizar profileData cuando user cambia
   useEffect(() => {
     if (user) {
-      setProfileData({
-        name: user.name || '',
-        email: user.email || '',
-        position: user.position || '',
-        specialization: user.specialization || '',
-        workgroup: user.workgroup || '',
-        degree: user.degree || '',
-        university: user.university || '',
-        experience: user.experience || ''
-      });
+      setProfileData(getProfileDataFromUser(user));
     }
   }, [user]);
 
@@ -87,17 +79,18 @@ function Profile() {
         
         reader.onload = async (e) => {
           const base64String = e.target.result;
-          setNewImageBase64(base64String);
           setPreviewImage(base64String);
           
           // Guardar automáticamente
           try {
-            await updateProfile(profileData.name, base64String);
+            await updateProfile({
+              name: profileData.name,
+              profile_image: base64String
+            });
             setMessage({ type: 'success', text: 'Imagen de perfil actualizada' });
           } catch (error) {
             setMessage({ type: 'error', text: error.message || 'Error al actualizar la imagen' });
             setPreviewImage(null);
-            setNewImageBase64(null);
           } finally {
             setLoading(false);
           }
@@ -112,14 +105,17 @@ function Profile() {
   };
 
   const handleSaveProfile = async () => {
-    if (!profileData.name.trim()) {
-      setMessage({ type: 'error', text: 'El nombre no puede estar vacío' });
-      return;
-    }
-
     try {
       setLoading(true);
-      await updateProfile(profileData.name, null);
+      await updateProfile({
+        name: profileData.name,
+        position: profileData.position,
+        specialization: profileData.specialization,
+        workgroup: profileData.workgroup,
+        degree: profileData.degree,
+        university: profileData.university,
+        experience: profileData.experience
+      });
       setEditingProfile(false);
       setMessage({ type: 'success', text: 'Perfil actualizado correctamente' });
     } catch (error) {
@@ -174,7 +170,7 @@ function Profile() {
 
   return (
     <div className="page-container">
-      <div className="container">
+      <div className="container profilePage">
         {/* Mensaje de feedback */}
         {message.text && (
           <div className={`profileMessage ${message.type} ${!showMessage ? 'fadeOut' : ''}`}>
@@ -204,12 +200,13 @@ function Profile() {
               </label>
             </div>
             <h2 className="profileUserName">{profileData.name || 'Usuario'}</h2>
+            <p className="profileUserEmail">{profileData.email}</p>
+            <p className="profileImageHint">JPG o PNG · máximo 5MB</p>
           </div>
         </div>
 
         {/* Sección de Información Personal */}
         <div className="profileCard">
-          <hr className="profileDivider" /> {/* Línea divisoria */}
           <div className="profileCardHeader">
             <h2 className="profileCardTitle">Información Personal</h2>
             {!editingProfile ? (
@@ -221,7 +218,7 @@ function Profile() {
                 <i className="fas fa-pencil-alt"></i>
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: '-1rem', alignItems: 'center' }}>
+              <div className="profileEditActions">
                 <button 
                   className="profileSaveButton"
                   onClick={handleSaveProfile}
@@ -229,32 +226,38 @@ function Profile() {
                   title="Guardar cambios"
                 >
                   <i className="fas fa-check"></i>
+                  <span>Guardar</span>
                 </button>
                 <button 
                   className="profileCancelButton"
                   onClick={() => {
                     setEditingProfile(false);
-                    setProfileData({
-                      name: user?.name || '',
-                      email: user?.email || '',
-                      position: user?.position || '',
-                      specialization: user?.specialization || '',
-                      workgroup: user?.workgroup || '',
-                      degree: user?.degree || '',
-                      university: user?.university || '',
-                      experience: user?.experience || ''
-                    });
+                    setProfileData(getProfileDataFromUser(user));
                   }}
                   disabled={loading}
                   title="Cancelar"
                 >
                   <i className="fas fa-times"></i>
+                  <span>Cancelar</span>
                 </button>
               </div>
             )}
           </div>
 
           <div className="profileFormGrid">
+            {/* Nombre */}
+            <div className="profileField">
+              <label className="profileLabel">Nombre</label>
+              <input
+                type="text"
+                value={editingProfile ? profileData.name : (profileData.name || 'Usuario')}
+                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                className={editingProfile ? "profileInput" : "profileInputDisabled"}
+                disabled={!editingProfile || loading}
+                placeholder="Usuario"
+              />
+            </div>
+
             {/* Email */}
             <div className="profileField">
               <label className="profileLabel">Correo Electrónico</label>
@@ -333,7 +336,7 @@ function Profile() {
           </div>
 
           {/* Experiencia Profesional - Campo completo */}
-          <div className="profileField" style={{ marginTop: '1rem' }}>
+          <div className="profileField profileExperienceField">
             <label className="profileLabel">Experiencia Profesional</label>
             <textarea 
               value={profileData.experience}
@@ -350,7 +353,8 @@ function Profile() {
         <div className="profileCard">
           <h2 className="profileCardTitle">Seguridad</h2>
 
-          {!showPasswordChange ? (
+          <div className="profileSecurityContent">
+            {!showPasswordChange ? (
             <button 
               className="profileButtonPrimary"
               onClick={() => setShowPasswordChange(true)}
@@ -417,6 +421,7 @@ function Profile() {
               </div>
             </div>
           )}
+          </div>
 
           <div className="profileLogoutSection">
             <button

@@ -26,6 +26,12 @@ class AuthService:
             "email": register_data.email,
             "password_hash": hash_password(register_data.password),
             "name": register_data.name or "",
+            "position": "",
+            "specialization": "",
+            "workgroup": "",
+            "degree": "",
+            "university": "",
+            "experience": "",
             "created_at": datetime.utcnow()
         }
         
@@ -61,7 +67,13 @@ class AuthService:
             "user": {
                 "email": user["email"],
                 "name": user.get("name", ""),
-                "profile_image": user.get("profile_image", None)
+                "profile_image": user.get("profile_image", None),
+                "position": user.get("position", ""),
+                "specialization": user.get("specialization", ""),
+                "workgroup": user.get("workgroup", ""),
+                "degree": user.get("degree", ""),
+                "university": user.get("university", ""),
+                "experience": user.get("experience", "")
             }
         }
 

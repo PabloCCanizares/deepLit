@@ -65,13 +65,18 @@
 }
 
 /* Profile Card */
+.profilePage {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
 .profileCard {
-  background: white;
-  border: none;
+  background: linear-gradient(180deg, #ffffff 0%, #fdfdff 100%);
+  border: 1px solid rgba(99, 102, 241, 0.14);
   border-radius: 0.75rem;
-  padding: 2rem;
+  padding: 1.75rem 2rem;
   margin-bottom: 1.3rem;
-  box-shadow: none;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
 .profileCardHeader {
@@ -80,7 +85,9 @@
   align-items: center;
   gap: 0.75rem;
   margin-top: 0;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.14);
 }
 
 .profileCardTitle {
@@ -96,14 +103,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  padding: -1rem 0 0.5rem 0;
+  gap: 0.35rem;
+  padding: 0.4rem 0 0.15rem 0;
 }
 
 .profileImageContainer {
   flex-shrink: 0;
   position: relative;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .profileImage {
@@ -159,43 +166,28 @@
 .profileDivider {
   border: none;
   border-top: 1px solid var(--main_color); 
-  margin-top: -1.5rem; 
-  margin-bottom: 0;
+  margin: 0 0 1.25rem 0;
   width: 100%; 
   margin-left: auto; 
   margin-right: auto; 
   opacity: 0.5;
 }
 
+.profileEditActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 
 .profileEditButton {
   position: static;
-  background: transparent;     
-  color: var(--main_color);     
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.profileEditButton i {
-  font-size: 1.1rem;           
-  color: var(--main_color);     
-}
-
-.profileEditButton:hover {
-  transform: scale(0.9);    
-  box-shadow: "none";
-}
-
-.profileSaveButton {
-  background: transparent;
-  color: #10b981;  
-  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--main_color);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   box-shadow: none;
   padding: 0;
   display: flex;
@@ -203,74 +195,134 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%; 
+}
+
+.profileEditButton i {
+  font-size: 0.95rem;
+  color: var(--main_color);
+}
+
+.profileEditButton:hover {
+  background: rgba(99, 102, 241, 0.14);
+  transform: scale(1.04);
+  box-shadow: none;
+}
+
+.profileSaveButton {
+  background: #ecfdf5;
+  color: #10b981;  
+  border: 1px solid #a7f3d0;
+  box-shadow: none;
+  padding: 0.35rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 96px;
+  height: 34px;
+  border-radius: 999px; 
 }
 
 .profileSaveButton i {
-  font-size: 1.1rem;
+  font-size: 0.92rem;
   color: #10b981;  
 }
 
+.profileSaveButton span {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .profileSaveButton:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4); /* Sombra verde */
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.22);
 }
 
 /* Botón de cancelar (rojo claro) */
 .profileCancelButton {
-  background: transparent;
+  background: #fef2f2;
   color: #ef4444;  /* Rojo claro */
-  border: none;
+  border: 1px solid #fecaca;
   box-shadow: none;
-  padding: 0;
+  padding: 0.35rem 0.7rem;
   display: flex;
   align-items: center;
+  gap: 0.35rem;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%; /* Circular */
+  min-width: 96px;
+  height: 34px;
+  border-radius: 999px;
 }
 
 .profileCancelButton i {
-  font-size: 1.1rem;
+  font-size: 0.92rem;
   color: #ef4444;  /* Rojo claro */
 }
 
+.profileCancelButton span {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .profileCancelButton:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.4); /* Sombra roja */
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.2);
+}
+
+.profileSaveButton:disabled,
+.profileCancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .profileUserName {
-  font-size: 1.3rem;
+  font-size: 1.45rem;
   font-weight: 600;
   color: var(--main_color);
   margin: 0;
-  margin-top: 0;
-  margin-bottom: -2rem; 
+  margin-top: 0.25rem;
+  margin-bottom: 0; 
+}
+
+.profileUserEmail {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.profileImageHint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
 /* Profile Field */
 .profileField {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.95rem;
+}
+
+.profileExperienceField {
+  margin-top: 0.45rem;
 }
 
 .profileLabel {
   display: block;
   font-weight: 600;
   color: var(--dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   font-size: 0.9rem;
 }
 
 .profileFormGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.85rem;
+  gap: 1.1rem 1rem;
 }
 
 .profileFieldDisplay {
@@ -284,18 +336,17 @@
 .profileTextarea,
 .profileTextareaDisabled {
   width: 100%;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--main_color);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #c7d2fe;
   border-radius: 0.5rem;
   font-size: 0.95rem;
   font-family: inherit;
   transition: all 0.2s ease;
-  color: var(--main_color);
+  color: #334155;
 }
 
 .profileInput,
 .profileTextarea {
-  border: 1px solid var(--main_color);
   background-color: white;
 }
 
@@ -309,16 +360,16 @@
 .profileInputDisabled,
 .profileTextareaDisabled {
   background-color: #f8fafc;
-  color: var(--main_color);
+  color: #64748b;
   cursor: default;
-  border: 1px solid var(--main_color);
-  opacity: 0.7;
+  border: 1px solid #e2e8f0;
+  opacity: 1;
 }
 
 .profileTextarea,
 .profileTextareaDisabled {
   resize: vertical;
-  min-height: 120px;
+  min-height: 132px;
 }
 
 .profileFieldHint {
@@ -356,6 +407,7 @@
 .profileButtonSecondary {
   background-color: #f1f5f9;
   color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .profileButtonSecondary:hover:not(:disabled) {
@@ -369,7 +421,9 @@
 }
 
 .profileLogoutSection {
-  margin-top: 1.25rem;
+  margin-top: 1.45rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(99, 102, 241, 0.12);
   display: flex;
   justify-content: center;
 }
@@ -401,7 +455,7 @@
 
 /* Password Form */
 .profilePasswordForm {
-  background-color: #f8fafc;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   padding: 1.5rem;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
@@ -414,10 +468,20 @@
   justify-content: flex-start;
 }
 
+.profileSecurityContent {
+  margin-top: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .profileCard {
     padding: 1.5rem;
+  }
+
+  .profileCardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
   }
 
   .profileFormGrid {
@@ -444,14 +508,36 @@
   }
 
   .profileDivider {
-    width: 68%; 
-    margin-top: -1.5rem;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%; 
+    margin-bottom: 1rem;
+  }
+
+  .profileEditActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .profileSaveButton,
+  .profileCancelButton {
+    min-width: 88px;
+    height: 32px;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .profileUserName {
+    font-size: 1.35rem;
+  }
+
+  .profileUserEmail {
+    font-size: 0.88rem;
   }
 
   .profileFormActions {
     flex-direction: column;
+  }
+
+  .profileSecurityContent {
+    margin-top: 0.85rem;
   }
 
   .profileFormActions button {

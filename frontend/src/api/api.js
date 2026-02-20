@@ -101,11 +101,34 @@ export const authAPI = {
   logout: () => apiFetch('/auth/logout', {
     method: 'POST',
   }),
-  updateProfile: (name, profileImage) => {
-    const body = { name };
-    if (profileImage) {
-      body.profile_image = profileImage;
+  updateProfile: (profileData = {}) => {
+    const body = {};
+    const editableFields = [
+      'position',
+      'specialization',
+      'workgroup',
+      'degree',
+      'university',
+      'experience',
+    ];
+
+    if (typeof profileData.name === 'string') {
+      const trimmedName = profileData.name.trim();
+      if (trimmedName.length > 0) {
+        body.name = trimmedName;
+      }
     }
+
+    if (typeof profileData.profile_image === 'string' && profileData.profile_image) {
+      body.profile_image = profileData.profile_image;
+    }
+
+    editableFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(profileData, field)) {
+        body[field] = profileData[field];
+      }
+    });
+
     return apiFetch('/user/me/profile', {
       method: 'PUT',
       body: JSON.stringify(body),
