@@ -87,6 +87,6 @@ Gestiona una cola de “completado de datos” para documentos con campos faltan
 Responsabilidades principales
 -Detección de incompletos: usando configuration.required_fields, identifica documentos con campos faltantes.
 Gestión de cola: alta individual o múltiple, consulta del estado y listado de pendientes/encolados.
---Ejecución asíncrona: arranque/parada de un hilo daemon que procesa la cola en segundo plano.
+--Ejecución asíncrona: arranque/parada de un hilo daemon que procesa la cola en segundo plAño.
 Integración con OpenAlex: búsqueda por título, selección del mejor resultado por similitud (difflib) y actualización de campos en el documento.
 Vistas de control: contador agregado (/queue), estado detallado (/queue/status) y vista intermedia de “matches” aplicados (/queue/intermediate).

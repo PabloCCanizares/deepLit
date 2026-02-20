@@ -1,16 +1,34 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
 import '../styles/articles/ArticleViewEdit.css'
 
-const ArticleEdit = () => {
+function normalizeToFormData(document = {}) {
+  return {
+    title: document.title || '',
+    year: document.year || '',
+    category: document.category || '',
+    type: document.type || '',
+    citations: document.citations || '',
+    pages: document.pages || '',
+    observations: document.observations || '',
+    link: document.link || '',
+    summary: document.summary || '',
+    abstract: document.abstract || '',
+    authors: Array.isArray(document.authors) ? document.authors.join(', ') : document.authors || '',
+  }
+}
+
+function ArticleEdit({ previewMode = false, previewDocument = null, onLockedAction = null, previewId = '' }) {
   const { id } = useParams()
+  const decodedId = decodeURIComponent(previewId || id || '')
   const navigate = useNavigate()
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     title: '',
     year: '',
@@ -26,81 +44,94 @@ const ArticleEdit = () => {
   })
 
   useEffect(() => {
+    if (previewMode) {
+      if (previewDocument) {
+        setFormData(normalizeToFormData(previewDocument))
+        setError(null)
+      } else {
+        setError('Articulo no encontrado')
+      }
+      setLoading(false)
+      return
+    }
+
     const fetchDocument = async () => {
       try {
         setLoading(true)
         setError(null)
-        
-        const response = await articlesAPI.getById(id)
-        const document = response.data
-        
-        setFormData({
-          title: document.title || '',
-          year: document.year || '',
-          category: document.category || '',
-          type: document.type || '',
-          citations: document.citations || '',
-          pages: document.pages || '',
-          observations: document.observations || '',
-          link: document.link || '',
-          summary: document.summary || '',
-          abstract: document.abstract || '',
-          authors: document.authors || '',
-        })
+
+        const response = await articlesAPI.getById(decodedId)
+        setFormData(normalizeToFormData(response.data))
       } catch (err) {
         console.error('Error fetching document:', err)
-        setError(`Error al cargar el artículo: ${err.message}`)
+        setError(`Error al cargar el articulo: ${err.message}`)
       } finally {
         setLoading(false)
       }
     }
 
-    if (id) {
+    if (decodedId) {
       fetchDocument()
+    } else {
+      setError('ID de articulo no proporcionado')
+      setLoading(false)
     }
-  }, [id])
+  }, [decodedId, previewDocument, previewMode])
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+  const handleInputChange = (event) => {
+    if (previewMode) return
+
+    const { name, value } = event.target
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
   }
 
   const handleSave = async () => {
+    if (previewMode) {
+      onLockedAction?.('edit')
+      return
+    }
+
     try {
       setSaving(true)
 
-      // Convierte los strings vacios a null para que en el backend haya campos nulos
       const sanitizedData = Object.fromEntries(
-        Object.entries(formData).map(([key, value]) => [
-          key,
-          value === "" ? null : value
-        ])
+        Object.entries(formData).map(([key, value]) => [key, value === '' ? null : value]),
       )
 
-      await articlesAPI.update(id, sanitizedData)
-      navigate(`/articles/${id}`)
+      await articlesAPI.update(decodedId, sanitizedData)
+      navigate(`/articles/${encodeURIComponent(decodedId)}`)
     } catch (err) {
       console.error('Error saving document:', err)
-      setError('Error al guardar el artículo')
+      setError('Error al guardar el articulo')
     } finally {
       setSaving(false)
     }
   }
 
   const handleCancel = () => {
-    navigate(`/articles/${id}`)
+    if (previewMode) {
+      navigate(`/preview/articles/${encodeURIComponent(decodedId)}`)
+      return
+    }
+
+    navigate(`/articles/${encodeURIComponent(decodedId)}`)
   }
 
   const handleDelete = async () => {
+    if (previewMode) {
+      onLockedAction?.('edit')
+      return
+    }
+
     try {
-      await articlesAPI.delete(id)
+      await articlesAPI.delete(decodedId)
       navigate('/articles')
     } catch (err) {
       console.error('Error deleting article:', err)
-      setError('Error al eliminar el artículo')
+      setError('Error al eliminar el articulo')
       setShowDeleteModal(false)
     }
   }
@@ -110,7 +141,7 @@ const ArticleEdit = () => {
       <div className="documentEditContainer">
         <div className="loading">
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-          <p>Cargando artículo...</p>
+          <p>Cargando articulo...</p>
         </div>
       </div>
     )
@@ -122,6 +153,9 @@ const ArticleEdit = () => {
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
           <p>{error}</p>
+          <button onClick={handleCancel} className="btn-secondary">
+            Volver
+          </button>
         </div>
       </div>
     )
@@ -130,31 +164,23 @@ const ArticleEdit = () => {
   return (
     <div className="documentEditContainer">
       <div className="documentHeader">
-        <h1 style={{ color: 'var(--main_color)' }}>Editar Artículo</h1>
+        <h1 style={{ color: 'var(--main_color)' }}>{previewMode ? 'Editar Articulo (solo lectura)' : 'Editar Articulo'}</h1>
         <div className="documentActions">
-          <button 
-            onClick={handleCancel} 
-            className="btn-secondary"
-            disabled={saving}
-          >
+          <button onClick={handleCancel} className="btn-secondary" disabled={saving}>
             Cancelar
           </button>
-          <button 
-            onClick={handleSave} 
-            className="btn-primary"
-            disabled={saving}
-          >
-            {saving ? 'Guardando...' : 'Guardar'}
+          <button onClick={handleSave} className="btn-primary" disabled={saving || previewMode}>
+            {previewMode ? 'Bloqueado' : saving ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </div>
 
-      <form className="documentForm" onSubmit={(e) => e.preventDefault()}>
+      <form className="documentForm" onSubmit={(event) => event.preventDefault()}>
         <div className="formSection formSectionFirst">
-          <h3>Información Básica</h3>
-          
+          <h3>Informacion Basica</h3>
+
           <div className="formField">
-            <label htmlFor="title">Título *</label>
+            <label htmlFor="title">Titulo *</label>
             <input
               type="text"
               id="title"
@@ -162,6 +188,7 @@ const ArticleEdit = () => {
               value={formData.title}
               onChange={handleInputChange}
               required
+              disabled={previewMode}
             />
           </div>
 
@@ -173,7 +200,8 @@ const ArticleEdit = () => {
               name="authors"
               value={formData.authors}
               onChange={handleInputChange}
-              placeholder="Separar múltiples autores con comas"
+              placeholder="Separar multiples autores con comas"
+              disabled={previewMode}
             />
           </div>
 
@@ -188,11 +216,12 @@ const ArticleEdit = () => {
                 onChange={handleInputChange}
                 min="1900"
                 max="2030"
+                disabled={previewMode}
               />
             </div>
 
             <div className="formField">
-              <label htmlFor="category">Categoría</label>
+              <label htmlFor="category">Categoria</label>
               <input
                 type="text"
                 id="category"
@@ -200,14 +229,15 @@ const ArticleEdit = () => {
                 value={formData.category}
                 onChange={handleInputChange}
                 placeholder="Ej: Technology, Healthcare"
+                disabled={previewMode}
               />
             </div>
           </div>
         </div>
 
         <div className="formSection">
-          <h3>Detalles de Publicación</h3>
-          
+          <h3>Detalles de Publicacion</h3>
+
           <div className="formField">
             <label htmlFor="type">Tipo</label>
             <input
@@ -217,11 +247,11 @@ const ArticleEdit = () => {
               value={formData.type}
               onChange={handleInputChange}
               placeholder="Ej: Research Article, Conference Paper"
+              disabled={previewMode}
             />
           </div>
 
           <div className="formRow">
-
             <div className="formField">
               <label htmlFor="citations">Citas</label>
               <input
@@ -231,11 +261,12 @@ const ArticleEdit = () => {
                 value={formData.citations}
                 onChange={handleInputChange}
                 min="0"
+                disabled={previewMode}
               />
             </div>
 
             <div className="formField">
-              <label htmlFor="pages">Páginas</label>
+              <label htmlFor="pages">Paginas</label>
               <input
                 type="text"
                 id="pages"
@@ -243,6 +274,7 @@ const ArticleEdit = () => {
                 value={formData.pages}
                 onChange={handleInputChange}
                 placeholder="Ej: 123-145"
+                disabled={previewMode}
               />
             </div>
           </div>
@@ -256,6 +288,7 @@ const ArticleEdit = () => {
               onChange={handleInputChange}
               rows="3"
               placeholder="Observaciones adicionales..."
+              disabled={previewMode}
             />
           </div>
 
@@ -268,6 +301,7 @@ const ArticleEdit = () => {
               value={formData.link}
               onChange={handleInputChange}
               placeholder="https://..."
+              disabled={previewMode}
             />
           </div>
         </div>
@@ -276,83 +310,78 @@ const ArticleEdit = () => {
           <h3>Contenido</h3>
 
           <div className="formField">
-            <label htmlFor="summary">Resumen (Español)</label>
+            <label htmlFor="summary">Resumen (EspAñol)</label>
             <textarea
               id="summary"
               name="summary"
               value={formData.summary}
               onChange={handleInputChange}
               rows="6"
-              placeholder="Resumen en español..."
+              placeholder="Resumen en espAñol..."
+              disabled={previewMode}
             />
           </div>
 
           <div className="formField">
-            <label htmlFor="abstract">Abstract (Inglés)</label>
+            <label htmlFor="abstract">Abstract (Ingles)</label>
             <textarea
               id="abstract"
               name="abstract"
               value={formData.abstract}
               onChange={handleInputChange}
               rows="6"
-              placeholder="Abstract en inglés..."
+              placeholder="Abstract en ingles..."
+              disabled={previewMode}
             />
           </div>
-
         </div>
       </form>
 
-      {/* Botón de eliminar */}
-      <div style={{ 
-        marginTop: '1rem', 
-        display: 'flex', 
-        justifyContent: 'center',
-        maxWidth: '1200px',
-        margin: '1rem auto 0',
-        padding: '0 2rem'
-      }}>
-        <button 
-          onClick={() => setShowDeleteModal(true)} 
+      <div
+        style={{
+          marginTop: '1rem',
+          display: 'flex',
+          justifyContent: 'center',
+          maxWidth: '1200px',
+          margin: '1rem auto 0',
+          padding: '0 2rem',
+        }}
+      >
+        <button
+          onClick={() => setShowDeleteModal(true)}
           className="btn-primary btn-delete-article"
-          disabled={saving}
-          style={{ 
+          disabled={saving || previewMode}
+          style={{
             minWidth: '250px',
             padding: '12px 24px',
-            fontSize: '1rem'
+            fontSize: '1rem',
           }}
         >
           <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-          Eliminar Artículo
+          {previewMode ? 'Bloqueado en demo' : 'Eliminar Articulo'}
         </button>
       </div>
 
-      {/* Modal de confirmación de eliminación */}
-      {showDeleteModal && (
+      {!previewMode && showDeleteModal && (
         <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
               <h2>
                 <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                {' '}Confirmar Eliminación
+                {' '}Confirmar Eliminacion
               </h2>
             </div>
             <div className="modal-body">
-              <p>¿Estás seguro de que quieres eliminar este artículo?</p>
+              <p>Estas seguro de que quieres eliminar este articulo?</p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Esta acción no se puede deshacer.
+                Esta accion no se puede deshacer.
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                onClick={() => setShowDeleteModal(false)} 
-                className="btn-secondary"
-              >
+              <button onClick={() => setShowDeleteModal(false)} className="btn-secondary">
                 Cancelar
               </button>
-              <button 
-                onClick={handleDelete} 
-                className="btn-primary"
-              >
+              <button onClick={handleDelete} className="btn-primary">
                 <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
                 Eliminar Definitivamente
               </button>

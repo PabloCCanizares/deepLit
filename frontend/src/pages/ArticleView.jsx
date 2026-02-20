@@ -1,45 +1,125 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
+import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import { recordViewedItem } from '../utils/viewHistory'
 import '../styles/articles/ArticleViewEdit.css'
 
-const ArticleView = () => {
+function ArticleView({
+  previewMode = false,
+  previewDocument = null,
+  onLockedAction = null,
+  activityScope = 'private',
+  previewId = '',
+}) {
   const { id } = useParams()
+  const decodedId = decodeURIComponent(id || '')
+  const resolvedId = decodeURIComponent(previewId || decodedId || '')
   const navigate = useNavigate()
+  const location = useLocation()
+
   const [document, setDocument] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const [showCollectionsModal, setShowCollectionsModal] = useState(false)
+  const [notification, setNotification] = useState('')
+
   useEffect(() => {
+    if (previewMode) {
+      if (previewDocument) {
+        setDocument(previewDocument)
+        setError(null)
+      } else {
+        setDocument(null)
+        setError('Articulo no encontrado')
+      }
+      setLoading(false)
+      return
+    }
+
     const fetchDocument = async () => {
       try {
         setLoading(true)
         setError(null)
-        
-        const response = await articlesAPI.getById(id)
+
+        const response = await articlesAPI.getById(resolvedId)
         setDocument(response.data)
       } catch (err) {
         console.error('Error fetching document:', err)
-        setError(`Error al cargar el artículo: ${err.message}`)
+        setError(`Error al cargar el articulo: ${err.message}`)
       } finally {
         setLoading(false)
       }
     }
 
-    if (id) {
+    if (resolvedId) {
       fetchDocument()
     } else {
-      setError('ID de artículo no proporcionado')
+      setError('ID de articulo no proporcionado')
       setLoading(false)
     }
-  }, [id])
+  }, [previewDocument, previewMode, resolvedId])
+
+  const articleId = document?._id || document?.id || resolvedId
+
+  useEffect(() => {
+    if (!document || !articleId) return
+
+    recordViewedItem(
+      {
+        id: articleId,
+        source: 'article',
+        title: document.title || 'Sin titulo',
+        year: document.year || null,
+        category: document.category || '',
+      },
+      { scope: activityScope },
+    )
+  }, [activityScope, articleId, document])
+
+  useEffect(() => {
+    if (!notification) return
+    const timer = setTimeout(() => setNotification(''), 3000)
+    return () => clearTimeout(timer)
+  }, [notification])
 
   const handleEdit = () => {
-    navigate(`/articles/${id}/edit`)
+    const encodedId = encodeURIComponent(resolvedId)
+    if (previewMode) {
+      navigate(`/preview/articles/${encodedId}/edit`)
+      return
+    }
+
+    navigate(`/articles/${encodedId}/edit`)
   }
 
   const handleBack = () => {
+    if (previewMode) {
+      navigate('/preview/articles')
+      return
+    }
+
+    if (location.state?.from === 'dashboard') {
+      navigate('/dashboard')
+      return
+    }
+
     navigate('/articles')
+  }
+
+  const handleCollectionsSuccess = (message) => {
+    setShowCollectionsModal(false)
+    setNotification(message || 'Articulo anadido a colecciones correctamente')
+  }
+
+  const handleOpenCollections = () => {
+    if (previewMode) {
+      onLockedAction?.('collections')
+      return
+    }
+
+    setShowCollectionsModal(true)
   }
 
   if (loading) {
@@ -47,7 +127,7 @@ const ArticleView = () => {
       <div className="documentViewContainer">
         <div className="loading">
           <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
-          <p>Cargando artículo...</p>
+          <p>Cargando articulo...</p>
         </div>
       </div>
     )
@@ -58,9 +138,9 @@ const ArticleView = () => {
       <div className="documentViewContainer">
         <div className="error-message">
           <i className="fas fa-exclamation-triangle"></i>
-          <p>{error || 'Artículo no encontrado'}</p>
+          <p>{error || 'Articulo no encontrado'}</p>
           <button onClick={handleBack} className="btn-secondary">
-            Volver a Artículos
+            {previewMode ? 'Volver a la demo' : 'Volver a Articulos'}
           </button>
         </div>
       </div>
@@ -73,12 +153,16 @@ const ArticleView = () => {
         <div className="documentSection">
           <div className="documentTitleSection">
             <h1 className="documentTitle" style={{ color: 'var(--main_color)' }}>
-              {document.title || 'Sin título'}
+              {document.title || 'Sin titulo'}
             </h1>
             <div className="documentNavigation">
               <button onClick={handleBack} className="btn-secondary">
                 <i className="fas fa-arrow-left"></i>
                 Volver
+              </button>
+              <button onClick={handleOpenCollections} className="btn-secondary">
+                <i className={`fas ${previewMode ? 'fa-lock' : 'fa-layer-group'}`}></i>
+                Anadir a coleccion
               </button>
               <button onClick={handleEdit} className="btn-primary">
                 <i className="fas fa-edit"></i>
@@ -89,13 +173,13 @@ const ArticleView = () => {
         </div>
 
         <div className="documentSection">
-          <h3>Información General</h3>
+          <h3>Informacion General</h3>
           <div className="documentField">
             <label>Autor(es):</label>
             <span>
               {Array.isArray(document.authors)
                 ? document.authors.join(', ')
-                : (document.authors || 'No especificado')}
+                : document.authors || 'No especificado'}
             </span>
           </div>
           <div className="documentField">
@@ -103,11 +187,11 @@ const ArticleView = () => {
             <span>{document.year || 'No especificado'}</span>
           </div>
           <div className="documentField">
-            <label>Categoría:</label>
+            <label>Categoria:</label>
             <span>{document.category || 'No especificado'}</span>
           </div>
           <div className="documentField">
-            <label>Páginas:</label>
+            <label>Paginas:</label>
             <span>{document.pages || 'No especificado'}</span>
           </div>
           {document.type && (
@@ -122,14 +206,13 @@ const ArticleView = () => {
               <span>
                 {Array.isArray(document.keywords)
                   ? document.keywords
-                      .map(item => {
-                        // Manejar diferentes formatos de keywords
-                        if (typeof item === 'string') return item;
-                        if (item && item.key) return item.key;
-                        if (item && item.display_name) return item.display_name;
-                        return String(item);
+                      .map((item) => {
+                        if (typeof item === 'string') return item
+                        if (item && item.key) return item.key
+                        if (item && item.display_name) return item.display_name
+                        return String(item)
                       })
-                      .filter(k => k) // Eliminar valores vacíos
+                      .filter((keyword) => keyword)
                       .join(', ')
                   : 'No especificado'}
               </span>
@@ -137,7 +220,7 @@ const ArticleView = () => {
           )}
           {document.acronym && (
             <div className="documentField">
-              <label>Acrónimo:</label>
+              <label>Acronimo:</label>
               <span>{document.acronym}</span>
             </div>
           )}
@@ -180,13 +263,29 @@ const ArticleView = () => {
 
         {document.bibliography && (
           <div className="documentSection">
-            <h3>Bibliografía</h3>
+            <h3>Bibliografia</h3>
             <div className="documentReferences">
               <p>{document.bibliography}</p>
             </div>
           </div>
         )}
       </div>
+
+      {!previewMode && (
+        <SaveToCollectionsModal
+          isOpen={showCollectionsModal}
+          onClose={() => setShowCollectionsModal(false)}
+          articleIds={[articleId]}
+          onSuccess={handleCollectionsSuccess}
+        />
+      )}
+
+      {notification && (
+        <div className="upload-success-notification">
+          <i className="fas fa-check-circle"></i>
+          <span>{notification}</span>
+        </div>
+      )}
     </div>
   )
 }

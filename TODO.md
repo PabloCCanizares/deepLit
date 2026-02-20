@@ -3,7 +3,7 @@ Visualización:
  
 Extracción:
 * Inclusión de APIs OpenAlex, Semantic scholar (Crossref, arXiv, Unpaywall, scopus) etc, para obtener información de articulos.
-* Análisis de artículos para extraer: abstract, #paginas, keywords, y contenido del artículo en texto plano.
+* Análisis de artículos para extraer: abstract, #paginas, keywords, y contenido del artículo en texto plAño.
 * Cargar múltiples carpetas de archivos y procesar.
 * Técnicas snowballing (backward/fordward).
  

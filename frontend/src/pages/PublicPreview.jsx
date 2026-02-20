@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { usePagination } from '../hooks/usePagination'
@@ -15,6 +15,10 @@ import OpenAlexList from '../components/openalex/OpenAlexList'
 import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
 import Pagination from '../components/articles/Pagination'
 import AiAssistant from '../components/ai_assistant/AiAssistant'
+import ArticleView from './ArticleView'
+import ArticleEdit from './ArticleEdit'
+import OpenAlexView from './OpenAlexView'
+import { getViewedHistory } from '../utils/viewHistory'
 
 const DASHBOARD_DATA = {
   document_count: 126,
@@ -29,12 +33,9 @@ const DASHBOARD_DATA = {
     ['review automation', 19],
     ['information retrieval', 16],
   ],
-  recent_docs: [
-    { title: 'Knowledge Graphs for Scientific Discovery', upload_date: '2026-02-15' },
-    { title: 'Reproducible Workflows in Literature Reviews', upload_date: '2026-02-14' },
-    { title: 'Automating Citation Screening with LLMs', upload_date: '2026-02-12' },
-  ],
 }
+
+const PREVIEW_ACTIVITY_SCOPE = 'preview'
 
 const PREVIEW_ARTICLES = [
   {
@@ -59,7 +60,7 @@ const PREVIEW_ARTICLES = [
     category: 'Procesamiento de texto',
     pages: 21,
     year: 2025,
-    authors: 'P. Ivanov, N. Reyes',
+    authors: 'P. IvAñov, N. Reyes',
   },
   {
     id: 'seed-004',
@@ -151,14 +152,37 @@ function isCompleteItem(item) {
   return Boolean(item.title && item.category && item.year)
 }
 
+function toPreviewActivityItem(item) {
+  return {
+    id: item.id,
+    source: item.source || 'article',
+    title: item.title || 'Sin titulo',
+    meta: `Año: ${item.year || 'No especificado'} - Categoria: ${item.category || 'No especificada'}`,
+    secondary: 'Visto recientemente',
+  }
+}
+
+function getPreviewRecommendedItems() {
+  return PREVIEW_OPENALEX.slice(0, 5).map((work) => ({
+    id: work.id,
+    source: 'openalex',
+    title: work.title || 'Sin titulo',
+    meta: `Año: ${work.year || 'No especificado'} - Categoria: ${work.category || 'No especificada'}`,
+    secondary: 'Top relevancia OpenAlex',
+  }))
+}
+
 function PublicPreview() {
   const { isAuthenticated } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('dashboard')
   const [lockMessage, setLockMessage] = useState('')
+  const [activityMode, setActivityMode] = useState('recommended')
+  const [activityItems, setActivityItems] = useState(getPreviewRecommendedItems())
 
   const [articleQuery, setArticleQuery] = useState('')
   const [articleSort, setArticleSort] = useState('year-desc')
@@ -192,6 +216,23 @@ function PublicPreview() {
     setLimit: setOpenAlexLimit,
   } = usePagination(openAlexPagination, setOpenAlexPagination)
 
+  const previewArticleEditMatch = location.pathname.match(/^\/preview\/articles\/([^/]+)\/edit$/)
+  const previewArticleDetailMatch = location.pathname.match(/^\/preview\/articles\/([^/]+)$/)
+  const previewOpenAlexDetailMatch = location.pathname.match(/^\/preview\/openalex\/([^/]+)$/)
+
+  const previewArticleId = decodeURIComponent((previewArticleEditMatch?.[1] || previewArticleDetailMatch?.[1] || ''))
+  const previewOpenAlexId = decodeURIComponent(previewOpenAlexDetailMatch?.[1] || '')
+
+  const previewArticleDoc = useMemo(
+    () => PREVIEW_ARTICLES.find((article) => article.id === previewArticleId) || null,
+    [previewArticleId],
+  )
+
+  const previewOpenAlexDoc = useMemo(
+    () => PREVIEW_OPENALEX.find((work) => work.id === previewOpenAlexId) || null,
+    [previewOpenAlexId],
+  )
+
   useEffect(() => {
     const path = location.pathname
     if (path.startsWith('/preview/openalex')) {
@@ -203,6 +244,19 @@ function PublicPreview() {
       return
     }
     setActiveSection('dashboard')
+  }, [location.pathname])
+
+  useEffect(() => {
+    const recentHistory = getViewedHistory(PREVIEW_ACTIVITY_SCOPE).slice(0, 5).map(toPreviewActivityItem)
+
+    if (recentHistory.length > 0) {
+      setActivityMode('recent')
+      setActivityItems(recentHistory)
+      return
+    }
+
+    setActivityMode('recommended')
+    setActivityItems(getPreviewRecommendedItems())
   }, [location.pathname])
 
   useEffect(() => {
@@ -355,6 +409,24 @@ function PublicPreview() {
     setSelectedOpenAlex(allSelected ? [] : ids)
   }
 
+  const handleActivityClick = (item) => {
+    if (!item?.id) return
+
+    if ((item.source || 'article') === 'article') {
+      navigate(`/preview/articles/${encodeURIComponent(item.id)}`)
+      return
+    }
+
+    navigate(`/preview/openalex/${encodeURIComponent(item.id)}`)
+  }
+
+  const handleActivityKeyDown = (event, item) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleActivityClick(item)
+    }
+  }
+
   const renderDashboard = () => {
     return (
       <div className="dashboardContainer">
@@ -377,7 +449,7 @@ function PublicPreview() {
         <div className="gridLayout">
           <div>
             <div className="section">
-              <h3 className="sectionTitle">Articulos por Ano</h3>
+              <h3 className="sectionTitle">Articulos por Año</h3>
               <YearChart labels={DASHBOARD_DATA.labels_by_year} values={DASHBOARD_DATA.values_by_year} />
             </div>
 
@@ -389,15 +461,27 @@ function PublicPreview() {
 
           <div>
             <div className="section">
-              <h3 className="sectionTitle">Actividad Reciente</h3>
-              <ul className="recentDocsList">
-                {DASHBOARD_DATA.recent_docs.map((doc, index) => (
-                  <li key={`${doc.title}-${index}`} className="recentDocItem">
-                    <div className="recentDocTitle">{doc.title}</div>
-                    <div className="recentDocDate">Subido: {doc.upload_date}</div>
-                  </li>
-                ))}
-              </ul>
+              <h3 className="sectionTitle">{activityMode === 'recent' ? 'Recientes' : 'Articulos recomendados'}</h3>
+              {activityItems.length > 0 ? (
+                <ul className="recentDocsList">
+                  {activityItems.map((item) => (
+                    <li
+                      key={`${item.source}-${item.id}`}
+                      className="recentDocItem recentDocItemInteractive"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleActivityClick(item)}
+                      onKeyDown={(event) => handleActivityKeyDown(event, item)}
+                    >
+                      <div className="recentDocTitle">{item.title}</div>
+                      <div className="recentDocDate">{item.meta}</div>
+                      <div className="recentDocHint">{item.secondary}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="recentDocsEmpty">No hay articulos recomendados disponibles.</p>
+              )}
             </div>
           </div>
         </div>
@@ -548,6 +632,53 @@ function PublicPreview() {
     )
   }
 
+  const renderMainContent = () => {
+    if (previewArticleEditMatch) {
+      return (
+        <ArticleEdit
+          previewMode
+          previewId={previewArticleId}
+          previewDocument={previewArticleDoc}
+          onLockedAction={openLock}
+        />
+      )
+    }
+
+    if (previewArticleDetailMatch) {
+      return (
+        <ArticleView
+          previewMode
+          previewId={previewArticleId}
+          previewDocument={previewArticleDoc}
+          onLockedAction={openLock}
+          activityScope={PREVIEW_ACTIVITY_SCOPE}
+        />
+      )
+    }
+
+    if (previewOpenAlexDetailMatch) {
+      return (
+        <OpenAlexView
+          previewMode
+          previewId={previewOpenAlexId}
+          previewDocument={previewOpenAlexDoc}
+          onLockedAction={openLock}
+          activityScope={PREVIEW_ACTIVITY_SCOPE}
+        />
+      )
+    }
+
+    if (activeSection === 'dashboard') {
+      return renderDashboard()
+    }
+
+    if (activeSection === 'articles') {
+      return renderArticles()
+    }
+
+    return renderOpenAlex()
+  }
+
   return (
     <div className="app-container previewAppShell">
       <nav className="navbar">
@@ -681,11 +812,7 @@ function PublicPreview() {
         </div>
       </aside>
 
-      <main className="main-content">
-        {activeSection === 'dashboard' && renderDashboard()}
-        {activeSection === 'articles' && renderArticles()}
-        {activeSection === 'openalex' && renderOpenAlex()}
-      </main>
+      <main className="main-content">{renderMainContent()}</main>
 
       {lockMessage && (
         <div className="modal-overlay" onClick={() => setLockMessage('')}>
