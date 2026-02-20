@@ -201,6 +201,11 @@
     background: rgba(255, 255, 255, 0.25);
 }
 
+.chat-footer textarea:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
 .chat-footer textarea::-webkit-scrollbar {
   width: 0;
   height: 0;
@@ -226,6 +231,23 @@
   margin-left: 2px; 
 }
 
+.send-btn i {
+  font-size: 16px;
+}
+
+.send-btn.locked {
+  opacity: 0.85;
+}
+
+.send-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
 .send-btn:hover {
   transform: scale(1.4);
+}
+
+.send-btn:disabled:hover {
+  transform: none;
 }

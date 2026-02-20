@@ -131,6 +131,11 @@
   font-size: 0.95rem;
 }
 
+.auth-preview-copy {
+  margin-top: 0.35rem;
+  font-size: 0.88rem !important;
+}
+
 .auth-link {
   color: var(--main_color);
   text-decoration: none;

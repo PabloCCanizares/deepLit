@@ -1,35 +1,33 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
-import { CollectionProvider } from './context/CollectionContext'  // ⬅ nuevo
+import { CollectionProvider } from './context/CollectionContext'
 import PrivateRoute from './components/auth/PrivateRoute'
 import Layout from './components/layout/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Home from './pages/Home'
 import Articles from './pages/Articles'
 import ArticleView from './pages/ArticleView'
 import ArticleEdit from './pages/ArticleEdit'
 import Collections from './pages/Collections'
 import CollectionDetail from './pages/CollectionDetail'
-import History from './pages/History'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
-import Explore from './pages/Explore'
 import OpenAlex from './pages/OpenAlex'
 import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
+import PublicPreview from './pages/PublicPreview'
 
 function App() {
   return (
     <Router>
-      <ThemeProvider>                      
+      <ThemeProvider>
         <AuthProvider>
-          <CollectionProvider>             
+          <CollectionProvider>
             <Routes>
-
-              {/* Rutas públicas */}
+              {/* Rutas publicas */}
+              <Route path="/preview/*" element={<PublicPreview />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
@@ -42,7 +40,6 @@ function App() {
                   </PrivateRoute>
                 }
               >
-
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
 
@@ -68,12 +65,10 @@ function App() {
                 <Route path="historial" element={<Navigate to="/articles" replace />} />
                 <Route path="perfil" element={<Navigate to="/profile" replace />} />
                 <Route path="configuracion" element={<Navigate to="/settings" replace />} />
-
               </Route>
 
               {/* Default route */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
-
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </CollectionProvider>
         </AuthProvider>

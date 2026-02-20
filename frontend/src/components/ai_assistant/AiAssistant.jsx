@@ -2,12 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { aiAssistantAPI } from '../../api/api'
 import '../../styles/App.css'
 
-function AiAssistant() {
+function AiAssistant({ locked = false }) {
   const [showChat, setShowChat] = useState(false)
   const [message, setMessage] = useState('')
   const [showTools, setShowTools] = useState(false)
-  const [messages, setMessages] = useState([
-    { role: 'bot', content: 'Hola, soy tu asistente IA. ¿En qué puedo ayudarte?' }
+  const [messages, setMessages] = useState(() => [
+    {
+      role: 'bot',
+      content: locked
+        ? 'El asistente IA se desbloquea al iniciar sesion.'
+        : 'Hola, soy tu asistente IA. En que puedo ayudarte?',
+    },
   ])
   const [isSending, setIsSending] = useState(false)
   const [selectedTool, setSelectedTool] = useState(null)
@@ -55,12 +60,16 @@ function AiAssistant() {
   const tools = [
     { id: 'deep_researcher', label: 'Deep research', icon: 'fas fa-brain' },
     { id: 'web_searcher', label: 'Web research', icon: 'fas fa-globe' },
-    { id: 'nexus', label: 'Nexus', icon: 'fa-solid fa-diagram-project' }
+    { id: 'nexus', label: 'Nexus', icon: 'fa-solid fa-diagram-project' },
   ]
 
   const activeTool = tools.find((tool) => tool.id === selectedTool) || null
 
   const handleSend = async () => {
+    if (locked) {
+      return
+    }
+
     const trimmed = message.trim()
     if (!trimmed || isSending) {
       return
@@ -75,16 +84,17 @@ function AiAssistant() {
       const reply = response?.data?.reply || 'No pude generar una respuesta.'
       setMessages((prev) => [...prev, { role: 'bot', content: reply }])
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'bot', content: 'Ocurrió un error al contactar el asistente.' }
-      ])
+      setMessages((prev) => [...prev, { role: 'bot', content: 'Ocurrio un error al contactar el asistente.' }])
     } finally {
       setIsSending(false)
     }
   }
 
   const handleKeyDown = (event) => {
+    if (locked) {
+      return
+    }
+
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       handleSend()
@@ -104,11 +114,7 @@ function AiAssistant() {
         <i className="fas fa-atom"></i>
       </button>
 
-      <div
-        className={`ai-chat-interface ${showChat ? 'active' : ''}`}
-        id="aiChat"
-        ref={chatRef}
-      >
+      <div className={`ai-chat-interface ${showChat ? 'active' : ''}`} id="aiChat" ref={chatRef}>
         <div className="chat-header"></div>
 
         <div className="chat-body" ref={chatBodyRef}>
@@ -117,9 +123,7 @@ function AiAssistant() {
               <p>{item.content}</p>
             </div>
           ))}
-          {isSending && (
-            <div className="typing-indicator">Pensando...</div>
-          )}
+          {isSending && <div className="typing-indicator">Pensando...</div>}
         </div>
 
         <div className="chat-footer">
@@ -134,11 +138,7 @@ function AiAssistant() {
             >
               <i className={activeTool ? `${activeTool.icon} tool-icon-selected` : 'fas fa-tools'}></i>
             </button>
-            <div
-              className={`tools-menu ${showTools ? 'active' : ''}`}
-              ref={toolMenuRef}
-              role="menu"
-            >
+            <div className={`tools-menu ${showTools ? 'active' : ''}`} ref={toolMenuRef} role="menu">
               {selectedTool && (
                 <button
                   className="tools-item"
@@ -174,20 +174,26 @@ function AiAssistant() {
           </div>
           <textarea
             rows={1}
-            placeholder="Escribe tu consulta..."
+            placeholder={locked ? 'Inicia sesion para usar el asistente...' : 'Escribe tu consulta...'}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={locked}
           />
           <button
-            className="send-btn"
+            className={`send-btn ${locked ? 'locked' : ''}`}
             onClick={handleSend}
-            aria-label="Enviar mensaje"
-            disabled={isSending}
+            aria-label={locked ? 'Enviar bloqueado' : 'Enviar mensaje'}
+            title={locked ? 'Inicia sesion para enviar' : 'Enviar mensaje'}
+            disabled={isSending || locked}
           >
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12 2.01 3 2 10L17 12L2 14L2.01 21Z" fill="currentColor"/>
-            </svg>
+            {locked ? (
+              <i className="fas fa-lock"></i>
+            ) : (
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.01 21L23 12 2.01 3 2 10L17 12L2 14L2.01 21Z" fill="currentColor" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
