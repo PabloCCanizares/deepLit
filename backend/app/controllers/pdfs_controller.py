@@ -10,6 +10,7 @@ from app.services.article_service import ArticleService, normalize_article
 from app.services.extraction_service import ExtractionService
 from app.services.collection_service import CollectionService
 from app.services import StorageService
+from app.services.sse_manager import sse_manager
 from app.ai_assistant.agents.specific_agents.pdf_processor import process_pdf
 from app.models import PdfUpload
 from app.core import StandardResponse
@@ -104,7 +105,7 @@ class PdfsController:
     ):
         """
         Procesamiento pesado en background, totalmente síncrono.
-        En caso de error, solo hace rollback de archivos (no de BD).
+        En caso de error, marca el artículo como error y notifica via SSE.
         """
         faiss_index_path = str(
             Path(__file__).resolve().parents[2]
@@ -122,21 +123,43 @@ class PdfsController:
             )
             
             # Actualizar artículo usando PyMongo sincrónico
-            self._update_article_sync(
+            updated_article = self._update_article_sync(
                 article_id=article_id,
                 metadata=processed_info["metadata"]
             )
             
             logger.info("PDF '%s' procesado exitosamente (article_id=%s)", filename, article_id)
             
+            # Notificar al frontend via SSE
+            sse_manager.notify(user_id, "article_ready", {
+                "_id": article_id,
+                "title": updated_article.get("title", filename),
+                "status": "ready",
+                "year": updated_article.get("year"),
+                "category": updated_article.get("category"),
+                "pages": updated_article.get("pages"),
+            })
+            
         except Exception as e:
-            logger.error("Error procesando PDF '%s': %s. Iniciando rollback...", filename, e)
+            logger.error("Error procesando PDF '%s': %s. Marcando como error...", filename, e)
             self._rollback_files_only(absolute_path, faiss_index_path, pdf_id)
+            
+            # Marcar artículo como error en BD (sync)
+            self._mark_article_error_sync(article_id, str(e))
+            
+            # Notificar error via SSE
+            sse_manager.notify(user_id, "article_error", {
+                "_id": article_id,
+                "title": filename,
+                "status": "error",
+                "error_message": str(e),
+            })
     
-    def _update_article_sync(self, article_id: str, metadata: dict):
+    def _update_article_sync(self, article_id: str, metadata: dict) -> dict:
         """
         Actualizar artículo de forma sincrónica usando PyMongo.
         Se ejecuta desde el thread del background task.
+        Retorna el artículo actualizado.
         """
         try:
             # Conectar a MongoDB de forma sincrónica
@@ -154,15 +177,40 @@ class PdfsController:
                 {"$set": normalized}
             )
             
+            # Obtener artículo actualizado para retornarlo
+            updated = articles_collection.find_one({"_id": article_id})
+            
             client.close()
             
             if result.modified_count > 0:
                 logger.info("Artículo actualizado sincronamente: %s", article_id)
             else:
                 logger.warning("Artículo no encontrado o no actualizado: %s", article_id)
+            
+            return updated or normalized
                 
         except Exception as e:
             logger.error("Error actualizando artículo sincronamente: %s", e)
+            return {}
+    
+    def _mark_article_error_sync(self, article_id: str, error_message: str):
+        """
+        Marcar artículo como error de forma sincrónica.
+        """
+        try:
+            client = MongoClient(settings.MONGODB_URL)
+            db = client[settings.DATABASE_NAME]
+            articles_collection = db["articles"]
+            
+            articles_collection.update_one(
+                {"_id": article_id},
+                {"$set": {"status": "error", "error_message": error_message}}
+            )
+            
+            client.close()
+            logger.info("Artículo marcado como error: %s", article_id)
+        except Exception as e:
+            logger.error("Error marcando artículo como error: %s", e)
     
     def _rollback_files_only(
         self,
@@ -192,3 +240,4 @@ class PdfsController:
             logger.info("Rollback de archivos completado para pdf_id=%s", pdf_id)
         except Exception as e:
             logger.error("Error critico durante rollback de archivos: %s", e)
+

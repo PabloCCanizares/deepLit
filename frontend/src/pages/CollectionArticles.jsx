@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 
 import { articlesAPI, collectionsAPI } from '../api/api'
@@ -7,6 +7,7 @@ import { useCollection } from "../context/CollectionContext";
 
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import UploadOverlay from '../components/articles/UploadOverlay'
+import ProcessingQueue from '../components/articles/ProcessingQueue'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import FilterSortControls from '../components/articles/FilterSortControls'
@@ -47,7 +48,11 @@ function CollectionArticles() {
   const [modalArticleIds, setModalArticleIds] = useState([])
 
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
+  const [isProcessingQueueOpen, setIsProcessingQueueOpen] = useState(false)
   const [notification, setNotification] = useState('')
+
+  // Ref para SSE EventSource
+  const eventSourceRef = useRef(null)
 
   const selectedCollection = collections.find(c => c._id === selectedCollectionId);
   const collectionName = selectedCollection ? selectedCollection.name : null;
@@ -67,6 +72,35 @@ function CollectionArticles() {
     const timer = setTimeout(() => setNotification(''), 4000)
     return () => clearTimeout(timer)
   }, [notification])
+
+
+  // SSE: suscripción a eventos en tiempo real
+  useEffect(() => {
+    const es = articlesAPI.subscribeEvents({
+      onArticleReady: (data) => {
+        console.log('SSE: artículo procesado', data)
+        setNotification(`"${data.title}" procesado correctamente`)
+        // Recargar lista para mostrar el nuevo artículo
+        loadDocuments()
+      },
+      onArticleError: (data) => {
+        console.log('SSE: error en artículo', data)
+        setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
+      },
+      onError: () => {
+        console.warn('SSE: conexión perdida, reconectando...')
+      }
+    })
+
+    eventSourceRef.current = es
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [])
 
 
   useEffect(() => {
@@ -440,3 +474,5 @@ function CollectionArticles() {
 }
 
 export default CollectionArticles
+
+

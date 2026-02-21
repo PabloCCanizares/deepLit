@@ -93,3 +93,32 @@ class ArticlesController:
             data={"deleted": True}
         )
 
+    async def get_queue(self, current_user: dict) -> StandardResponse:
+        """
+        Obtener artículos en cola de procesamiento (processing/error).
+        """
+        user_id = current_user.get("_id")
+        queue = await self.article_service.get_queue(user_id)
+
+        return StandardResponse(
+            success=True,
+            message="Cola de procesamiento recuperada",
+            data={"queue": queue, "total": len(queue)}
+        )
+
+    async def get_article_status(self, article_id: str, current_user: dict) -> StandardResponse:
+        """
+        Obtener el status de un artículo específico.
+        """
+        article = await self.article_service.get_by_id(article_id, current_user["_id"])
+
+        return StandardResponse(
+            success=True,
+            message="Status del artículo recuperado",
+            data={
+                "_id": article.get("_id"),
+                "status": article.get("status", "ready"),
+                "title": article.get("title"),
+                "error_message": article.get("error_message")
+            }
+        )

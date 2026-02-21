@@ -4,7 +4,7 @@ Repositorio de usuarios
 from typing import Optional
 from app.database import get_database
 from app.models import QueryBody
-from typing import List
+from typing import List, Optional
 from pymongo import ASCENDING, DESCENDING
 
 class ArticleRepository:
@@ -44,9 +44,12 @@ class ArticleRepository:
         return result.deleted_count > 0
     
     async def count_documents(self, user_id: str, collection_id: Optional[str] = None) -> int:
-        """Contar documentos asociados a un usuario"""
+        """Contar documentos asociados a un usuario (excluyendo processing/error)"""
 
-        filter_query = {"id_user": user_id}
+        filter_query = {
+            "id_user": user_id,
+            "status": {"$nin": ["processing", "error"]}
+        }
         
         if collection_id:  # Si collection no es None ni vacío
             filter_query["collection_ids"] = {"$in": [collection_id]}
@@ -77,10 +80,30 @@ class ArticleRepository:
         return results
         
 
+    async def get_processing_articles(self, user_id: str) -> List[dict]:
+        """Obtener artículos en cola (status processing o error) del usuario."""
+        cursor = self.collection.find(
+            {
+                "id_user": user_id,
+                "status": {"$in": ["processing", "error"]}
+            },
+            {
+                "_id": 1,
+                "title": 1,
+                "status": 1,
+                "error_message": 1,
+                "id_pdf": 1,
+            }
+        )
+        return await cursor.to_list(length=100)
+
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
         """Recuperar artículos del usuario actual con paginación y filtros"""
         
         filter_criteria = {"id_user": user_id}
+
+        # Excluir artículos en procesamiento o con error de la lista normal
+        filter_criteria["status"] = {"$nin": ["processing", "error"]}
 
         if collection_id:
             filter_criteria["collection_ids"] = {"$in": [collection_id]}
@@ -122,7 +145,8 @@ class ArticleRepository:
             "title": 1,
             "category": 1,
             "pages": 1,
-            "year": 1
+            "year": 1,
+            "status": 1
         }
 
         # 🚀 APLICAR LA LÓGICA DE ORDENACIÓN

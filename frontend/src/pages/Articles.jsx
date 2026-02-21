@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 import { articlesAPI } from '../api/api'
 import { usePagination } from '../hooks/usePagination'
 
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import UploadOverlay from '../components/articles/UploadOverlay'
+import ProcessingQueue from '../components/articles/ProcessingQueue'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import FilterSortControls from '../components/articles/FilterSortControls'
@@ -42,8 +43,11 @@ function Articles() {
   const [modalArticleIds, setModalArticleIds] = useState([])
 
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
+  const [isProcessingQueueOpen, setIsProcessingQueueOpen] = useState(false)
   const [notification, setNotification] = useState('')
 
+  // Ref para SSE EventSource
+  const eventSourceRef = useRef(null)
 
   const {
     currentPage,
@@ -62,29 +66,40 @@ function Articles() {
   }, [notification])
 
 
-  // Cargar el total de artículos sin filtros al inicio
-  // useEffect(() => {
-  //   const loadTotalArticles = async () => {
-  //     try {
-  //       const response = await articlesAPI.getArticles({
-  //         limit: 1,
-  //         offset: 0,
-  //         filters: { mode: 'all' },
-  //       })
-  //       setTotalArticles(response.data.total)
-  //     } catch (err) {
-  //       console.error('Error loading total articles:', err)
-  //     }
-  //   }
-  //   loadTotalArticles()
-  // }, [])
+  // SSE: suscripción a eventos en tiempo real
+  useEffect(() => {
+    const es = articlesAPI.subscribeEvents({
+      onArticleReady: (data) => {
+        console.log('SSE: artículo procesado', data)
+        setNotification(`"${data.title}" procesado correctamente`)
+        // Recargar lista para mostrar el nuevo artículo
+        loadDocuments()
+      },
+      onArticleError: (data) => {
+        console.log('SSE: error en artículo', data)
+        setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
+      },
+      onError: () => {
+        console.warn('SSE: conexión perdida, reconectando...')
+      }
+    })
+
+    eventSourceRef.current = es
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [])
 
 
   useEffect(() => {
     loadDocuments()
   }, [
     pagination.offset,
-    pagination.limit, 
+    pagination.limit,
     searchQuery,
     sortCriteria,
     filterCriteria
@@ -107,7 +122,7 @@ function Articles() {
         limit: pagination.limit,
         offset: pagination.offset,
         filters: {
-          title: searchQuery || undefined, 
+          title: searchQuery || undefined,
           ...filterCriteria,
         },
 
@@ -150,11 +165,11 @@ function Articles() {
 
   const handleViewModeChange = (mode) => setViewMode(mode)
 
-  {/* SELECCIÓN DE ARTÍCULOS*/}
+  {/* SELECCIÓN DE ARTÍCULOS*/ }
 
   const handleSelectArticle = (articleId) => {
-    setSelectedArticles(prev => 
-      prev.includes(articleId) 
+    setSelectedArticles(prev =>
+      prev.includes(articleId)
         ? prev.filter(id => id !== articleId)
         : [...prev, articleId]
     )
@@ -168,7 +183,7 @@ function Articles() {
     }
   }
 
-  {/* SUBIR ARTÍCULOS*/}
+  {/* SUBIR ARTÍCULOS*/ }
 
   const handleUploadSuccess = async (message) => {
     // Cerrar el overlay inmediatamente
@@ -179,7 +194,7 @@ function Articles() {
     await loadDocuments();
   }
 
-  {/* AÑADIR ARTÍCULOS A LAS COLECCIONES*/}
+  {/* AÑADIR ARTÍCULOS A LAS COLECCIONES*/ }
 
   const handleAddToCollections = () => {
     if (selectedArticles.length === 0) return
@@ -199,7 +214,7 @@ function Articles() {
   }
 
 
-  {/* BORRADO DE ARTÍCULOS*/}
+  {/* BORRADO DE ARTÍCULOS*/ }
 
   const handleDeleteArticle = (articleId) => {
     setPendingDeleteIds([articleId])
@@ -215,11 +230,11 @@ function Articles() {
   const confirmDeleteSelected = async () => {
 
     const ids = pendingDeleteIds
-    
+
     try {
       await Promise.all(ids.map(id => articlesAPI.delete(id)))
       setNotification(`${ids.length} artículo(s) eliminado(s)`)
-      
+
       const newOffset =
         documents.length === ids.length && pagination.offset > 0
           ? pagination.offset - pagination.limit
@@ -323,8 +338,18 @@ function Articles() {
         <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
+          title="Subir artículos"
         >
           <i className="fas fa-cloud-upload-alt"></i>
+        </button>
+
+        {/* Botón para visualizar cola de procesamiento */}
+        <button
+          className="floating-queue-button"
+          onClick={() => setIsProcessingQueueOpen(true)}
+          title="Ver cola de procesamiento"
+        >
+          <i className="fas fa-hourglass-half"></i>
         </button>
 
         {/* Overlay de subida */}
@@ -332,6 +357,12 @@ function Articles() {
           isOpen={isUploadOverlayOpen}
           onClose={() => setIsUploadOverlayOpen(false)}
           onUploadSuccess={handleUploadSuccess}
+        />
+
+        {/* Modal de cola de procesamiento */}
+        <ProcessingQueue
+          isOpen={isProcessingQueueOpen}
+          onClose={() => setIsProcessingQueueOpen(false)}
         />
 
         {/* Mensaje de éxito de carga */}

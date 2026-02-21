@@ -245,6 +245,36 @@
   transform: scale(0.95);
 }
 
+/* Botón flotante para ver la cola de procesamiento */
+.floating-queue-button {
+  position: fixed;
+  bottom: 6.5rem;
+  right: 2rem;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  z-index: 900;
+}
+
+.floating-queue-button:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+}
+
+.floating-queue-button:active {
+  transform: scale(0.95);
+}
+
 /* Notificación de éxito de carga - Estilo copiado de ArticleViewEdit */
 .upload-success-notification {
   position: fixed;
@@ -331,6 +361,14 @@ body[data-theme='dark'] .upload-success-notification {
 @media (max-width: 768px) {
   .floating-upload-button {
     bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+    font-size: 1.25rem;
+  }
+
+  .floating-queue-button {
+    bottom: 5.5rem;
     right: 1.5rem;
     width: 56px;
     height: 56px;

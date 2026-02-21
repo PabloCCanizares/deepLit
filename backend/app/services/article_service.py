@@ -1,7 +1,9 @@
 """
 Servicio de Artículos.
 """
+import shutil
 from datetime import datetime
+from pathlib import Path
 from app.repositories import ArticleRepository
 from app.models import QueryBody
 from app.core import NotFoundError, AuthorizationError
@@ -52,6 +54,9 @@ class ArticleService:
     
     def __init__(self):
         self.article_repo = ArticleRepository()
+        # Importar aquí para evitar circular import
+        from app.services.pdf_service import PdfService
+        self.pdf_service = PdfService()
     
     async def create_from_pdf_features(
         self,
@@ -78,8 +83,10 @@ class ArticleService:
         }
 
         if collection_id:
+            # Aquí asignamos una lista que contiene el ID al nuevo campo "collection_ids"
             article_dict["collection_ids"] = [collection_id]
 
+        
         # Guardar en base de datos
         result_id = await self.article_repo.create(article_dict)
                 
@@ -223,9 +230,27 @@ class ArticleService:
         updated_article = await self.article_repo.update(article_id, update_data)
         return updated_article
     
+    async def get_queue(self, user_id: str) -> List[Dict]:
+        """
+        Obtener artículos en cola de procesamiento (status='processing' o 'error').
+        Retorna lista ordenada por fecha de creación (más reciente primero).
+        """
+        queue_items = await self.article_repo.collection.find(
+            {
+                "id_user": user_id,
+                "status": {"$in": ["processing", "error"]}
+            }
+        ).sort("created_at", -1).to_list(length=None)
+        
+        return queue_items if queue_items else []
+    
     async def delete(self, article_id: str, user_id: str) -> bool:
         """
-        Eliminar artículo por ID.
+        Eliminar artículo por ID, incluyendo:
+        1. Registro del artículo en BD
+        2. PDF del almacenamiento local (si existe)
+        3. Índice FAISS del artículo (si existe)
+        
         Verifica que el artículo pertenezca al usuario.
         """
         # Verificar que el artículo existe y pertenece al usuario
@@ -237,6 +262,27 @@ class ArticleService:
         if article.get("id_user") != user_id:
             raise AuthorizationError("No tienes permiso para eliminar este artículo")
         
-        # Eliminar
+        # Obtener id_pdf para eliminar el PDF
+        pdf_id = article.get("id_pdf")
+        
+        # Eliminar PDF del almacenamiento local si existe
+        if pdf_id:
+            try:
+                await self.pdf_service.delete_pdf_by_id(pdf_id, user_id)
+            except Exception as e:
+                print(f"Advertencia: Error al eliminar PDF {pdf_id}: {e}")
+                # Continuamos de todas formas para eliminar el artículo
+        
+        # Eliminar índice FAISS si existe
+        try:
+            faiss_index_path = Path(__file__).resolve().parents[2] / "storage" / "faiss_indexes" / str(user_id) / article_id
+            if faiss_index_path.exists():
+                shutil.rmtree(faiss_index_path, ignore_errors=True)
+                print(f"Índice FAISS eliminado: {faiss_index_path}")
+        except Exception as e:
+            print(f"Advertencia: Error al eliminar índice FAISS: {e}")
+            # Continuamos de todas formas
+        
+        # Eliminar registro del artículo en BD
         deleted = await self.article_repo.delete(article_id)
         return deleted
