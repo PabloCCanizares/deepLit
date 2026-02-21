@@ -11,18 +11,18 @@ function getAuthToken() {
 // Helper function for fetch requests
 async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  
+
   // Agregar token automáticamente si existe
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   const config = {
     headers,
     ...options,
@@ -30,21 +30,21 @@ async function apiFetch(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
-    
+
     // Handle empty responses
     if (response.status === 204) {
       return null;
     }
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       const error = new Error(data.message);
       error.status = response.status;
       error.data = data;
       throw error;
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -55,30 +55,30 @@ async function apiFetch(endpoint, options = {}) {
 // Helper genérico para descargar archivos binarios (imágenes, PDFs, etc.)
 async function fetchFile(endpoint) {
   const url = `${API_BASE}${endpoint}`;
-  
+
   // Agregar token si existe (igual que apiFetch)
   const token = getAuthToken();
   const headers = {};
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   try {
     const response = await fetch(url, { headers });
-    
+
     // Si es 404, devolver null (archivo no existe)
     if (response.status === 404) {
       return null;
     }
-    
+
     // Para otros errores, lanzar (igual que apiFetch)
     if (!response.ok) {
       const error = new Error(`Error al cargar archivo: ${response.statusText}`);
       error.status = response.status;
       throw error;
     }
-    
+
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   } catch (error) {
@@ -122,14 +122,14 @@ export const authAPI = {
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
   getStats: async ({ collection_id }) => {
-  let url = "stats/dashboard";
-  console.log("1- statsAPI.getStats called with collection_id:", collection_id);
-  if (collection_id) {
-    url += `?collection_id=${collection_id}`;
-  }
-  console.log("2- statsAPI.getStats called with collection_id:", url);
-  console.log(url);
-  return apiFetch(url);
+    let url = "stats/dashboard";
+    console.log("1- statsAPI.getStats called with collection_id:", collection_id);
+    if (collection_id) {
+      url += `?collection_id=${collection_id}`;
+    }
+    console.log("2- statsAPI.getStats called with collection_id:", url);
+    console.log(url);
+    return apiFetch(url);
   },
 };
 
@@ -143,10 +143,10 @@ export const uploadAPI = {
         const base64String = e.target.result.split(',')[1];
         apiFetch('/pdfs', {
           method: 'POST',
-          body: JSON.stringify({ filename: file.name, content: base64String , collection_id: collection_id}),
+          body: JSON.stringify({ filename: file.name, content: base64String, collection_id: collection_id }),
         }).then(resolve).catch(reject);
       };
-      
+
       reader.onerror = () => reject(new Error('Error al leer el archivo'));
       reader.readAsDataURL(file);
     });
@@ -163,7 +163,7 @@ export const uploadAPI = {
           body: JSON.stringify({ filename: file.name, content: base64String, collection_id: collection_id }),
         }).then(resolve).catch(reject);
       };
-      
+
       reader.onerror = () => reject(new Error('Error al leer el archivo'));
       reader.readAsDataURL(file);
     });
@@ -172,7 +172,7 @@ export const uploadAPI = {
 
 export const articlesAPI = {
   // Get articles with pagination
-  getArticles: async ({ limit = 10, offset = 0, filters = {}, collection_id, sort_by} = {}) => {
+  getArticles: async ({ limit = 10, offset = 0, filters = {}, collection_id, sort_by } = {}) => {
     const body = {
       pagination: { limit, offset },
       filters: Object.keys(filters).length > 0 ? filters : null,
@@ -209,12 +209,62 @@ export const articlesAPI = {
     });
   },
 
+  // Get processing queue
+  getQueue: async () => {
+    return apiFetch('/articles/cola', {
+      method: 'GET'
+    });
+  },
+
+  // Get article processing status
+  getStatus: async (id) => {
+    return apiFetch(`/articles/${id}/status`, {
+      method: 'GET'
+    });
+  },
+
+  // SSE: subscribe to real-time article events
+  subscribeEvents: ({ onArticleReady, onArticleError, onError } = {}) => {
+    const token = getAuthToken();
+    const url = `${API_BASE}/articles/events?token=${encodeURIComponent(token)}`;
+
+    const eventSource = new EventSource(url);
+
+    // Listener para artículo procesado
+    eventSource.addEventListener('article_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onArticleReady) onArticleReady(data);
+      } catch (err) {
+        console.error('Error parsing article_ready event:', err);
+      }
+    });
+
+    // Listener para error en procesamiento
+    eventSource.addEventListener('article_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onArticleError) onArticleError(data);
+      } catch (err) {
+        console.error('Error parsing article_error event:', err);
+      }
+    });
+
+    // Error handler (reconexión automática por EventSource)
+    eventSource.onerror = (e) => {
+      console.warn('SSE connection error, will auto-reconnect:', e);
+      if (onError) onError(e);
+    };
+
+    return eventSource; // Caller debe cerrar con eventSource.close()
+  },
+
 
 };
 
 
 export const openalexAPI = {
-  getWorks: async ({ limit = 10, offset = 0, filters = {}, sort_by} = {}) => {
+  getWorks: async ({ limit = 10, offset = 0, filters = {}, sort_by } = {}) => {
     console.log("API OPENALEX - getWorks called");
     return apiFetch('/openalex/search', {
       method: 'POST',
@@ -227,29 +277,29 @@ export const openalexAPI = {
   },
 
   // Get single work by ID - Recupera datos del backend usando búsqueda por ID
-    getById: async (id) => {
-      return apiFetch(`/openalex/${id}`, {
-        method: 'GET'
-        });
-    },
+  getById: async (id) => {
+    return apiFetch(`/openalex/${id}`, {
+      method: 'GET'
+    });
+  },
 
-    //Guarda un work de openalex en le colección actual y en todos los artículos
-    //Si es null no se manda el query param collection_id
-    saveWork: async (id, collection_id) => {
-      const url = collection_id
-        ? `/openalex/${id}/save?collection_id=${collection_id}`
-        : `/openalex/${id}/save`;
+  //Guarda un work de openalex en le colección actual y en todos los artículos
+  //Si es null no se manda el query param collection_id
+  saveWork: async (id, collection_id) => {
+    const url = collection_id
+      ? `/openalex/${id}/save?collection_id=${collection_id}`
+      : `/openalex/${id}/save`;
 
-      return apiFetch(url, { method: 'POST' });
-    },
+    return apiFetch(url, { method: 'POST' });
+  },
 
-    unsaveWork: async (id, collection_id) => {
-      const url = collection_id
-          ? `/openalex/${id}/unsave?collection_id=${collection_id}`
-          : `/openalex/${id}/unsave`;
+  unsaveWork: async (id, collection_id) => {
+    const url = collection_id
+      ? `/openalex/${id}/unsave?collection_id=${collection_id}`
+      : `/openalex/${id}/unsave`;
 
-      return apiFetch(url, { method: 'POST' });
-    },
+    return apiFetch(url, { method: 'POST' });
+  },
 
 };
 

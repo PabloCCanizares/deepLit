@@ -83,7 +83,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
     try {
       for (let i = 0; i < pdfFiles.length; i++) {
         const file = pdfFiles[i];
-        await uploadAPI.uploadPDF(file);
+        await uploadAPI.uploadPDF(file, collection_id);
       }
       
       if (onUploadSuccess) {
