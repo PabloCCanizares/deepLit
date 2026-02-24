@@ -4,8 +4,8 @@ Configuración de la aplicación usando Pydantic Settings.
 Carga automáticamente variables desde .env y las valida.
 Si falta alguna variable obligatoria o el tipo es incorrecto, la app no arranca.
 """
-from pydantic_settings import BaseSettings
 from typing import List, Optional
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -58,13 +58,17 @@ class Settings(BaseSettings):
     # ============================================
     # AI ASSISTANT
     # ============================================
-    OFFLINE: bool = False
-    GOOGLE_API_KEY: Optional[str] = None  
-    
+    # Modo de despliegue del backend (fuente de verdad)
+    # True -> modelos locales (Ollama)
+    # False -> proveedor remoto (Gemini)
+    OFFLINE: bool = True
+    GOOGLE_API_KEY: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
-    
+        extra = "ignore"
+
     def get_origins_list(self) -> List[str]:
         """
         Convierte ALLOWED_ORIGINS de string a lista. (Se requiere para CORS)
@@ -72,7 +76,6 @@ class Settings(BaseSettings):
         if isinstance(self.ALLOWED_ORIGINS, str):
             return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(',')]
         return self.ALLOWED_ORIGINS
-
 
 # ============================================
 # INSTANCIA GLOBAL

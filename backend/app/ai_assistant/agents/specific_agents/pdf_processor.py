@@ -22,8 +22,8 @@ class Metadata(BaseModel):
 
 
 
-def process_pdf(file_path, offline=None):
-    config = get_pdf_processor_config(offline)
+def process_pdf(file_path):
+    config = get_pdf_processor_config()
     agent = RagAgent(**config, system_prompt=PDF_PROCESSOR_PROMPT)
     agent.set_structured_output(Metadata)
 

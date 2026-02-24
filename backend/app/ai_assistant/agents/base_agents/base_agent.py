@@ -5,7 +5,7 @@ from ..prompts import DEFAULT_SYSTEM_PROMPT
 from app.config import settings
 
 class BaseAgent:
-    def __init__(self, modelo, temperatura, system_prompt=DEFAULT_SYSTEM_PROMPT, offline=None):
+    def __init__(self, modelo, temperatura, offline, system_prompt=DEFAULT_SYSTEM_PROMPT):
         if offline:
             self.llm = ChatOllama(model=modelo, temperature=temperatura)
         else:
@@ -52,4 +52,3 @@ class BaseAgent:
         print("Recibe:", input)
         print("Envia:", output)
         print("==============================")
-
