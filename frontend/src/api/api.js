@@ -10,7 +10,8 @@ function getAuthToken() {
 
 // Helper function for fetch requests
 async function apiFetch(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE}${normalizedEndpoint}`;
   
   // Agregar token automáticamente si existe
   const token = getAuthToken();
@@ -145,7 +146,7 @@ export const authAPI = {
 // Stats API - Estadísticas y analytics
 export const statsAPI = {
   getStats: async ({ collection_id }) => {
-  let url = "stats/dashboard";
+  let url = "/stats/dashboard";
   console.log("1- statsAPI.getStats called with collection_id:", collection_id);
   if (collection_id) {
     url += `?collection_id=${collection_id}`;
