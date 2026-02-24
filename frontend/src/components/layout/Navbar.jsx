@@ -14,34 +14,6 @@ function Navbar({ toggleSidebar }) {
   const { collections, selectedCollectionId, changeCollection  } = useCollection();
   const location = useLocation();
 
-  // Estado para modo offline/online
-  const [offline, setOffline] = useState(() => {
-    const saved = localStorage.getItem('ai_mode_offline')
-    return saved === 'true' || saved === null // Por defecto true (offline)
-  })
-
-  // Guardar preferencia de modo AI y actualizar backend
-  useEffect(() => {
-    const updateBackendConfig = async () => {
-      try {
-        localStorage.setItem('ai_mode_offline', offline)
-        // Actualizar el archivo de configuración runtime en el backend
-        await fetch('/api/runtime-config', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ offline })
-        })
-        console.log(`Modo AI actualizado: ${offline ? 'OFFLINE' : 'ONLINE'}`)
-      } catch (error) {
-        console.error('Error actualizando configuración:', error)
-      }
-    }
-
-    updateBackendConfig()
-  }, [offline])
-
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -143,24 +115,6 @@ function Navbar({ toggleSidebar }) {
             </button>
           </div>
 
-          {/* AI mode toggle buttons */}
-          <div className="themeToggle">
-            <button
-              className={`themeButton ${offline ? 'active' : ''}`}
-              onClick={() => setOffline(true)}
-              title="Modo Offline (Ollama local)"
-            >
-              <i className="fas fa-desktop"></i>
-            </button>
-            <button
-              className={`themeButton ${!offline ? 'active' : ''}`}
-              onClick={() => setOffline(false)}
-              title="Modo Online (Google Gemini)"
-            >
-              <i className="fas fa-cloud"></i>
-            </button>
-          </div>
-
           <AiAssistant />
 
           </div>
@@ -172,5 +126,3 @@ function Navbar({ toggleSidebar }) {
 }
 
 export default Navbar
-
-
