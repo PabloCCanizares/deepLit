@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { aiAssistantAPI } from '../../api/api'
+import { useCollection } from '../../context/CollectionContext'
 import '../../styles/App.css'
 
 function AiAssistant({ locked = false }) {
+  const { selectedCollectionId } = useCollection()
   const [showChat, setShowChat] = useState(false)
   const [message, setMessage] = useState('')
   const [showTools, setShowTools] = useState(false)
@@ -80,7 +82,7 @@ function AiAssistant({ locked = false }) {
 
     try {
       setIsSending(true)
-      const response = await aiAssistantAPI.chat(trimmed, selectedTool)
+      const response = await aiAssistantAPI.chat(trimmed, selectedTool, selectedCollectionId)
       const reply = response?.data?.reply || 'No pude generar una respuesta.'
       setMessages((prev) => [...prev, { role: 'bot', content: reply }])
     } catch (error) {

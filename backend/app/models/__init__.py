@@ -50,6 +50,11 @@ from app.models.ai_assistant import (
     ChatRequest
 )
 
+# Knowledge Graph models
+from app.models.knowledge_graph import (
+    KnowledgeGraphBackfillRequest
+)
+
 __all__ = [
     # Auth (autenticación)
     "UserRegister",
@@ -74,5 +79,8 @@ __all__ = [
 
     # AI Assistant
     "ChatRequest",
+
+    # Knowledge Graph
+    "KnowledgeGraphBackfillRequest",
 ]
 

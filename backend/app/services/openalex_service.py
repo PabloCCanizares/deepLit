@@ -24,6 +24,46 @@ class OpenAlexService:
         self.article_repo = ArticleRepository()
         self.collection_repo = CollectionRepository() 
 
+    def _normalize_year_value(self, value):
+        """
+        Normaliza un valor de año en formato int cuando sea posible.
+        """
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str):
+            stripped = value.strip()
+            if len(stripped) >= 4 and stripped[:4].isdigit():
+                return int(stripped[:4])
+        return None
+
+    def _extract_year(self, payload: Dict[str, Any]):
+        """
+        Extrae el año desde distintas variantes del esquema OpenAlex.
+        """
+        if not payload:
+            return None
+
+        direct_candidates = [
+            payload.get("year"),
+            payload.get("publication_year"),
+            payload.get("from_publication_date"),
+            payload.get("to_publication_date"),
+            payload.get("publication_date"),
+        ]
+
+        biblio = payload.get("biblio") if isinstance(payload.get("biblio"), dict) else {}
+        if biblio:
+            direct_candidates.append(biblio.get("publication_year"))
+
+        for candidate in direct_candidates:
+            normalized = self._normalize_year_value(candidate)
+            if normalized is not None:
+                return normalized
+
+        return None
+
     async def save_openalex_article_by_id(
         self,
         openalex_id: str,
@@ -181,17 +221,18 @@ class OpenAlexService:
 
         for result in results:
             try:
-                if result["primary_topic"] is not None:
-                    result["category"] = result["primary_topic"]["display_name"]
-                if result["publication_year"] is not None:
-                    result["year"] = result["publication_year"]
+                primary_topic = result.get("primary_topic")
+                if isinstance(primary_topic, dict):
+                    result["category"] = primary_topic.get("display_name")
+
+                year_value = self._extract_year(result)
 
                 #Escoger solo 4 campos relevantes
 
                 filtered_results.append({
                     "_id": result["id"].split("/")[-1],
-                    "title": result["title"],
-                    "year": result.get("year", ""),
+                    "title": result.get("title") or result.get("display_name") or "",
+                    "year": year_value if year_value is not None else "No disponible",
                     "category": result.get("category", ""),
                     "pages": result.get("pages", ""),
                 }) 
@@ -215,9 +256,8 @@ class OpenAlexService:
         # print("Buscando artículo de OpenAlex con ID:", openalex_id)
         article = Works()[openalex_id]
 
-        if isinstance(article, (tuple, list)):
+        if isinstance(article, (tuple, list)) and len(article) > 0:
             article = article[0]
-            article = article[0]  # Acceder al primer elemento si es una lista o tupla
         # print("TYPE OF ARTICLE RAW:", type(article) )
         if not article:
             raise NotFoundError("Artículo no encontrado")
@@ -243,9 +283,8 @@ class OpenAlexService:
         # Si tiene primary_topic, asignar category (es lo mismo)
         if article.get("primary_topic",None) is not None:
             article["category"] = article["primary_topic"]["display_name"]
-        # Se hace lo mismo con publication-year -> year
-        if article.get("publication_year",None) is not None:
-            article["year"] = article["publication_year"]
+        # Normalizar año con fallback robusto
+        article["year"] = self._extract_year(article)
         
         best_loc = None
         best_loc_is_oa_bool = False
@@ -316,7 +355,7 @@ class OpenAlexService:
         article_final = {
             "_id": article.get("id", None).split("/")[-1],
             "doi": article.get("doi", None),
-            "title": article.get("title", None),
+            "title": article.get("title", None) or article.get("display_name", None),
             "relevance_score": article.get("relevance_score", None),
             "year": article.get("year", None),
             "category": article.get("category", None),

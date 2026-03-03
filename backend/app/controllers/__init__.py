@@ -8,6 +8,7 @@ from .articles_controller import ArticlesController
 from .stats_controller import StatsController
 from .openalex_controller import OpenAlexController
 from .ai_assistant_controller import AiAssistantController
+from .knowledge_graph_controller import KnowledgeGraphController
 
 __all__ = [
     "AuthController",
@@ -18,4 +19,5 @@ __all__ = [
     "StatsController",
     "OpenAlexController",
     "AiAssistantController",
+    "KnowledgeGraphController",
 ]

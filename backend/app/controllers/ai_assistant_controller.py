@@ -24,7 +24,10 @@ class AiAssistantController:
             message=payload.message,
             user_id=current_user.get("_id"),
             user_name=user_name,
-            selected_mode=payload.selected_mode
+            selected_mode=payload.selected_mode,
+            collection_id=payload.collection_id,
+            runtime_mode=payload.runtime_mode,
+            web_provider=payload.web_provider,
         )
 
         return StandardResponse(

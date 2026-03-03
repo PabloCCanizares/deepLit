@@ -6,19 +6,15 @@ function PrivateRoute({ children }) {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          fontSize: '1.5rem',
-          color: '#666',
-        }}
-      >
-        <div>
-          <div className="spinner"></div>
-          <p>Cargando...</p>
+      <div className="private-route-loading" role="status" aria-live="polite">
+        <div className="private-route-loading-card">
+          <div className="private-route-animals" aria-hidden="true">
+            <i className="fas fa-paw"></i>
+            <i className="fas fa-paw"></i>
+            <i className="fas fa-paw"></i>
+          </div>
+          <div className="spinner private-route-spinner"></div>
+          <p className="private-route-loading-text">Cargando...</p>
         </div>
       </div>
     )

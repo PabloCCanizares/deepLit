@@ -10,6 +10,15 @@ DATABASE = "deeplit"
 DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300, add_start_index=True)
 DEFAULT_OFFLINE_EMBBEDING_MODEL = "nomic-embed-text"
 DEFAULT_ONLINE_EMBBEDING_MODEL = "models/gemini-embedding-001"
+DEFAULT_RAG_STRATEGY = {
+    "k": 8,
+    "use_mmr": True,
+    "fetch_k_multiplier": 3,
+    "lambda_mult": 0.7,
+    "rerank": "query_overlap",
+    "max_context_chars": 12000,
+    "include_citations": True,
+}
 
 def get_embeddings(offline=None):
     if offline is None:
@@ -105,3 +114,7 @@ def get_pdf_processor_config(offline=None):
         "embedding_model": get_embeddings(offline),
         "offline": offline
     }
+
+
+def get_rag_strategy_config():
+    return DEFAULT_RAG_STRATEGY.copy()

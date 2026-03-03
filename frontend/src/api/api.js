@@ -233,6 +233,53 @@ export const articlesAPI = {
     });
   },
 
+  // Get processing queue
+  getQueue: async () => {
+    return apiFetch('/articles/cola', {
+      method: 'GET'
+    });
+  },
+
+  // Get article processing status
+  getStatus: async (id) => {
+    return apiFetch(`/articles/${id}/status`, {
+      method: 'GET'
+    });
+  },
+
+  // SSE: subscribe to real-time article events
+  subscribeEvents: ({ onArticleReady, onArticleError, onError } = {}) => {
+    const token = getAuthToken();
+    const url = `${API_BASE}/articles/events?token=${encodeURIComponent(token || '')}`;
+
+    const eventSource = new EventSource(url);
+
+    eventSource.addEventListener('article_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onArticleReady) onArticleReady(data);
+      } catch (err) {
+        console.error('Error parsing article_ready event:', err);
+      }
+    });
+
+    eventSource.addEventListener('article_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onArticleError) onArticleError(data);
+      } catch (err) {
+        console.error('Error parsing article_error event:', err);
+      }
+    });
+
+    eventSource.onerror = (e) => {
+      console.warn('SSE connection error, will auto-reconnect:', e);
+      if (onError) onError(e);
+    };
+
+    return eventSource;
+  },
+
 
 };
 
@@ -336,12 +383,15 @@ export const collectionsAPI = {
 };
 
 export const aiAssistantAPI = {
-  chat: async (message, selected_mode) => {
+  chat: async (message, selected_mode, collection_id = null, runtime_mode = null, web_provider = null) => {
     return apiFetch('/ai-assistant/chat', {
       method: 'POST',
       body: JSON.stringify({
         message,
-        selected_mode: selected_mode || null
+        selected_mode: selected_mode || null,
+        collection_id: collection_id || null,
+        runtime_mode: runtime_mode || null,
+        web_provider: web_provider || null
       })
     });
   }

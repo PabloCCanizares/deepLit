@@ -11,3 +11,15 @@ class ChatRequest(BaseModel):
         None,
         description="Modo/herramienta seleccionada (opcional)"
     )
+    collection_id: Optional[str] = Field(
+        None,
+        description="ID de coleccion para acotar el contexto del asistente (opcional)",
+    )
+    runtime_mode: Optional[str] = Field(
+        None,
+        description="Modo runtime del asistente: online u offline (opcional)",
+    )
+    web_provider: Optional[str] = Field(
+        None,
+        description="Proveedor de busqueda web (opcional): duckduckgo o hackernews",
+    )

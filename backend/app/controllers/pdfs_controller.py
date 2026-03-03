@@ -9,6 +9,7 @@ from app.services.pdf_service import PdfService
 from app.services.article_service import ArticleService, normalize_article
 from app.services.extraction_service import ExtractionService
 from app.services.collection_service import CollectionService
+from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services import StorageService
 from app.services.sse_manager import sse_manager
 from app.ai_assistant.agents.specific_agents.pdf_processor import process_pdf
@@ -28,13 +29,15 @@ class PdfsController:
         pdf_service: PdfService = Depends(),
         extraction_service: ExtractionService = Depends(),
         article_service: ArticleService = Depends(),
-        collection_service: CollectionService = Depends()
+        collection_service: CollectionService = Depends(),
+        knowledge_graph_service: KnowledgeGraphService = Depends(),
     ):
         # Inyección de dependencias de los 3 services
         self.pdf_service = pdf_service
         self.extraction_service = extraction_service
         self.article_service = article_service
         self.collection_service = collection_service
+        self.knowledge_graph_service = knowledge_graph_service
     
     async def upload_pdf(
         self,
@@ -127,6 +130,19 @@ class PdfsController:
                 article_id=article_id,
                 metadata=processed_info["metadata"]
             )
+
+            # Crear/actualizar knowledge graph para este artículo (non-blocking)
+            try:
+                self.knowledge_graph_service.ingest_documents(
+                    user_id=user_id,
+                    article_id=article_id,
+                    title=updated_article.get("title", filename),
+                    docs=processed_info.get("docs", []),
+                    collection_ids=updated_article.get("collection_ids", []) or ([] if not collection_id else [collection_id]),
+                    reprocess=True,
+                )
+            except Exception as kg_exc:
+                logger.warning("Knowledge graph no actualizado para %s: %s", article_id, kg_exc)
             
             logger.info("PDF '%s' procesado exitosamente (article_id=%s)", filename, article_id)
             

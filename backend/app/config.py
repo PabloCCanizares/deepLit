@@ -63,6 +63,18 @@ class Settings(BaseSettings):
     OFFLINE: bool = True
     GOOGLE_API_KEY: Optional[str] = None
 
+    # WEB SEARCH (agente web)
+    WEB_SEARCH_PROVIDER: str = "duckduckgo"  # duckduckgo | hackernews
+    WEB_SEARCH_CACHE_TTL_MINUTES: int = 30
+    WEB_SEARCH_MAX_RESULTS: int = 8
+    WEB_SEARCH_REQUIRE_TRUSTED_SOURCES: bool = True
+    WEB_SEARCH_MIN_TRUSTED_SOURCES: int = 2
+    WEB_TRUSTED_DOMAINS: str = (
+        "reuters.com,apnews.com,bbc.com,nytimes.com,washingtonpost.com,"
+        "nature.com,science.org,arxiv.org,who.int,nih.gov,cdc.gov,europa.eu,"
+        "openai.com,github.com,wikipedia.org"
+    )
+
     # ============================================
     # NEO4J (Knowledge Graph) - opcional
     # ============================================
