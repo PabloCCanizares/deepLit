@@ -94,6 +94,14 @@
   background: var(--hover-bg);
 }
 
+.collection-menu .menu-dropdown .menu-item-danger {
+  color: var(--color-danger, #dc2626);
+}
+
+.collection-menu .menu-dropdown .menu-item-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+
 .collection-menu .menu-dropdown button i {
   width: 16px;
 }

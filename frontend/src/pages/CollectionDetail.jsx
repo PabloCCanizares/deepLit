@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collectionsAPI } from '../api/api'
+import { usePagination } from '../hooks/usePagination'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
-import ArticleCard from '../components/articles/ArticleCard'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import Pagination from '../components/articles/Pagination'
@@ -26,12 +26,21 @@ function CollectionDetail() {
   const [successMessage, setSuccessMessage] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState('all')
+  const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' })
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 10,
     offset: 0
   })
+
+  const {
+    currentPage,
+    totalPages,
+    setPage,
+    nextPage,
+    prevPage,
+    setLimit
+  } = usePagination(pagination, setPagination)
 
   useEffect(() => {
     loadCollection()
@@ -43,23 +52,30 @@ function CollectionDetail() {
 
   const applyFiltersAndSort = () => {
     let filtered = [...articles]
+    const normalizedSearch = searchQuery.trim().toLowerCase()
+    const mode = filterCriteria?.mode || 'all'
 
     // 1. Aplicar búsqueda
-    if (searchQuery.trim() !== '') {
-      filtered = filtered.filter(article =>
-        article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        article.authors?.some(author => 
-          author.toLowerCase().includes(searchQuery.toLowerCase())
+    if (normalizedSearch) {
+      filtered = filtered.filter(article => {
+        const titleText = String(article.title || '').toLowerCase()
+        const authorsText = Array.isArray(article.authors)
+          ? article.authors.join(', ').toLowerCase()
+          : String(article.authors || '').toLowerCase()
+
+        return (
+          titleText.includes(normalizedSearch) ||
+          authorsText.includes(normalizedSearch)
         )
-      )
+      })
     }
 
     // 2. Aplicar filtros
-    if (filterCriteria === 'complete') {
+    if (mode === 'complete') {
       filtered = filtered.filter(article => 
         article.title && article.category && article.pages && article.year
       )
-    } else if (filterCriteria === 'incomplete') {
+    } else if (mode === 'incomplete') {
       filtered = filtered.filter(article => 
         !article.title || !article.category || !article.pages || !article.year
       )
@@ -116,14 +132,17 @@ function CollectionDetail() {
 
   const handleSort = (criteria) => {
     setSortCriteria(criteria)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleFilter = (filter) => {
     setFilterCriteria(filter)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleSearch = (query) => {
     setSearchQuery(query)
+    setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleViewModeChange = (mode) => {
@@ -259,8 +278,6 @@ function CollectionDetail() {
             onDeleteSelected={handleRemoveFromCollection}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
             isCollectionView={true}
           />
         ) : (
@@ -269,8 +286,8 @@ function CollectionDetail() {
             onFilter={handleFilter}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            pagination={pagination}
-            onChangePagination={setPagination}
+            currentLimit={pagination.limit}
+            onLimitChange={setLimit}
           />
         )}
 
@@ -316,8 +333,11 @@ function CollectionDetail() {
 
         {/* Paginación debajo de los artículos */}
         <Pagination 
-          pagination={pagination}
-          onChangePagination={setPagination}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPrev={prevPage}
+          onNext={nextPage}
+          onPageChange={setPage}
         />
 
         {/* Modal de confirmación de eliminación */}

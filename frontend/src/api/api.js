@@ -348,6 +348,13 @@ export const collectionsAPI = {
     });
   },
 
+  // Delete single collection
+  delete: async (collectionId) => {
+    return apiFetch(`/collections/${collectionId}`, {
+      method: 'DELETE'
+    });
+  },
+
   // Get collection with articles
   getWithArticles: async (collectionId, { limit = 100, offset = 0 } = {}) => {
     return apiFetch(`/collections/${collectionId}/articles?limit=${limit}&offset=${offset}`, {
@@ -367,6 +374,14 @@ export const collectionsAPI = {
   removeArticle: async (collectionId, articleId) => {
     return apiFetch(`/collections/${collectionId}/articles/${articleId}`, {
       method: 'DELETE'
+    });
+  },
+
+  // Delete multiple collections
+  deleteMany: async (collectionIds) => {
+    return apiFetch('/collections/batch', {
+      method: 'DELETE',
+      body: JSON.stringify({ collection_ids: collectionIds })
     });
   },
 
@@ -409,5 +424,3 @@ export default {
   aiAssistant: aiAssistantAPI,
 
 };
-
-

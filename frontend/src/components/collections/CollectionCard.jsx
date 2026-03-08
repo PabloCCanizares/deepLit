@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { collectionsAPI } from '../../api/api'
 import '../../styles/collections/CollectionCard.css'
 
-function CollectionCard({ collection, onEdit }) {
+function CollectionCard({ collection, onEdit, onDelete }) {
   const [showMenu, setShowMenu] = useState(false)
   const [imageUrl, setImageUrl] = useState(null)
   const [imageError, setImageError] = useState(false)
@@ -97,6 +97,15 @@ function CollectionCard({ collection, onEdit }) {
     }
   }
 
+  const handleDelete = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowMenu(false)
+    if (onDelete) {
+      onDelete(collection)
+    }
+  }
+
   return (
     <Link to={`/collections/${id}`} className="collection-card-link">
       <div className="collection-card" ref={cardRef}>
@@ -114,6 +123,10 @@ function CollectionCard({ collection, onEdit }) {
               <button onClick={handleEdit}>
                 <i className="fas fa-edit"></i>
                 Editar
+              </button>
+              <button onClick={handleDelete} className="menu-item-danger">
+                <i className="fas fa-trash"></i>
+                Eliminar
               </button>
             </div>
           )}

@@ -17,6 +17,7 @@ function Collections() {
   const [loading, setLoading] = useState(true)
   const [selectedCollections, setSelectedCollections] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const { refreshCollections } = useCollection();
   
   useEffect(() => {
@@ -73,11 +74,46 @@ function Collections() {
     setShowDeleteModal(true)
   }
 
+  const handleDeleteCollection = (collection) => {
+    const collectionId = collection?._id || collection?.id
+    if (!collectionId) {
+      return
+    }
+
+    setSelectedCollections([collectionId])
+    setShowDeleteModal(true)
+  }
+
   const confirmDelete = async () => {
-    setSuccessMessage(`Funcionalidad de eliminar ${selectedCollections.length} colección(es) - Próximamente`)
-    setTimeout(() => setSuccessMessage(''), 3000)
-    setShowDeleteModal(false)
-    setSelectedCollections([])
+    if (selectedCollections.length === 0 || deleting) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      let deletedCount = selectedCollections.length
+
+      if (selectedCollections.length === 1) {
+        await collectionsAPI.delete(selectedCollections[0])
+      } else {
+        const response = await collectionsAPI.deleteMany(selectedCollections)
+        deletedCount = response?.data?.deleted_count ?? selectedCollections.length
+      }
+
+      await Promise.all([loadCollections(), refreshCollections()])
+
+      setSuccessMessage(
+        `${deletedCount} colección(es) eliminada(s). Los artículos siguen disponibles.`
+      )
+    } catch (err) {
+      console.error('Error deleting collections:', err)
+      setSuccessMessage('Error al eliminar colecciones')
+    } finally {
+      setDeleting(false)
+      setShowDeleteModal(false)
+      setSelectedCollections([])
+      setTimeout(() => setSuccessMessage(''), 3000)
+    }
   }
 
   const handleCompareCollections = () => {
@@ -278,6 +314,7 @@ function Collections() {
                 <CollectionCard 
                   collection={collection}
                   onEdit={handleEditCollection}
+                  onDelete={handleDeleteCollection}
                 />
               </div>
             ))
@@ -317,22 +354,24 @@ function Collections() {
               <div className="modal-body">
                 <p>¿Estás seguro de que quieres eliminar {selectedCollections.length} colección(es)?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Esta acción no se puede deshacer.
+                  Se eliminará la colección y su imagen. Los artículos no se borran: solo se quitarán de esas colecciones.
                 </p>
               </div>
               <div className="modal-footer">
                 <button 
                   onClick={() => setShowDeleteModal(false)} 
                   className="btn-secondary"
+                  disabled={deleting}
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={confirmDelete} 
                   className="btn-danger"
+                  disabled={deleting}
                 >
-                  <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-                  Eliminar
+                  <i className={`fas ${deleting ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ marginRight: '0.5rem' }}></i>
+                  {deleting ? 'Eliminando...' : 'Eliminar'}
                 </button>
               </div>
             </div>
