@@ -64,6 +64,16 @@ class OpenAlexService:
 
         return None
 
+    def _extract_work_id(self, payload: Optional[Dict[str, Any]]) -> Optional[str]:
+        """
+        Extrae el identificador OpenAlex (W...) desde el payload.
+        """
+        raw_id = payload.get("id") if isinstance(payload, dict) else None
+        if isinstance(raw_id, str) and raw_id.strip():
+            return raw_id.rstrip("/").split("/")[-1]
+
+        return None
+
     async def save_openalex_article_by_id(
         self,
         openalex_id: str,
@@ -78,7 +88,10 @@ class OpenAlexService:
 
         article["id_user"] = id_user
 
-        article_id = article["_id"]
+        article_id = article.get("_id")
+        if not article_id:
+            raise NotFoundError("No se pudo resolver el ID del artículo de OpenAlex")
+        article["_id"] = article_id
 
         # Si el artículo ya existe, añadirlo a las colecciones
         existing_article = await self.article_repo.find_by_id(article_id)
@@ -273,6 +286,9 @@ class OpenAlexService:
         """
         Seleccionar solo los campos especificados de un artículo.
         """
+        work_id = self._extract_work_id(article)
+        if not work_id:
+            raise NotFoundError("Artículo de OpenAlex sin identificador")
         
         #print("TYPE OF ARTICLE:", type(article))
         #print("VALUE OF ARTICLE:", article)
@@ -292,8 +308,9 @@ class OpenAlexService:
         best_loc_landing_bool = False
 
         #Bucle para conseguir la mejor localización -- Seguramente optimizable
-        if article["locations"] is not None and len(article["locations"]) > 0:
-            for loc in article["locations"]:
+        locations = article.get("locations") or []
+        if len(locations) > 0:
+            for loc in locations:
                 is_oa_bool = False
                 pdf_bool = False
                 landing_bool = False
@@ -353,7 +370,6 @@ class OpenAlexService:
         article["keywords"] = keywords_list
        
         article_final = {
-            "_id": article.get("id", None).split("/")[-1],
             "doi": article.get("doi", None),
             "title": article.get("title", None) or article.get("display_name", None),
             "relevance_score": article.get("relevance_score", None),
@@ -367,10 +383,11 @@ class OpenAlexService:
             "referenced_works": article.get("referenced_works", []),
             "related_works": article.get("related_works", []),
             "counts_by_year": article.get("counts_by_year", []),
-            "abstract": article["abstract"]
+            "abstract": article.get("abstract")
         }
         
         # Normalizar para asegurar que todos los campos estén presentes
         article_final = normalize_article(article_final)
+        article_final["_id"] = work_id
         
         return article_final

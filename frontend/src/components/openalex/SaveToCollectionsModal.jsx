@@ -96,42 +96,32 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
       const newCollections = selectedCollections.filter(id => !preselectedCollections.includes(id))
       const removedCollections = preselectedCollections.filter(id => !selectedCollections.includes(id))
 
-      const ops = []
-
-      // Añadir artículos a las colecciones nuevas
+      // Procesar secuencialmente evita condiciones de carrera al guardar
+      // un mismo artículo de OpenAlex en varias colecciones a la vez.
       for (const collectionId of newCollections) {
         for (const articleId of articleIds) {
-          ops.push((async () => {
-            try {
-              return await collectionsAPI.addArticle(collectionId, articleId)
-            } catch (err) {
-              const msg = err && err.message ? err.message.toString().toLowerCase() : ''
-              // Si el error indica que no existe, intentar guardar desde OpenAlex
-              if (msg.includes('no encontrado') || msg.includes('not found') || err.status === 404) {
-                // Guardar el work en la colección (backend manejará creación + asociación)
-                return await openalexAPI.saveWork(articleId, collectionId)
-              }
+          try {
+            await collectionsAPI.addArticle(collectionId, articleId)
+          } catch (err) {
+            const msg = err && err.message ? err.message.toString().toLowerCase() : ''
+            if (msg.includes('no encontrado') || msg.includes('not found') || err.status === 404) {
+              await openalexAPI.saveWork(articleId, collectionId)
+            } else {
               throw err
             }
-          })())
+          }
         }
       }
 
-      // Eliminar artículos de las colecciones deseleccionadas
       for (const collectionId of removedCollections) {
         for (const articleId of articleIds) {
-          ops.push((async () => {
-            try {
-              return await collectionsAPI.removeArticle(collectionId, articleId)
-            } catch (err) {
-              console.warn(`Error removing article ${articleId} from collection ${collectionId}:`, err)
-              // No lanzar error aquí, continuar con las demás operaciones
-            }
-          })())
+          try {
+            await collectionsAPI.removeArticle(collectionId, articleId)
+          } catch (err) {
+            console.warn(`Error removing article ${articleId} from collection ${collectionId}:`, err)
+          }
         }
       }
-
-      await Promise.all(ops)
 
       // Construir mensaje basado en las operaciones realizadas
       let message = ''
@@ -167,6 +157,13 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
   }
 
   if (!isOpen) return null
+
+  const newSelectionsCount = selectedCollections.filter(
+    id => !preselectedCollections.includes(id)
+  ).length
+  const hasChanges =
+    newSelectionsCount > 0 ||
+    preselectedCollections.some(id => !selectedCollections.includes(id))
 
   return (
     <div className="save-modal-overlay" onClick={onClose}>
@@ -249,7 +246,7 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
           <button
             className="save-modal-btn save-modal-btn-save"
             onClick={handleSave}
-            disabled={saving || selectedCollections.length === 0 || loading}
+            disabled={saving || loading || !hasChanges}
           >
             {saving ? (
               <>
@@ -260,16 +257,11 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
               <>
                 <i className="fas fa-plus"></i>
                 Guardar
-                {(() => {
-                  const newSelections = selectedCollections.filter(
-                    id => !preselectedCollections.includes(id)
-                  ).length
-                  return newSelections > 0 && (
-                    <span className="save-modal-badge">
-                      {newSelections}
-                    </span>
-                  )
-                })()}
+                {newSelectionsCount > 0 && (
+                  <span className="save-modal-badge">
+                    {newSelectionsCount}
+                  </span>
+                )}
               </>
             )}
           </button>
