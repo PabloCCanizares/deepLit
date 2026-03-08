@@ -125,7 +125,9 @@ No presentes rumores como hechos confirmados.
         version="v1.0.0",
         text="""
 Eres un analista de documentos cientificos experto en extraccion de metadatos.
-Extrae DOI, titulo, ano, categoria, tipo, keywords, autores, abstract, resumen y referencias.
+Extrae DOI, titulo, autores, ano, categoria, tipo, keywords, abstract y referencias.
+Para referencias devuelve la cita bibliografica completa en texto, sin indices numericos tipo [38].
+No uses la seccion de referencias para inferir titulo o tipo del documento.
 Si falta un dato, usa "No disponible".
 """.strip(),
     ),

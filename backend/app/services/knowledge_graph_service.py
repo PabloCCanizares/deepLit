@@ -254,10 +254,8 @@ class KnowledgeGraphService:
         text = "\n".join(
             [
                 f"Titulo: {article.get('title', '')}",
-                f"Resumen: {article.get('summary', '')}",
                 f"Abstract: {article.get('abstract', '')}",
                 f"Keywords: {article.get('keywords', [])}",
-                f"Autores: {article.get('authors', [])}",
                 f"Referencias: {article.get('referenced_works', [])}",
                 f"Ano: {article.get('year', '')}",
                 f"Categoria: {article.get('category', '')}",

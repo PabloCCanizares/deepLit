@@ -1,4 +1,4 @@
-"""
+﻿"""
 Controlador de Estadísticas.
 
 Responsabilidad: Orquestar múltiples services para obtener estadísticas.
@@ -20,7 +20,7 @@ class StatsController:
         article_service: ArticleService = Depends(),
         collection_service: CollectionService = Depends()
     ):
-        # Inyección de dependencias de los 2 services
+        # Inyección de dependencias de los 3 services
         self.pdf_service = pdf_service
         self.article_service = article_service
         self.collection_service = collection_service
@@ -30,41 +30,36 @@ class StatsController:
         Obtener estadísticas del dashboard.
         """
         user_id = current_user.get("_id")
-        #Se obtiene el id de la colección si se proporciona el nombre
+
+        # Si la coleccion no existe, caer a dashboard global
         if collection_id:
             exists = await self.collection_service.collection_exists(user_id, collection_id)
             if not exists:
-                return StandardResponse(
-                    success=False,
-                    message="Colección no encontrada",
-                    data={}
-                )
+                collection_id = None
 
-        # PASO 1: Contar PDFs (PdfService)
         document_count = await self.pdf_service.get_document_count(user_id)
-        
-        # PASO 2: Contar artículos (ArticleService)
         article_count = await self.article_service.get_article_count(user_id, collection_id)
 
+        try:
+            articles_by_year = await self.article_service.get_article_count_grouped_by_year(user_id, collection_id)
+        except Exception as exc:
+            print(f"Warning /stats/dashboard year aggregation failed: {exc}")
+            articles_by_year = {"labels": [], "values": []}
 
-        articles_by_year = await self.article_service.get_article_count_grouped_by_year(user_id, collection_id)
-        
-        # PASO 4: Obtener ranking de keywords
-        sorted_keywords = await self.article_service.get_keywords_ranking(user_id, collection_id)
-        
-        # TODO: Añadir más estadísticas cuando estén implementadas
-        # - Referencias totales
-        # - Promedio de referencias por documento
-        
+        try:
+            sorted_keywords = await self.article_service.get_keywords_ranking(user_id, collection_id)
+        except Exception as exc:
+            print(f"Warning /stats/dashboard keywords aggregation failed: {exc}")
+            sorted_keywords = []
+
         return StandardResponse(
             success=True,
-            message="Estadísticas obtenidas exitosamente",
+            message="Estadisticas obtenidas exitosamente",
             data={
                 "document_count": document_count,
                 "article_count": article_count,
-                "labels_by_year": articles_by_year["labels"],
-                "values_by_year": articles_by_year["values"],
+                "labels_by_year": articles_by_year.get("labels", []),
+                "values_by_year": articles_by_year.get("values", []),
                 "sorted_keywords": sorted_keywords
             }
         )
-

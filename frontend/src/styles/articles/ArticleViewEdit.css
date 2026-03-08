@@ -1,4 +1,4 @@
-/* ArticleView.css */
+﻿/* ArticleView.css */
 .documentViewContainer {
   min-height: 100vh;
   background: var(--white);
@@ -365,7 +365,50 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive para el header de artículos */
+
+/* Collection empty state */
+.collection-empty-state-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 2rem;
+}
+
+.collection-empty-state-card {
+  width: min(720px, 100%);
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-left: 6px solid var(--main_color);
+  border-radius: 14px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.collection-empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  color: var(--main_color);
+  background: rgba(99, 102, 241, 0.1);
+  font-size: 1.4rem;
+}
+
+.collection-empty-state-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.4rem;
+  color: var(--dark);
+}
+
+.collection-empty-state-card p {
+  margin: 0;
+  color: #6b7280;
+}
+/* Responsive para el header de artÃ­culos */
 @media (max-width: 768px) {
   .documents-header {
     flex-direction: column;
@@ -453,7 +496,7 @@
   gap: 0.5rem;
 }
 
-/* Hover rojo para botón de eliminar */
+/* Hover rojo para botÃ³n de eliminar */
 .modal-footer .btn-primary {
   background: var(--color-danger) !important;
 }
@@ -513,7 +556,7 @@
   }
 }
 
-/* Botón de eliminar principal */
+/* BotÃ³n de eliminar principal */
 .btn-delete-article {
   background: var(--main_color) !important;
   transition: all 0.3s ease;
@@ -641,4 +684,19 @@ body[data-theme='dark'] .modal-body p:last-child {
   color: var(--text-secondary);
 }
 
-/* Animación spin ahora en common.css */
+
+body[data-theme='dark'] .collection-empty-state-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+}
+
+body[data-theme='dark'] .collection-empty-state-card h1 {
+  color: var(--text-primary);
+}
+
+body[data-theme='dark'] .collection-empty-state-card p {
+  color: var(--text-secondary);
+}
+/* AnimaciÃ³n spin ahora en common.css */
+

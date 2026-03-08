@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { articlesAPI } from '../../api/api';
 import '../../styles/articles/ProcessingQueue.css';
 
@@ -6,39 +6,45 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [removingIds, setRemovingIds] = useState(new Set());
   const eventSourceRef = useRef(null);
+  const reloadTimeoutRef = useRef(null);
+  const loadingRef = useRef(false);
 
-  // Cargar cola
-  const loadQueue = async () => {
+  const loadQueue = useCallback(async () => {
+    if (loadingRef.current) return;
+
     try {
+      loadingRef.current = true;
       setLoading(true);
       setError(null);
       const response = await articlesAPI.getQueue();
-      setQueue(response.data.queue || []);
+      setQueue(response?.data?.queue || []);
     } catch (err) {
       setError(err.message || 'Error al cargar la cola');
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Suscribirse a eventos SSE cuando el modal está abierto
+  const scheduleQueueReload = useCallback(() => {
+    if (reloadTimeoutRef.current) return;
+
+    reloadTimeoutRef.current = setTimeout(() => {
+      reloadTimeoutRef.current = null;
+      loadQueue();
+    }, 400);
+  }, [loadQueue]);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return undefined;
 
-    // Cargar cola inicialmente cuando se abre el modal
     loadQueue();
 
-    // Suscribirse a eventos SSE
     const es = articlesAPI.subscribeEvents({
-      onArticleReady: (data) => {
-        console.log('ProcessingQueue: artículo listo', data);
-        loadQueue(); // Recargar la cola cuando un artículo esté listo
-      },
-      onArticleError: (data) => {
-        console.log('ProcessingQueue: error en artículo', data);
-        loadQueue(); // Recargar la cola cuando hay un error
-      },
+      onArticleReady: scheduleQueueReload,
+      onArticleError: scheduleQueueReload,
       onError: () => {
         console.warn('ProcessingQueue: error en SSE');
       }
@@ -51,19 +57,41 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (reloadTimeoutRef.current) {
+        clearTimeout(reloadTimeoutRef.current);
+        reloadTimeoutRef.current = null;
+      }
     };
-  }, [isOpen]);
+  }, [isOpen, loadQueue, scheduleQueueReload]);
 
-  // Cerrar con ESC
   useEffect(() => {
+    if (!isOpen) return undefined;
+
     const handleEsc = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
+
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
+
+  const handleRemoveError = async (itemId) => {
+    setRemovingIds(prev => new Set(prev).add(itemId));
+    try {
+      await articlesAPI.delete(itemId);
+      await loadQueue();
+    } catch (err) {
+      console.error('Error eliminando item de la cola:', err);
+    } finally {
+      setRemovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -73,7 +101,6 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
   return (
     <div className="processing-queue-overlay" onClick={onClose}>
       <div className="processing-queue-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="pq-header">
           <div className="pq-title-section">
             <h2 className="pq-title">Cola de Procesamiento</h2>
@@ -92,37 +119,31 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
           </div>
           <button className="pq-close" onClick={onClose}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
 
-        {/* Controls */}
         <div className="pq-controls">
-          <button 
-            className="pq-btn-refresh" 
-            onClick={loadQueue}
-            disabled={loading}
-          >
+          <button className="pq-btn-refresh" onClick={loadQueue} disabled={loading}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {loading ? 'Actualizando...' : 'Actualizar'}
           </button>
         </div>
 
-        {/* Content */}
         <div className="pq-content">
           {error && (
             <div className="pq-error-message">
-              <p>⚠️ {error}</p>
+              <p>[!] {error}</p>
             </div>
           )}
 
           {!error && queue.length === 0 && !loading && (
             <div className="pq-empty">
-              <div className="pq-empty-icon">✓</div>
+              <div className="pq-empty-icon">OK</div>
               <p>No hay artículos en procesamiento</p>
               <span className="pq-empty-hint">Todos tus artículos están listos</span>
             </div>
@@ -133,20 +154,14 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
               {queue.map((item) => (
                 <div key={item._id} className={`pq-item pq-item-${item.status}`}>
                   <div className="pq-item-status">
-                    {item.status === 'error' && (
-                      <div className="pq-error-icon">!</div>
-                    )}
+                    {item.status === 'error' && <div className="pq-error-icon">!</div>}
                   </div>
 
                   <div className="pq-item-content">
                     <h3 className="pq-item-title">{item.title || 'Sin título'}</h3>
-                    {item.status === 'processing' && (
-                      <p className="pq-item-status-text">Procesando PDF...</p>
-                    )}
+                    {item.status === 'processing' && <p className="pq-item-status-text">Procesando PDF...</p>}
                     {item.status === 'error' && (
-                      <p className="pq-item-error-message">
-                        Error: {item.error_message || 'Error desconocido'}
-                      </p>
+                      <p className="pq-item-error-message">Error: {item.error_message || 'Error desconocido'}</p>
                     )}
                   </div>
 
@@ -157,13 +172,33 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
                       second: '2-digit'
                     })}
                   </div>
+
+                  {item.status === 'error' && (
+                    <button
+                      className="pq-item-remove"
+                      onClick={() => handleRemoveError(item._id)}
+                      disabled={removingIds.has(item._id)}
+                      title="Eliminar de la cola"
+                    >
+                      {removingIds.has(item._id) ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10">
+                            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
+                          </circle>
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="pq-footer">
           <span className="pq-total">Total en cola: {queue.length}</span>
         </div>

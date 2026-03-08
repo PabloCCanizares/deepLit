@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 
 
 import { articlesAPI, collectionsAPI } from '../api/api'
@@ -74,21 +74,21 @@ function CollectionArticles() {
   }, [notification])
 
 
-  // SSE: suscripción a eventos en tiempo real
+  // SSE: suscripciÃ³n a eventos en tiempo real
   useEffect(() => {
     const es = articlesAPI.subscribeEvents({
       onArticleReady: (data) => {
-        console.log('SSE: artículo procesado', data)
+        console.log('SSE: artÃ­culo procesado', data)
         setNotification(`"${data.title}" procesado correctamente`)
-        // Recargar lista para mostrar el nuevo artículo
+        // Recargar lista para mostrar el nuevo artÃ­culo
         loadDocuments()
       },
       onArticleError: (data) => {
-        console.log('SSE: error en artículo', data)
+        console.log('SSE: error en artÃ­culo', data)
         setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
       },
       onError: () => {
-        console.warn('SSE: conexión perdida, reconectando...')
+        console.warn('SSE: conexiÃ³n perdida, reconectando...')
       }
     })
 
@@ -122,9 +122,14 @@ function CollectionArticles() {
 
   if (!selectedCollectionId) {
     return (
-      <div className="page-container">
-        <h1>Ninguna colección seleccionada</h1>
-        <p>Selecciona una colección en el menú de la parte superior.</p>
+      <div className="page-container collection-empty-state-page">
+        <div className="collection-empty-state-card">
+          <div className="collection-empty-state-icon">
+            <i className="fas fa-folder-open"></i>
+          </div>
+          <h1>Ninguna coleccion seleccionada</h1>
+          <p>Selecciona una coleccion en el menu superior para ver sus articulos.</p>
+        </div>
       </div>
     );
   }
@@ -146,7 +151,7 @@ function CollectionArticles() {
 
         sort_by: sortCriteria,
       });
-      console.log("Respuesta de artículos:", response);
+      console.log("Respuesta de artÃ­culos:", response);
 
       setDocuments(response.data.articles)
       setTotalArticles(response.data.total)
@@ -154,9 +159,9 @@ function CollectionArticles() {
         ...prev,
         total: response.data.total
       }))
-      console.log("Artículos recibidos:", response.data.articles.length, "Total del backend:", response.data.total);
+      console.log("ArtÃ­culos recibidos:", response.data.articles.length, "Total del backend:", response.data.total);
     } catch (err) {
-      setError(err.message || 'Error al cargar artículos')
+      setError(err.message || 'Error al cargar artÃ­culos')
     } finally {
       setLoading(false)
     }
@@ -177,14 +182,14 @@ function CollectionArticles() {
 
   const handleSearch = (query) => {
     setSearchQuery(query)
-    // Reiniciar a la primera página al hacer una búsqueda
+    // Reiniciar a la primera pÃ¡gina al hacer una bÃºsqueda
     setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
   const handleViewModeChange = (mode) => setViewMode(mode)
 
 
-  {/* SELECCIÓN DE ARTÍCULOS*/}
+  {/* SELECCIÃ“N DE ARTÃCULOS*/}
 
   const handleSelectArticle = (articleId) => {
     setSelectedArticles(prev => 
@@ -202,18 +207,18 @@ function CollectionArticles() {
     }
   }
 
-  {/* SUBIR ARTÍCULOS*/}
+  {/* SUBIR ARTÃCULOS*/}
 
   const handleUploadSuccess = async (message) => {
     // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
-    // Mostrar mensaje de éxito
+    // Mostrar mensaje de Ã©xito
     setNotification(message || 'Archivo(s) subido(s) correctamente')
     setPagination(prev => ({ ...prev, offset: 0 }))
     await loadDocuments();
   }
 
-  {/* AÑADIR ARTÍCULOS A LAS COLECCIONES*/}
+  {/* AÃ‘ADIR ARTÃCULOS A LAS COLECCIONES*/}
 
   const handleAddToCollections = () => {
     if (selectedArticles.length === 0) return
@@ -229,11 +234,11 @@ function CollectionArticles() {
   const handleCollectionsSuccess = (message) => {
     setShowCollectionsModal(false)
     setSelectedArticles([])
-    setNotification(message || 'Artículos añadidos a colecciones correctamente')
+    setNotification(message || 'ArtÃ­culos aÃ±adidos a colecciones correctamente')
   }
 
 
-  {/* BORRADO DE ARTÍCULOS*/}
+  {/* BORRADO DE ARTÃCULOS*/}
 
   const handleDeleteArticle = (articleId) => {
     setPendingDeleteIds([articleId])
@@ -252,7 +257,7 @@ function CollectionArticles() {
     
     try {
       await Promise.all(ids.map(id => articlesAPI.delete(id)))
-      setNotification(`${ids.length} artículo(s) eliminado(s)`)
+      setNotification(`${ids.length} artÃ­culo(s) eliminado(s)`)
       
       const newOffset =
         documents.length === ids.length && pagination.offset > 0
@@ -261,7 +266,7 @@ function CollectionArticles() {
 
       setPagination(prev => ({ ...prev, offset: Math.max(0, newOffset) }))
     } catch (e) {
-      setNotification('Error al eliminar artículos')
+      setNotification('Error al eliminar artÃ­culos')
     } finally {
       setShowDeleteModal(false)
       setPendingDeleteIds([])
@@ -274,7 +279,7 @@ function CollectionArticles() {
   //   const removedCount = selectedArticles.length
 
   //   try {
-  //     // Eliminar los artículos de la colección (no los elimina de la base de datos)
+  //     // Eliminar los artÃ­culos de la colecciÃ³n (no los elimina de la base de datos)
   //     await Promise.all(
   //       selectedArticles.map(id =>
   //         collectionsAPI.removeArticle(selectedCollectionId, id)
@@ -292,7 +297,7 @@ function CollectionArticles() {
   //       sort_by: sortCriteria
   //     })
 
-  //     // Si la página actual está vacía y no es la primera página, ir a la anterior
+  //     // Si la pÃ¡gina actual estÃ¡ vacÃ­a y no es la primera pÃ¡gina, ir a la anterior
   //     if (response.data.articles.length === 0 && pagination.offset > 0) {
   //       const newOffset = Math.max(0, pagination.offset - pagination.limit)
   //       setPagination(prev => ({
@@ -309,11 +314,11 @@ function CollectionArticles() {
   //       }))
   //     }
 
-  //     setUploadSuccessMessage(`${removedCount} artículo(s) eliminado(s) de la colección`)
+  //     setUploadSuccessMessage(`${removedCount} artÃ­culo(s) eliminado(s) de la colecciÃ³n`)
   //     setTimeout(() => setUploadSuccessMessage(''), 4000)
   //   } catch (err) {
   //     console.error('Error removing articles from collection:', err)
-  //     setUploadSuccessMessage('Error al eliminar artículos de la colección')
+  //     setUploadSuccessMessage('Error al eliminar artÃ­culos de la colecciÃ³n')
   //     setTimeout(() => setUploadSuccessMessage(''), 4000)
   //     setShowRemoveModal(false)
   //   }
@@ -323,13 +328,13 @@ function CollectionArticles() {
     <div className="page-container">
       <div className="container">
 
-        {/* Header Panel - Formato común */}
+        {/* Header Panel - Formato comÃºn */}
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
-              <h1 className="header-title">Artículos de "{collectionName}"</h1>
+              <h1 className="header-title">ArtÃ­culos de "{collectionName}"</h1>
               <span className="header-subtitle">
-                Gestiona y organiza tu biblioteca de artículos
+                Gestiona y organiza tu biblioteca de artÃ­culos
               </span>
             </div>
             <div className="header-stats">
@@ -348,7 +353,7 @@ function CollectionArticles() {
 
 
         <div style={{ marginTop: '2rem' }}>
-          <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
+          <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por tÃ­tulo" />
         </div>
 
         {selectedArticles.length > 0 ? (
@@ -393,7 +398,7 @@ function CollectionArticles() {
           />
         )}
 
-        {/* Paginación debajo de los artículos */}
+        {/* PaginaciÃ³n debajo de los artÃ­culos */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -402,7 +407,7 @@ function CollectionArticles() {
           onPageChange={setPage}
         />
 
-        {/* Botón flotante para subir artículos */}
+        {/* BotÃ³n flotante para subir artÃ­culos */}
         <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
@@ -418,7 +423,7 @@ function CollectionArticles() {
           collection_id={selectedCollectionId}
         />
 
-        {/* Mensaje de éxito de carga */}
+        {/* Mensaje de Ã©xito de carga */}
         {notification && (
           <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
             <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
@@ -426,20 +431,20 @@ function CollectionArticles() {
           </div>
         )}
 
-        {/* Modal de confirmación de eliminación */}
+        {/* Modal de confirmaciÃ³n de eliminaciÃ³n */}
         {showDeleteModal && (
           <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>
                   <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                  {' '}Confirmar Eliminación
+                  {' '}Confirmar EliminaciÃ³n
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Estás seguro de que quieres eliminar {pendingDeleteIds.length > 0 ? pendingDeleteIds.length : selectedArticles.length} artículo(s)?</p>
+                <p>Â¿EstÃ¡s seguro de que quieres eliminar {pendingDeleteIds.length > 0 ? pendingDeleteIds.length : selectedArticles.length} artÃ­culo(s)?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Esta acción no se puede deshacer.
+                  Esta acciÃ³n no se puede deshacer.
                 </p>
               </div>
               <div className="modal-footer">
@@ -461,7 +466,7 @@ function CollectionArticles() {
           </div>
         )}
 
-        {/* Modal de añadir a colecciones */}
+        {/* Modal de aÃ±adir a colecciones */}
         <SaveToCollectionsModal
           isOpen={showCollectionsModal}
           onClose={() => setShowCollectionsModal(false)}

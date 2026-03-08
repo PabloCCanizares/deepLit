@@ -23,22 +23,19 @@ class ArticleUpdate(BaseModel):
     """
     # Campos principales
     title: Optional[str] = Field(None, max_length=500, description="Título del artículo")
-    abstract: Optional[str] = Field(None, description="Resumen del artículo")
-    authors: Optional[str] = Field(None, description="Autores del artículo")
+    abstract: Optional[str] = Field(None, description="Abstract del artículo")
+    authors: Optional[Any] = Field(None, description="Autores del artículo")
     year: Optional[str] = Field(None, description="Año de publicación")
     
     # Campos de clasificación
     category: Optional[str] = Field(None, description="Categoría del artículo")
     type: Optional[str] = Field(None, description="Tipo de publicación")
-    keywords: Optional[str] = Field(None, description="Palabras clave")
-    
-    # Campos de metadata
-    acronym: Optional[str] = Field(None, description="Acrónimo de la conferencia/journal")
-    citations: Optional[str] = Field(None, description="Número de citas")
+    keywords: Optional[Any] = Field(None, description="Palabras clave (lista o string)")
     pages: Optional[str] = Field(None, description="Número de páginas")
-    
-    # Campos adicionales
-    link: Optional[str] = Field(None, description="Enlace al artículo")
-    citation: Optional[str] = Field(None, description="Formato de citación")
-    summary: Optional[str] = Field(None, description="Resumen adicional")
-    observations: Optional[str] = Field(None, description="Observaciones del usuario")
+    doi: Optional[str] = Field(None, description="DOI")
+    relevance_score: Optional[str] = Field(None, description="Score de relevancia")
+    pdf_url: Optional[str] = Field(None, description="URL del PDF")
+    landing_page_url: Optional[str] = Field(None, description="URL de la página del artículo")
+    referenced_works: Optional[Any] = Field(None, description="Referencias bibliográficas")
+    related_works: Optional[Any] = Field(None, description="Obras relacionadas")
+    counts_by_year: Optional[Any] = Field(None, description="Citas por año")

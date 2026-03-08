@@ -19,15 +19,24 @@ export const CollectionProvider = ({ children }) => {
     (async () => {
       try {
         const resp = await collectionsAPI.getAll();
-        // resp.data.collections: [{ id, name }, ...]
-        setCollections(resp.data.collections);
-        console.log("Colecciones recargadas", resp.data.collections);
+        const fetchedCollections = resp?.data?.collections || [];
+        setCollections(fetchedCollections);
+        console.log("Colecciones recargadas", fetchedCollections);
+
+        // Si la coleccion seleccionada ya no existe, volver a "Sin coleccion"
+        if (
+          selectedCollectionId &&
+          !fetchedCollections.some((collection) => collection._id === selectedCollectionId)
+        ) {
+          setSelectedCollectionId(null);
+          localStorage.removeItem("selectedCollection");
+        }
       } catch (err) {
         console.error("Error cargando colecciones:", err);
         setCollections([]);
       }
     })();
-  }, [user]);
+  }, [user, selectedCollectionId]);
 
   // Cambiar colección seleccionada
   const changeCollection = (id) => {

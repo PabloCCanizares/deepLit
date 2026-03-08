@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
@@ -147,6 +147,28 @@ function ArticleView({
     )
   }
 
+  const authorsText = Array.isArray(document.authors)
+    ? document.authors.join(', ')
+    : (document.authors || 'No especificado')
+
+  const keywordsText = Array.isArray(document.keywords)
+    ? document.keywords
+        .map((item) => {
+          if (typeof item === 'string') return item
+          if (item && item.key) return item.key
+          if (item && item.display_name) return item.display_name
+          return ''
+        })
+        .filter(Boolean)
+        .join(', ')
+    : (typeof document.keywords === 'string' ? document.keywords : '')
+
+  const abstractText = (document.abstract || '').trim()
+  const hasAbstract = Boolean(abstractText)
+  const referencedWorks = Array.isArray(document.referenced_works) ? document.referenced_works : []
+  const relatedWorks = Array.isArray(document.related_works) ? document.related_works : []
+  const countsByYear = Array.isArray(document.counts_by_year) ? document.counts_by_year : []
+
   return (
     <div className="documentViewContainer">
       <div className="documentContent">
@@ -176,14 +198,10 @@ function ArticleView({
           <h3>Informacion General</h3>
           <div className="documentField">
             <label>Autor(es):</label>
-            <span>
-              {Array.isArray(document.authors)
-                ? document.authors.join(', ')
-                : document.authors || 'No especificado'}
-            </span>
+            <span>{authorsText}</span>
           </div>
           <div className="documentField">
-            <label>Año:</label>
+            <label>Anio:</label>
             <span>{document.year || 'No especificado'}</span>
           </div>
           <div className="documentField">
@@ -200,64 +218,105 @@ function ArticleView({
               <span>{document.type}</span>
             </div>
           )}
-          {document.keywords && document.keywords.length > 0 && (
+          {document.relevance_score !== null && document.relevance_score !== undefined && (
+            <div className="documentField">
+              <label>Relevancia:</label>
+              <span>{document.relevance_score}</span>
+            </div>
+          )}
+          {keywordsText && (
             <div className="documentField">
               <label>Palabras Clave:</label>
-              <span>
-                {Array.isArray(document.keywords)
-                  ? document.keywords
-                      .map((item) => {
-                        if (typeof item === 'string') return item
-                        if (item && item.key) return item.key
-                        if (item && item.display_name) return item.display_name
-                        return String(item)
-                      })
-                      .filter((keyword) => keyword)
-                      .join(', ')
-                  : 'No especificado'}
-              </span>
+              <span>{keywordsText}</span>
             </div>
           )}
-          {document.acronym && (
+          {document.doi && (
             <div className="documentField">
-              <label>Acronimo:</label>
-              <span>{document.acronym}</span>
+              <label>DOI:</label>
+              <span>{document.doi}</span>
             </div>
           )}
-          {document.citations && (
+          {document.pdf_url && (
             <div className="documentField">
-              <label>Citas:</label>
-              <span>{document.citations}</span>
-            </div>
-          )}
-          {document.link && (
-            <div className="documentField">
-              <label>Enlace:</label>
-              <a href={document.link} target="_blank" rel="noopener noreferrer">
-                {document.link}
+              <label>PDF URL:</label>
+              <a href={document.pdf_url} target="_blank" rel="noopener noreferrer">
+                {document.pdf_url}
               </a>
+            </div>
+          )}
+          {document.landing_page_url && (
+            <div className="documentField">
+              <label>Landing Page:</label>
+              <a href={document.landing_page_url} target="_blank" rel="noopener noreferrer">
+                {document.landing_page_url}
+              </a>
+            </div>
+          )}
+          {document.status && (
+            <div className="documentField">
+              <label>Estado:</label>
+              <span>{document.status}</span>
             </div>
           )}
         </div>
 
-        {(document.summary || document.abstract) && (
-          <div className="documentSection">
-            <h3>Resumen</h3>
-            <p className="documentAbstract">{document.summary || document.abstract}</p>
-          </div>
-        )}
-
-        {document.abstract && document.summary && (
+        {hasAbstract && (
           <div className="documentSection">
             <h3>Abstract</h3>
-            <p className="documentAbstract">{document.abstract}</p>
+            <p className="documentAbstract">{abstractText}</p>
           </div>
         )}
 
-        {document.observations && (
+        {Array.isArray(document.keywords) && document.keywords.length > 0 && (
           <div className="documentSection">
-            <h3>Observaciones</h3>
-            <p className="documentAbstract">{document.observations}</p>
+            <h3>Keywords</h3>
+            <div className="documentKeywords">
+              {document.keywords.map((item, index) => {
+                const key = typeof item === 'string' ? item : (item?.key || item?.display_name || '')
+                const score = typeof item === 'object' && item ? item.score : null
+                if (!key) return null
+                return (
+                  <span key={`${key}-${index}`} className="keyword-badge">
+                    {score !== null && score !== undefined ? `${key} (${Number(score).toFixed(2)})` : key}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {countsByYear.length > 0 && (
+          <div className="documentSection">
+            <h3>Citas por Anio</h3>
+            <div className="documentReferences">
+              {countsByYear.map((entry, index) => (
+                <p key={`${entry?.year || 'y'}-${index}`}>
+                  {entry?.year || '-'}: {entry?.cited_by_count ?? 0}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {referencedWorks.length > 0 && (
+          <div className="documentSection">
+            <h3>Obras Referenciadas</h3>
+            <div className="documentReferences">
+              {referencedWorks.map((item, index) => (
+                <p key={`ref-${index}`}>{item}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {relatedWorks.length > 0 && (
+          <div className="documentSection">
+            <h3>Obras Relacionadas</h3>
+            <div className="documentReferences">
+              {relatedWorks.map((item, index) => (
+                <p key={`rel-${index}`}>{item}</p>
+              ))}
+            </div>
           </div>
         )}
 

@@ -65,12 +65,31 @@ class PdfsController:
         pdf_id, absolute_path = await self.pdf_service.save_pdf(pdf_data, user_id)
         
         # PASO 2: Crear artículo placeholder (status=processing) → respuesta inmediata
-        article_id = await self.article_service.create_processing_article(
-            pdf_id=pdf_id,
-            user_id=user_id,
-            filename=pdf_data.filename,
-            collection_id=collection_id
-        )
+        # Si falla, hacemos rollback del PDF guardado en paso 1
+        try:
+            article_id = await self.article_service.create_processing_article(
+                pdf_id=pdf_id,
+                user_id=user_id,
+                filename=pdf_data.filename,
+                collection_id=collection_id
+            )
+        except Exception as e:
+            # Rollback: eliminar PDF de BD y disco
+            logger.error(
+                "Error creando artículo placeholder para PDF '%s': %s. Haciendo rollback...",
+                pdf_data.filename, e
+            )
+            try:
+                await self.pdf_service.force_delete(pdf_id)
+            except Exception as rollback_err:
+                logger.warning("Rollback: error eliminando registro PDF: %s", rollback_err)
+            try:
+                pdf_path = Path(absolute_path)
+                if pdf_path.exists():
+                    pdf_path.unlink()
+            except Exception as rollback_err:
+                logger.warning("Rollback: error eliminando archivo PDF: %s", rollback_err)
+            raise e
         
         # PASO 3: Encolar procesamiento pesado en background
         background_tasks.add_task(

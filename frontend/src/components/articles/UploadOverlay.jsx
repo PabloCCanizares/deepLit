@@ -69,7 +69,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
     if (!files || files.length === 0) return;
 
     const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
-    
+
     if (pdfFiles.length === 0) {
       alert('Error: No se encontraron archivos PDF en la carpeta');
       event.target.value = '';
@@ -85,7 +85,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
         const file = pdfFiles[i];
         await uploadAPI.uploadPDF(file, collection_id);
       }
-      
+
       if (onUploadSuccess) {
         onUploadSuccess(`${pdfFiles.length} archivo(s) subido(s) correctamente`);
       }
@@ -164,9 +164,8 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
         {/* Las 3 tarjetas con animación de burbujas */}
         <div className="upload-options-grid">
           {/* Subir Archivo */}
-          <div 
-            className="upload-card bubble-float"
-            style={{ animationDelay: '0.1s' }}
+          <div
+            className="upload-card"
             onClick={() => handleUploadOption('file')}
           >
             <div className="upload-card-icon">
@@ -182,9 +181,8 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
           </div>
 
           {/* Subir Carpeta */}
-          <div 
-            className="upload-card bubble-float"
-            style={{ animationDelay: '0.3s' }}
+          <div
+            className="upload-card"
             onClick={() => handleUploadOption('folder')}
           >
             <div className="upload-card-icon">
@@ -199,9 +197,8 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
           </div>
 
           {/* Subir Excel */}
-          <div 
-            className="upload-card bubble-float"
-            style={{ animationDelay: '0.5s' }}
+          <div
+            className="upload-card"
             onClick={() => handleUploadOption('excel')}
           >
             <div className="upload-card-icon">

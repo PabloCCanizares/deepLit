@@ -17,6 +17,10 @@ class PdfRepository:
         # Si MongoDB genera el _id, usamos result.inserted_id
         return pdf_data.get("_id") or str(result.inserted_id)
 
+    async def find_by_id(self, pdf_id: str) -> Optional[dict]:
+        """Buscar PDF por ID"""
+        return await self.collection.find_one({"_id": pdf_id})
+
     async def count_documents(self, user_id: str) -> int:
         """Contar documentos asociados a un usuario"""
         count = await self.collection.count_documents({"id_user": user_id})

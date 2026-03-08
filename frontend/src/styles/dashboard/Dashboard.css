@@ -1,6 +1,6 @@
 /* ======= Dashboard Container Styles ======= */
 .dashboardContainer {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   padding: 2rem;
   background: linear-gradient(135deg, var(--white) 0%, #eef2ff 100%);
 }

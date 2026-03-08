@@ -43,9 +43,20 @@ function Dashboard() {
       const response = await statsAPI.getStats({
         collection_id: selectedCollectionId || undefined,
       })
+      if (!response?.success) {
+        setStats({
+          document_count: 0,
+          article_count: 0,
+          labels_by_year: [],
+          values_by_year: [],
+          sorted_keywords: [],
+        })
+        setError(response?.message || 'No se pudieron cargar las estadisticas')
+        return
+      }
 
-      setStats(response.data)
-      await loadActivityPanel()
+      setStats(response.data || {})
+      loadActivityPanel()
     } catch (err) {
       setError(err.status ? err.message : 'Error de conexion con el servidor')
     } finally {
