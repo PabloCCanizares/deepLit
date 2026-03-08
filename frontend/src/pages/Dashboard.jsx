@@ -142,8 +142,12 @@ function Dashboard() {
 
     try {
       setUploading(true)
-      await uploadAPI.uploadPDF(file)
-      alert('PDF subido correctamente')
+      await uploadAPI.uploadPDF(file, selectedCollectionId || undefined)
+      alert(
+        selectedCollectionId
+          ? 'PDF subido a la colección actual'
+          : 'PDF subido correctamente'
+      )
       loadDashboard()
     } catch (err) {
       alert(err.status ? err.message : 'Error de conexion con el servidor')
