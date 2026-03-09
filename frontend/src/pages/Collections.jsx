@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { collectionsAPI } from '../api/api'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import CollectionCard from '../components/collections/CollectionCard'
@@ -6,8 +7,10 @@ import CreateCollectionModal from '../components/collections/CreateCollectionMod
 import '../styles/App.css'
 import '../styles/collections/Collections.css'
 import { useCollection } from "../context/CollectionContext";
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 
 function Collections() {
+  const queryClient = useQueryClient()
   const [collections, setCollections] = useState([])
   const [filteredCollections, setFilteredCollections] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -127,6 +130,8 @@ function Collections() {
   }
 
   const handleSaveCollection = async (collectionData) => {
+    let affectedCollectionId = null
+
     try {
       console.log('\n=== SAVING COLLECTION ====')
       console.log('Collection data:', collectionData)
@@ -134,6 +139,7 @@ function Collections() {
       console.log('Image:', collectionData.image ? collectionData.image.substring(0, 100) + '...' : 'None')
       
       if (editingCollection) {
+        affectedCollectionId = editingCollection._id
         // Modo edición
         await collectionsAPI.update(editingCollection._id, {
           name: collectionData.name,
@@ -181,6 +187,7 @@ function Collections() {
         })
 
         const createdCollection = response.data
+        affectedCollectionId = createdCollection._id
 
         // Añadir artículos seleccionados a la colección
         if (collectionData.selectedArticles && collectionData.selectedArticles.length > 0) {
@@ -193,6 +200,10 @@ function Collections() {
         refreshCollections();
 
         setSuccessMessage('Colección creada correctamente')
+      }
+
+      if (affectedCollectionId) {
+        await invalidateOpenAlexMembershipQueries(queryClient)
       }
 
       // Recargar colecciones

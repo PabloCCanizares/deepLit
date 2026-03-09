@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { collectionsAPI, openalexAPI } from '../../api/api'
+import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries'
 import '../../styles/openalex/SaveToCollectionsModal.css'
 
 function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess }) {
+  const queryClient = useQueryClient()
   const [collections, setCollections] = useState([])
   const [selectedCollections, setSelectedCollections] = useState([])
   const [preselectedCollections, setPreselectedCollections] = useState([])
@@ -52,8 +55,7 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
             
             // Solo preseleccionar si TODOS los artículos están en esta colección
             const allArticlesInCollection = articleIds.every(id => 
-              collectionArticleIds.includes(id) || 
-              collectionArticleIds.some(colId => colId.includes(id) || id.includes(colId))
+              collectionArticleIds.includes(id)
             )
             
             if (allArticlesInCollection) {
@@ -122,6 +124,8 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
           }
         }
       }
+
+      await invalidateOpenAlexMembershipQueries(queryClient)
 
       // Construir mensaje basado en las operaciones realizadas
       let message = ''

@@ -40,7 +40,7 @@ function Sidebar({ isOpen, onClose }) {
               onClick={onClose}
             >
               <i className="fas fa-file-alt"></i>
-              <span>Mis Artículos</span>
+              <span>Biblioteca</span>
             </Link>
             <Link 
               to="/collections" 
@@ -91,4 +91,3 @@ function Sidebar({ isOpen, onClose }) {
 }
 
 export default Sidebar
-

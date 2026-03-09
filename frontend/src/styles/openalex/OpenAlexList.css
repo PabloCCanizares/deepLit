@@ -20,7 +20,7 @@ body[data-theme='dark'] .openalex-document-list {
    =========================== */
 .openalex-list-header {
   display: grid;
-  grid-template-columns: 40px 1fr 1fr 60px 120px;
+  grid-template-columns: 40px minmax(0, 1.35fr) 140px minmax(0, 1fr) 60px 120px;
   gap: 1.5rem;
   padding: 1rem 1.5rem;
   background: var(--dark);
@@ -51,7 +51,7 @@ body[data-theme='dark'] .openalex-list-header > div {
    =========================== */
 .openalex-list-row {
   display: grid;
-  grid-template-columns: 40px 1fr 1fr 60px 120px;
+  grid-template-columns: 40px minmax(0, 1.35fr) 140px minmax(0, 1fr) 60px 120px;
   gap: 1.5rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e0e0e0;
@@ -164,6 +164,39 @@ body[data-theme='dark'] .list-title-link {
   text-decoration: underline;
 }
 
+.openalex-inline-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.list-col-status {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.openalex-inline-status.status-collection {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--main_color);
+}
+
+.openalex-inline-status.status-library {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--text-primary);
+}
+
+.openalex-inline-status.status-new {
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--text-secondary);
+}
+
 .list-col-category,
 .list-col-year {
   overflow: hidden;
@@ -263,8 +296,8 @@ body[data-theme='dark'] .list-col-year {
 @media (max-width: 1024px) {
   .openalex-list-header,
   .openalex-list-row {
-    grid-template-columns: 40px 1fr 1fr 60px 120px;
-    gap: 1rem;
+    grid-template-columns: 40px minmax(0, 1.2fr) 128px minmax(0, 1fr) 60px 120px;
+    gap: 0.9rem;
     padding: 0.8rem 1rem;
   }
 }
@@ -272,7 +305,7 @@ body[data-theme='dark'] .list-col-year {
 @media (max-width: 768px) {
   .openalex-list-header,
   .openalex-list-row {
-    grid-template-columns: 40px 1fr 1fr 50px 100px;
+    grid-template-columns: 40px minmax(0, 1.1fr) 118px minmax(0, 1fr) 50px 100px;
     gap: 0.5rem;
     padding: 0.8rem 0.5rem;
     font-size: 0.9rem;
@@ -291,7 +324,7 @@ body[data-theme='dark'] .list-col-year {
 @media (max-width: 480px) {
   .openalex-list-header,
   .openalex-list-row {
-    grid-template-columns: 40px 1fr 1fr 50px 100px;
+    grid-template-columns: 34px minmax(0, 1fr) 104px minmax(0, 0.9fr) 46px 92px;
     gap: 0.3rem;
     padding: 0.6rem 0.3rem;
     font-size: 0.8rem;

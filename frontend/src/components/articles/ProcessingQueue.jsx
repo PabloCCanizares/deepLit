@@ -1,8 +1,11 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { articlesAPI } from '../../api/api';
+import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries';
 import '../../styles/articles/ProcessingQueue.css';
 
 const ProcessingQueue = ({ isOpen, onClose }) => {
+  const queryClient = useQueryClient();
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -81,7 +84,10 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
     setRemovingIds(prev => new Set(prev).add(itemId));
     try {
       await articlesAPI.delete(itemId);
-      await loadQueue();
+      await Promise.all([
+        loadQueue(),
+        invalidateOpenAlexMembershipQueries(queryClient),
+      ]);
     } catch (err) {
       console.error('Error eliminando item de la cola:', err);
     } finally {

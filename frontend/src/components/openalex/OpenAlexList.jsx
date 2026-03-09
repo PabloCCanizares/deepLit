@@ -1,8 +1,23 @@
 import { Link } from 'react-router-dom'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import { getOpenAlexArticleStatus } from './openalexStatus'
 import '../../styles/openalex/OpenAlexList.css'
 
-function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, onSelectAll, savedArticles = [], onSave, onSaveMultiple }) {
+function OpenAlexList({
+  documents,
+  loading,
+  error,
+  baseRoute = '/openalex',
+  selectedArticles = [],
+  onSelectArticle,
+  onSelectAll,
+  libraryArticleIds = [],
+  currentCollectionArticleIds = [],
+  hasActiveCollection = false,
+  collectionName = '',
+  onSave,
+  onSaveMultiple,
+}) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -45,6 +60,7 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
           )}
         </div>
         <div className="list-col-title">Título</div>
+        <div className="list-col-status">Estado</div>
         <div className="list-col-category">Categoría</div>
         <div className="list-col-year">Año</div>
         <div className="list-col-actions">Opciones</div>
@@ -66,22 +82,28 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
         let clean_id = id;
         
         
-        const isSaved = savedArticles.includes(clean_id) || savedArticles.includes(id);
+        const inLibrary = libraryArticleIds.includes(clean_id) || libraryArticleIds.includes(id)
+        const inCurrentCollection =
+          hasActiveCollection &&
+          (currentCollectionArticleIds.includes(clean_id) || currentCollectionArticleIds.includes(id))
+        const status = getOpenAlexArticleStatus({
+          inLibrary,
+          inCurrentCollection,
+          hasActiveCollection,
+          collectionName,
+        })
 
-        function RowActions({itemId, initiallySaved}){
-          // Usar ref para mantener el valor inicial y no reinicializarlo
-          const initialSavedRef = useRef(initiallySaved)
-          const [saved, setSaved] = useState(initialSavedRef.current)
+        function RowActions({ itemId, rowStatus, rowInLibrary, rowInCurrentCollection }) {
           const [saving, setSaving] = useState(false)
 
           const handleSaveClick = async () => {
             if (!onSave) return
             try {
               setSaving(true)
-              const result = await onSave(itemId, saved)
-              if (result !== false) {
-                setSaved(!saved)
-              }
+              await onSave(itemId, {
+                inLibrary: rowInLibrary,
+                inCurrentCollection: rowInCurrentCollection,
+              })
             } catch (e) {
               console.error('save error', e)
             } finally {
@@ -100,12 +122,12 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
                 <i className="fas fa-eye"></i>
               </Link>
               <button
-                className={`save-article-btn ${saved ? 'saved' : ''}`}
-                title={saved ? 'Quitar de colección' : 'Guardar en colección actual'}
+                className={`save-article-btn ${rowInCurrentCollection || rowInLibrary ? 'saved' : ''}`}
+                title={rowStatus.actionTitle}
                 onClick={handleSaveClick}
                 disabled={saving}
               >
-                <i className={saved ? 'fas fa-bookmark' : 'far fa-bookmark'}></i>
+                <i className={saving ? 'fas fa-spinner fa-spin' : rowStatus.actionIcon}></i>
               </button>
               {onSaveMultiple && (
                 <button
@@ -138,9 +160,18 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
                 {title}
               </Link>
             </div>
+            <div className="list-col-status">
+              <span className={`openalex-inline-status ${status.badgeTone}`}>{status.badgeLabel}</span>
+            </div>
             <div className="list-col-category">{category}</div>
             <div className="list-col-year">{year}</div>
-            <RowActions key={clean_id} itemId={clean_id} initiallySaved={isSaved} />
+            <RowActions
+              key={clean_id}
+              itemId={clean_id}
+              rowStatus={status}
+              rowInLibrary={inLibrary}
+              rowInCurrentCollection={inCurrentCollection}
+            />
           </div>
         )
       })}
@@ -149,7 +180,3 @@ function OpenAlexList({ documents, loading, error, baseRoute = '/openalex', sele
 }
 
 export default OpenAlexList
-
-
-
-

@@ -1,7 +1,20 @@
 import OpenAlexCard from './OpenAlexCard'
 import '../../styles/openalex/OpenAlexGrid.css'
 
-function OpenAlexGrid({ documents, loading, error, baseRoute = '/openalex', selectedArticles = [], onSelectArticle, savedArticles = [], onSave, onSaveMultiple }) {
+function OpenAlexGrid({
+  documents,
+  loading,
+  error,
+  baseRoute = '/openalex',
+  selectedArticles = [],
+  onSelectArticle,
+  libraryArticleIds = [],
+  currentCollectionArticleIds = [],
+  hasActiveCollection = false,
+  collectionName = '',
+  onSave,
+  onSaveMultiple,
+}) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -38,7 +51,10 @@ function OpenAlexGrid({ documents, loading, error, baseRoute = '/openalex', sele
           baseRoute={baseRoute}
           selectedArticles={selectedArticles}
           onSelectArticle={onSelectArticle}
-          savedArticles={savedArticles}
+          libraryArticleIds={libraryArticleIds}
+          currentCollectionArticleIds={currentCollectionArticleIds}
+          hasActiveCollection={hasActiveCollection}
+          collectionName={collectionName}
           onSave={onSave}
           onSaveMultiple={onSaveMultiple}
         />

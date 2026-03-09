@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { articlesAPI, collectionsAPI } from '../api/api'
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 import '../styles/articles/ArticleViewEdit.css'
 
 function toFormValue(value) {
@@ -28,6 +30,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
   const decodedId = decodeURIComponent(previewId || id || '')
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -137,11 +140,13 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
     try {
       if (location.state?.from === 'search' && location.state?.collectionId) {
         await collectionsAPI.removeArticle(location.state.collectionId, decodedId)
+        await invalidateOpenAlexMembershipQueries(queryClient)
         navigate('/search')
         return
       }
 
       await articlesAPI.delete(decodedId)
+      await invalidateOpenAlexMembershipQueries(queryClient)
 
       if (location.state?.from === 'collection' && location.state?.collectionId) {
         navigate(`/collections/${encodeURIComponent(location.state.collectionId)}`)

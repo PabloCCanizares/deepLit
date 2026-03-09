@@ -394,6 +394,12 @@ export const collectionsAPI = {
     return apiFetch(`/collections/${collection_id}/ids`, {
       method: 'GET'
     });
+  },
+
+  getLibraryIds: async () => {
+    return apiFetch('/collections/ids', {
+      method: 'GET'
+    });
   }
 };
 

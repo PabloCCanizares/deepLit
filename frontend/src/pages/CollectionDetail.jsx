@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collectionsAPI } from '../api/api'
 import { usePagination } from '../hooks/usePagination'
@@ -8,6 +9,7 @@ import SelectionActions from '../components/articles/SelectionActions'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import Pagination from '../components/articles/Pagination'
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 import '../styles/collections/CollectionDetail.css'
@@ -15,6 +17,7 @@ import '../styles/collections/CollectionDetail.css'
 function CollectionDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   
   const [collection, setCollection] = useState(null)
   const [articles, setArticles] = useState([])
@@ -215,6 +218,7 @@ function CollectionDetail() {
       setSelectedArticles([])
       setPendingRemoveIds([])
       setShowDeleteModal(false)
+      await invalidateOpenAlexMembershipQueries(queryClient)
       await loadCollection()
     } catch (err) {
       console.error('Error removing articles:', err)
@@ -341,7 +345,7 @@ function CollectionDetail() {
             )}
             {!searchQuery && articles.length === 0 && (
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                Añade artículos desde "Mis Artículos" para verlos aquí
+                Añade artículos desde "Biblioteca" para verlos aquí
               </p>
             )}
           </div>

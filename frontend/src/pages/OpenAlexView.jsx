@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { openalexAPI } from '../api/api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { collectionsAPI, openalexAPI } from '../api/api'
 import { useCollection } from '../context/CollectionContext'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 import { recordViewedItem } from '../utils/viewHistory'
+import { getOpenAlexArticleStatus } from '../components/openalex/openalexStatus'
 import '../styles/openalex/OpenAlexView.css'
 
 function OpenAlexView({
@@ -17,7 +20,8 @@ function OpenAlexView({
   const openalexId = decodeURIComponent(previewId || id || '')
   const navigate = useNavigate()
   const location = useLocation()
-  const { selectedCollectionId } = useCollection()
+  const { selectedCollectionId, collections } = useCollection()
+  const queryClient = useQueryClient()
 
   const [document, setDocument] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -26,6 +30,25 @@ function OpenAlexView({
   const [savingCurrent, setSavingCurrent] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [notification, setNotification] = useState('')
+
+  const { data: libraryData } = useQuery({
+    queryKey: ['libraryArticleIds'],
+    queryFn: async () => {
+      const response = await collectionsAPI.getLibraryIds()
+      return response.data
+    },
+    enabled: !previewMode,
+  })
+
+  const { data: collectionData } = useQuery({
+    queryKey: ['collectionArticleIds', selectedCollectionId],
+    queryFn: async () => {
+      if (!selectedCollectionId) return { article_ids: [] }
+      const response = await collectionsAPI.getIdsbyCollection(selectedCollectionId)
+      return response.data
+    },
+    enabled: !previewMode && Boolean(selectedCollectionId),
+  })
 
   useEffect(() => {
     if (previewMode) {
@@ -107,12 +130,29 @@ function OpenAlexView({
 
     try {
       setSavingCurrent(true)
-      await openalexAPI.saveWork(openalexId, selectedCollectionId || undefined)
-      setNotification(
-        selectedCollectionId
-          ? 'Articulo guardado en la coleccion actual'
-          : 'Articulo guardado en Mis Articulos',
-      )
+      let message = ''
+
+      if (selectedCollectionId) {
+        if (isInCurrentCollection) {
+          await collectionsAPI.removeArticle(selectedCollectionId, openalexId)
+          message = `Artículo quitado de "${selectedCollectionName}"`
+        } else if (isInLibrary) {
+          await collectionsAPI.addArticle(selectedCollectionId, openalexId)
+          message = `Artículo añadido a "${selectedCollectionName}"`
+        } else {
+          await openalexAPI.saveWork(openalexId, selectedCollectionId)
+          message = `Artículo guardado y añadido a "${selectedCollectionName}"`
+        }
+      } else if (isInLibrary) {
+        await openalexAPI.unsaveWork(openalexId)
+        message = 'Artículo quitado de tu biblioteca'
+      } else {
+        await openalexAPI.saveWork(openalexId)
+        message = 'Artículo guardado en tu biblioteca'
+      }
+
+      await invalidateOpenAlexMembershipQueries(queryClient)
+      setNotification(message)
     } catch (err) {
       setNotification(err.message || 'Error al guardar el articulo')
     } finally {
@@ -123,6 +163,7 @@ function OpenAlexView({
   const handleCollectionsSuccess = (message) => {
     setShowCollectionsModal(false)
     setNotification(message || 'Articulo guardado en colecciones')
+    invalidateOpenAlexMembershipQueries(queryClient)
   }
 
   const handleOpenCollections = () => {
@@ -160,6 +201,19 @@ function OpenAlexView({
   }
 
   const title = document.title || 'Sin titulo'
+  const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
+  const selectedCollectionName = selectedCollection?.name || 'la colección activa'
+  const libraryArticleIds = libraryData?.article_ids || []
+  const currentCollectionArticleIds = collectionData?.article_ids || []
+  const isInLibrary = libraryArticleIds.includes(openalexId)
+  const isInCurrentCollection =
+    Boolean(selectedCollectionId) && currentCollectionArticleIds.includes(openalexId)
+  const actionStatus = getOpenAlexArticleStatus({
+    inLibrary: isInLibrary,
+    inCurrentCollection: isInCurrentCollection,
+    hasActiveCollection: Boolean(selectedCollectionId),
+    collectionName: selectedCollectionName,
+  })
   const year = document.year || document.publication_year || 'No especificado'
   const category = document.category || document.primary_topic?.display_name || 'No especificado'
   const citations = document.citations || document.cited_by_count || 0
@@ -206,14 +260,12 @@ function OpenAlexView({
                 Volver
               </button>
               <button onClick={handleSaveToCurrentCollection} className="btn-secondary" disabled={!previewMode && savingCurrent}>
-                <i className={savingCurrent ? 'fas fa-spinner fa-spin' : 'fas fa-bookmark'}></i>
+                <i className={savingCurrent ? 'fas fa-spinner fa-spin' : actionStatus.actionIcon}></i>
                 {previewMode
                   ? 'Iniciar sesion para guardar'
                   : savingCurrent
                   ? 'Guardando...'
-                  : selectedCollectionId
-                    ? 'Guardar en coleccion actual'
-                    : 'Guardar en Mis Articulos'}
+                  : actionStatus.actionLabel}
               </button>
               <button onClick={handleOpenCollections} className="btn-primary">
                 <i className={`fas ${previewMode ? 'fa-lock' : 'fa-layer-group'}`}></i>

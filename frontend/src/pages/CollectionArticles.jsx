@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 
 import { articlesAPI, collectionsAPI } from '../api/api'
@@ -14,6 +15,7 @@ import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 
 // import ArticleControls from '../components/articles/ArticleControls'
 
@@ -22,6 +24,7 @@ import '../styles/articles/ArticleViewEdit.css'
 
 function CollectionArticles() {
   const { selectedCollectionId, collections } = useCollection();
+  const queryClient = useQueryClient()
 
   const [documents, setDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
@@ -127,8 +130,8 @@ function CollectionArticles() {
           <div className="collection-empty-state-icon">
             <i className="fas fa-folder-open"></i>
           </div>
-          <h1>Ninguna coleccion seleccionada</h1>
-          <p>Selecciona una coleccion en el menu superior para ver sus articulos.</p>
+          <h1>Selecciona una colección</h1>
+          <p>Zona de trabajo opera sobre una colección concreta. Si quieres ver todo, usa Biblioteca.</p>
         </div>
       </div>
     );
@@ -273,6 +276,7 @@ function CollectionArticles() {
     } catch (e) {
       setNotification('Error al quitar artículos de la colección')
     } finally {
+      await invalidateOpenAlexMembershipQueries(queryClient)
       setShowDeleteModal(false)
       setPendingDeleteIds([])
       setSelectedArticles([])

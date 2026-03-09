@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { articlesAPI } from '../api/api'
 import { usePagination } from '../hooks/usePagination'
@@ -12,11 +13,13 @@ import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 
 function Articles() {
+  const queryClient = useQueryClient()
 
   const [documents, setDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
@@ -247,7 +250,10 @@ function Articles() {
       setShowDeleteModal(false)
       setPendingDeleteIds([])
       setSelectedArticles([])
-      await loadDocuments()
+      await Promise.all([
+        loadDocuments(),
+        invalidateOpenAlexMembershipQueries(queryClient),
+      ])
     }
   }
 
@@ -259,7 +265,7 @@ function Articles() {
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
-              <h1 className="header-title">Todos Mis Artículos</h1>
+              <h1 className="header-title">Biblioteca</h1>
               <span className="header-subtitle">
                 Gestiona y organiza tu biblioteca de artículos
               </span>

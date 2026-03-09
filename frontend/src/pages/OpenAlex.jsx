@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { collectionsAPI, openalexAPI } from '../api/api'
 import { useCollection } from "../context/CollectionContext";
 import { usePagination } from '../hooks/usePagination';
+import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
@@ -52,7 +53,7 @@ const resetCachedParams = () => {
 }
 
 function OpenAlex() {
-  const { selectedCollectionId } = useCollection();
+  const { selectedCollectionId, collections } = useCollection();
   const queryClient = useQueryClient()
   
   // Leer parámetros guardados (si existen)
@@ -131,7 +132,7 @@ function OpenAlex() {
 
   // Query separada para los IDs guardados
   const { data: savedData } = useQuery({
-    queryKey: ['savedArticles', selectedCollectionId],
+    queryKey: ['collectionArticleIds', selectedCollectionId],
     queryFn: async () => {
       if (!selectedCollectionId) return { article_ids: [] }
       const response = await collectionsAPI.getIdsbyCollection(selectedCollectionId);
@@ -140,10 +141,21 @@ function OpenAlex() {
     enabled: !!selectedCollectionId, // Solo ejecutar si hay colección seleccionada
   })
 
+  const { data: libraryData } = useQuery({
+    queryKey: ['libraryArticleIds'],
+    queryFn: async () => {
+      const response = await collectionsAPI.getLibraryIds()
+      return response.data
+    },
+  })
+
   // Extraer datos de las queries
   const filteredArticles = data?.articles || []
   const total = data?.total || 0
-  const savedArticles = savedData?.article_ids || []
+  const currentCollectionArticleIds = savedData?.article_ids || []
+  const libraryArticleIds = libraryData?.article_ids || []
+  const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
+  const selectedCollectionName = selectedCollection?.name || 'la colección activa'
 
   // Actualizar total cuando cambie
   useEffect(() => {
@@ -195,32 +207,36 @@ function OpenAlex() {
   //   await openalexAPI.addToMyArticles(selectedArticles)
   // }
 
-  // Guardar o eliminar de la colección actual (botón simple toggle)
-  const handleSaveArticle = async (id, isCurrentlySaved = false) => {
+  const handleSaveArticle = async (id, articleState = {}) => {
+    const { inLibrary = false, inCurrentCollection = false } = articleState
+
     try {
-      if (isCurrentlySaved) {
-        // Eliminar de la colección
-        const res = await collectionsAPI.removeArticle(selectedCollectionId, id);
-        if (res !== null) {
-          setNotification('Artículo eliminado')
-          // Invalidar después de un pequeño delay para que el componente actualice primero
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
-          }, 100)
+      let message = ''
+
+      if (selectedCollectionId) {
+        if (inCurrentCollection) {
+          await collectionsAPI.removeArticle(selectedCollectionId, id)
+          message = `Artículo quitado de "${selectedCollectionName}"`
+        } else if (inLibrary) {
+          await collectionsAPI.addArticle(selectedCollectionId, id)
+          message = `Artículo añadido a "${selectedCollectionName}"`
+        } else {
+          await openalexAPI.saveWork(id, selectedCollectionId)
+          message = `Artículo guardado y añadido a "${selectedCollectionName}"`
         }
-        return true;
       } else {
-        // Guardar en la colección
-        const res = await openalexAPI.saveWork(id, selectedCollectionId);
-        if (res !== null) {
-          setNotification('Artículo guardado')
-          // Invalidar después de un pequeño delay para que el componente actualice primero
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['savedArticles', selectedCollectionId] })
-          }, 100)
+        if (inLibrary) {
+          await openalexAPI.unsaveWork(id)
+          message = 'Artículo quitado de tu biblioteca'
+        } else {
+          await openalexAPI.saveWork(id)
+          message = 'Artículo guardado en tu biblioteca'
         }
-        return true;
       }
+
+      await invalidateOpenAlexMembershipQueries(queryClient)
+      setNotification(message)
+      return true
     } catch (e) {
       console.error("Error saving/removing:", e);
       setNotification('Error al procesar la solicitud');
@@ -244,8 +260,7 @@ function OpenAlex() {
     setNotification(message || 'Artículos guardados exitosamente')
     // Deseleccionar todos los artículos
     setSelectedArticles([])
-    // Invalidar todas las queries de savedArticles
-    queryClient.invalidateQueries({ queryKey: ['savedArticles'] })
+    invalidateOpenAlexMembershipQueries(queryClient)
   }
 
   return (
@@ -280,7 +295,10 @@ function OpenAlex() {
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
-            savedArticles={savedArticles}
+            libraryArticleIds={libraryArticleIds}
+            currentCollectionArticleIds={currentCollectionArticleIds}
+            hasActiveCollection={Boolean(selectedCollectionId)}
+            collectionName={selectedCollectionName}
             onSave={handleSaveArticle}
             onSaveMultiple={handleOpenSaveModal}
           />
@@ -292,7 +310,10 @@ function OpenAlex() {
             baseRoute="/openalex"
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
-            savedArticles={savedArticles}
+            libraryArticleIds={libraryArticleIds}
+            currentCollectionArticleIds={currentCollectionArticleIds}
+            hasActiveCollection={Boolean(selectedCollectionId)}
+            collectionName={selectedCollectionName}
             onSave={handleSaveArticle}
             onSaveMultiple={handleOpenSaveModal}
           />

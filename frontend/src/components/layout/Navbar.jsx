@@ -48,6 +48,7 @@ function Navbar({ toggleSidebar }) {
 
   
   const selectedCollection = collections.find(c => c._id === selectedCollectionId);
+  const scopeLabel = selectedCollection ? selectedCollection.name : 'Toda la biblioteca'
 
   return (
     <>
@@ -78,7 +79,7 @@ function Navbar({ toggleSidebar }) {
                 }
               }}
             >
-              <span>{selectedCollection ? selectedCollection.name : 'Sin colección'}</span>
+              <span>{scopeLabel}</span>
               <i className="fas fa-chevron-down"></i>
             </button>
             
@@ -89,7 +90,7 @@ function Navbar({ toggleSidebar }) {
                   onClick={() => handleCollectionChange('')}
                 >
                   <i className="fas fa-list"></i>
-                  <span>Sin colección</span>
+                  <span>Toda la biblioteca</span>
                 </button>
                 {collections.map(col => (
                   <button
