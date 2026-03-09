@@ -20,8 +20,11 @@ ARTICLE_DEFAULT_FIELDS = {
     "category": None,
     "type": None,
     "pages": None,
+    "citations": None,
     "pdf_url": None,
     "landing_page_url": None,
+    "summary": None,
+    "observations": None,
     "keywords": [],
     "authors": [],
     "referenced_works": [],
@@ -177,6 +180,12 @@ def normalize_article(article_data: Dict) -> Dict:
     except (TypeError, ValueError):
         normalized["pages"] = None
 
+    citations_value = normalized.get("citations")
+    try:
+        normalized["citations"] = int(citations_value) if citations_value is not None and str(citations_value).strip() else None
+    except (TypeError, ValueError):
+        normalized["citations"] = None
+
     relevance_value = normalized.get("relevance_score")
     try:
         normalized["relevance_score"] = float(relevance_value) if relevance_value is not None and str(relevance_value).strip() else None
@@ -219,6 +228,7 @@ class ArticleService:
         article_dict = {
             "_id": article_id,
             "id_user": user_id,
+            "source": "pdf",
             "id_pdf": pdf_id,
             **normalized_features  # title, abstract, year, keywords, etc.
         }
@@ -231,6 +241,36 @@ class ArticleService:
         # Guardar en base de datos
         result_id = await self.article_repo.create(article_dict)
                 
+        return result_id
+
+    async def create_from_excel_row(
+        self,
+        excel_id: str,
+        row_index: int,
+        user_id: str,
+        features: Dict,
+        collection_id: Optional[str] = None
+    ) -> str:
+        """
+        Crear artículo a partir de una fila de Excel.
+        No genera ni asocia un PDF real.
+        """
+        article_id = f"article_{excel_id}_row{row_index}"
+        normalized_features = normalize_article(features)
+
+        article_dict = {
+            "_id": article_id,
+            "id_user": user_id,
+            "source": "excel",
+            "id_excel": excel_id,
+            "import_row": row_index,
+            **normalized_features,
+        }
+
+        if collection_id:
+            article_dict["collection_ids"] = [collection_id]
+
+        result_id = await self.article_repo.create(article_dict)
         return result_id
     
     async def create_processing_article(
@@ -249,6 +289,7 @@ class ArticleService:
         article_dict = {
             "_id": article_id,
             "id_user": user_id,
+            "source": "pdf",
             "id_pdf": pdf_id,
             "title": filename,
             "status": "processing",
@@ -470,6 +511,12 @@ class ArticleService:
                 normalized_partial["pages"] = int(pages_value) if pages_value is not None and str(pages_value).strip() else None
             except (TypeError, ValueError):
                 normalized_partial["pages"] = None
+        if "citations" in normalized_partial:
+            try:
+                citations_value = normalized_partial.get("citations")
+                normalized_partial["citations"] = int(citations_value) if citations_value is not None and str(citations_value).strip() else None
+            except (TypeError, ValueError):
+                normalized_partial["citations"] = None
         if "relevance_score" in normalized_partial:
             try:
                 score_value = normalized_partial.get("relevance_score")
@@ -513,14 +560,25 @@ class ArticleService:
         if article.get("id_user") != user_id:
             raise AuthorizationError("No tienes permiso para eliminar este artÃ­culo")
         
-        # Obtener id_pdf para eliminar el PDF (fallback por convenciÃ³n article_<pdf_id>)
+        # Obtener id_pdf para eliminar el PDF (fallback por convencion article_<pdf_id>)
         pdf_id = article.get("id_pdf")
-        if not pdf_id and isinstance(article_id, str) and article_id.startswith("article_"):
+        if (
+            not pdf_id
+            and article.get("source") != "excel"
+            and isinstance(article_id, str)
+            and article_id.startswith("article_")
+        ):
             pdf_id = article_id[len("article_"):]
 
-        # Eliminar PDF del almacenamiento local si existe/estÃ¡ asociado
+        # Eliminar PDF del almacenamiento local si existe/esta asociado
         if pdf_id:
-            await self.pdf_service.delete_pdf_by_id(pdf_id, user_id)
+            try:
+                await self.pdf_service.delete_pdf_by_id(pdf_id, user_id)
+            except NotFoundError:
+                print(
+                    f"Advertencia: se omite borrado de PDF inexistente "
+                    f"para article_id={article_id}, pdf_id={pdf_id}"
+                )
         
         # Eliminar Ã­ndice FAISS si existe
         try:
@@ -535,4 +593,3 @@ class ArticleService:
         # Eliminar registro del artÃ­culo en BD
         deleted = await self.article_repo.delete(article_id)
         return deleted
-
