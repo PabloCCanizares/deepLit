@@ -8,6 +8,10 @@ function FilterSortControls({
   onViewModeChange,
   currentLimit,
   onLimitChange,
+  showRelevanceSort = false,
+  relevanceSortEnabled = false,
+  relevanceSortActive = false,
+  onToggleRelevance,
 }) {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -97,6 +101,23 @@ function FilterSortControls({
             </div>
           )}
         </div>
+
+        {showRelevanceSort && (
+          <button
+            type="button"
+            className={`control-btn relevance-toggle ${relevanceSortActive ? 'active' : ''}`}
+            onClick={() => onToggleRelevance?.()}
+            disabled={!relevanceSortEnabled}
+            title={
+              relevanceSortEnabled
+                ? 'Alternar orden por relevancia'
+                : 'La relevancia solo está disponible al buscar'
+            }
+          >
+            <i className="fas fa-crosshairs"></i>
+            <span>Relevancia</span>
+          </button>
+        )}
       </div>
 
       <div className="control-right">

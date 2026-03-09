@@ -183,6 +183,11 @@ class OpenAlexService:
 
         return mapped
 
+    def _has_search_filter(self, filters: Dict[str, Any]) -> bool:
+        """
+        Detecta si hay una búsqueda textual real para poder ordenar por relevancia.
+        """
+        return any(key == "search" or key.endswith(".search") for key in filters.keys())
 
     async def get_openalex_articles(self, body: QueryBody) -> Dict:
         limit = body.pagination.limit
@@ -195,8 +200,9 @@ class OpenAlexService:
         mode_filter = raw_filters.pop("mode", None)
         
         filters = self.map_filters(raw_filters)
-
-        works_query = Works().filter(**filters)
+        works_query = Works()
+        if filters:
+            works_query = works_query.filter(**filters)
 
 
         if body.sort_by:
@@ -211,6 +217,9 @@ class OpenAlexService:
             sort_field = self.map_sort_field(sort_field)
 
             if sort_field in ["display_name", "cited_by_count", "works_count", "publication_date", "relevance_score"]:
+                if sort_field == "relevance_score" and not self._has_search_filter(filters):
+                    sort_field = None
+
                 if sort_field=="cited_by_count":
                     works_query = works_query.sort(cited_by_count=sort_order)
                 elif sort_field=="display_name":

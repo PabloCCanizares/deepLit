@@ -10,7 +10,6 @@ import { useCollection } from '../context/CollectionContext'
 import { getViewedHistory } from '../utils/viewHistory'
 
 const OPENALEX_RECOMMENDATION_QUERIES = [
-  { sort_by: 'relevance-desc', filters: { mode: 'all' } },
   { sort_by: 'cited_by_count-desc', filters: {} },
   { sort_by: 'year-desc', filters: {} },
   { sort_by: undefined, filters: {} },

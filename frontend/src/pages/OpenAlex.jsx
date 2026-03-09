@@ -109,6 +109,12 @@ function OpenAlex() {
     setSelectedArticles([])
   }, [pagination.offset])
 
+  useEffect(() => {
+    if (!searchQuery.trim() && sortCriteria === 'relevance-desc') {
+      setSortCriteria('year-desc')
+    }
+  }, [searchQuery, sortCriteria])
+
 
   
   /* ---------- Data --------*/
@@ -156,6 +162,7 @@ function OpenAlex() {
   const libraryArticleIds = libraryData?.article_ids || []
   const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
   const selectedCollectionName = selectedCollection?.name || 'la colección activa'
+  const hasSearchQuery = Boolean(searchQuery.trim())
 
   // Actualizar total cuando cambie
   useEffect(() => {
@@ -283,6 +290,12 @@ function OpenAlex() {
             onViewModeChange={handleViewModeChange}
             currentLimit={pagination.limit}
             onLimitChange={setLimit}
+            showRelevanceSort={true}
+            relevanceSortEnabled={hasSearchQuery}
+            relevanceSortActive={sortCriteria === 'relevance-desc'}
+            onToggleRelevance={() =>
+              handleSort(sortCriteria === 'relevance-desc' ? 'year-desc' : 'relevance-desc')
+            }
           />
         )}
         
