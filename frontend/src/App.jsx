@@ -13,7 +13,6 @@ import ArticleEdit from './pages/ArticleEdit'
 import Collections from './pages/Collections'
 import CollectionDetail from './pages/CollectionDetail'
 import Profile from './pages/Profile'
-import Settings from './pages/Settings'
 import OpenAlex from './pages/OpenAlex'
 import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
@@ -51,7 +50,7 @@ function App() {
                 <Route path="collections/:id" element={<CollectionDetail />} />
 
                 <Route path="profile" element={<Profile />} />
-                <Route path="settings" element={<Settings />} />
+                <Route path="settings" element={<Navigate to="/profile" replace />} />
 
                 <Route path="search" element={<CollectionArticles />} />
 
@@ -64,7 +63,7 @@ function App() {
                 <Route path="colecciones" element={<Navigate to="/" replace />} />
                 <Route path="historial" element={<Navigate to="/articles" replace />} />
                 <Route path="perfil" element={<Navigate to="/profile" replace />} />
-                <Route path="configuracion" element={<Navigate to="/settings" replace />} />
+                <Route path="configuracion" element={<Navigate to="/profile" replace />} />
               </Route>
 
               {/* Default route */}

@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { articlesAPI } from '../api/api'
+import { articlesAPI, collectionsAPI } from '../api/api'
 import '../styles/articles/ArticleViewEdit.css'
+
+function toFormValue(value) {
+  return value === null || value === undefined ? '' : String(value)
+}
 
 function normalizeToFormData(document = {}) {
   return {
-    title: document.title || '',
-    year: document.year || '',
-    category: document.category || '',
-    type: document.type || '',
-    citations: document.citations || '',
-    pages: document.pages || '',
-    observations: document.observations || '',
-    link: document.link || '',
-    summary: document.summary || '',
-    abstract: document.abstract || '',
+    title: toFormValue(document.title),
+    year: toFormValue(document.year),
+    category: toFormValue(document.category),
+    type: toFormValue(document.type),
+    citations: toFormValue(document.citations),
+    pages: toFormValue(document.pages),
+    observations: toFormValue(document.observations),
+    link: toFormValue(document.landing_page_url || document.link),
+    summary: toFormValue(document.summary),
+    abstract: toFormValue(document.abstract),
     authors: Array.isArray(document.authors) ? document.authors.join(', ') : document.authors || '',
   }
 }
@@ -29,6 +33,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const isSearchCollectionContext = location.state?.from === 'search' && location.state?.collectionId
 
   const [formData, setFormData] = useState({
     title: '',
@@ -101,12 +106,14 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
       const sanitizedData = Object.fromEntries(
         Object.entries(formData).map(([key, value]) => [key, value === '' ? null : value]),
       )
+      sanitizedData.landing_page_url = sanitizedData.link
+      delete sanitizedData.link
 
       await articlesAPI.update(decodedId, sanitizedData)
       navigate(`/articles/${encodeURIComponent(decodedId)}`, { state: location.state })
     } catch (err) {
       console.error('Error saving document:', err)
-      setError('Error al guardar el articulo')
+      setError(err.message || 'Error al guardar el articulo')
     } finally {
       setSaving(false)
     }
@@ -128,11 +135,13 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
     }
 
     try {
-      await articlesAPI.delete(decodedId)
-      if (location.state?.from === 'search') {
+      if (location.state?.from === 'search' && location.state?.collectionId) {
+        await collectionsAPI.removeArticle(location.state.collectionId, decodedId)
         navigate('/search')
         return
       }
+
+      await articlesAPI.delete(decodedId)
 
       if (location.state?.from === 'collection' && location.state?.collectionId) {
         navigate(`/collections/${encodeURIComponent(location.state.collectionId)}`)
@@ -142,7 +151,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
       navigate('/articles')
     } catch (err) {
       console.error('Error deleting article:', err)
-      setError('Error al eliminar el articulo')
+      setError(isSearchCollectionContext ? 'Error al quitar el articulo de la coleccion' : 'Error al eliminar el articulo')
       setShowDeleteModal(false)
     }
   }
@@ -369,7 +378,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
           }}
         >
           <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-          {previewMode ? 'Bloqueado en demo' : 'Eliminar Articulo'}
+          {previewMode ? 'Bloqueado en demo' : isSearchCollectionContext ? 'Quitar de la coleccion' : 'Eliminar Articulo'}
         </button>
       </div>
 
@@ -379,13 +388,13 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
             <div className="modal-header">
               <h2>
                 <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                {' '}Confirmar Eliminacion
+                {' '}{isSearchCollectionContext ? 'Quitar de la coleccion' : 'Confirmar Eliminacion'}
               </h2>
             </div>
             <div className="modal-body">
-              <p>Estas seguro de que quieres eliminar este articulo?</p>
+              <p>{isSearchCollectionContext ? 'Estas seguro de que quieres quitar este articulo de la coleccion activa?' : 'Estas seguro de que quieres eliminar este articulo?'}</p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Esta accion no se puede deshacer.
+                {isSearchCollectionContext ? 'El articulo seguira existiendo en tu biblioteca y en otras colecciones.' : 'Esta accion no se puede deshacer.'}
               </p>
             </div>
             <div className="modal-footer">
@@ -394,7 +403,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
               </button>
               <button onClick={handleDelete} className="btn-primary">
                 <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-                Eliminar Definitivamente
+                {isSearchCollectionContext ? 'Quitar de la coleccion' : 'Eliminar Definitivamente'}
               </button>
             </div>
           </div>

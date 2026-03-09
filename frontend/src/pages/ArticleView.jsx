@@ -175,6 +175,9 @@ function ArticleView({
 
   const abstractText = (document.abstract || '').trim()
   const hasAbstract = Boolean(abstractText)
+  const summaryText = (document.summary || '').trim()
+  const observationsText = (document.observations || '').trim()
+  const citationsValue = document.citations
   const referencedWorks = Array.isArray(document.referenced_works) ? document.referenced_works : []
   const relatedWorks = Array.isArray(document.related_works) ? document.related_works : []
   const countsByYear = Array.isArray(document.counts_by_year) ? document.counts_by_year : []
@@ -222,6 +225,12 @@ function ArticleView({
             <label>Paginas:</label>
             <span>{document.pages || 'No especificado'}</span>
           </div>
+          {citationsValue !== null && citationsValue !== undefined && citationsValue !== '' && (
+            <div className="documentField">
+              <label>Citas:</label>
+              <span>{citationsValue}</span>
+            </div>
+          )}
           {document.type && (
             <div className="documentField">
               <label>Tipo:</label>
@@ -274,6 +283,20 @@ function ArticleView({
           <div className="documentSection">
             <h3>Abstract</h3>
             <p className="documentAbstract">{abstractText}</p>
+          </div>
+        )}
+
+        {summaryText && (
+          <div className="documentSection">
+            <h3>Resumen</h3>
+            <p className="documentAbstract">{summaryText}</p>
+          </div>
+        )}
+
+        {observationsText && (
+          <div className="documentSection">
+            <h3>Observaciones</h3>
+            <p className="documentAbstract">{observationsText}</p>
           </div>
         )}
 

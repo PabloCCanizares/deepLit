@@ -84,14 +84,6 @@ function Sidebar({ isOpen, onClose }) {
             <i className="fas fa-user"></i>
             <span>Perfil</span>
           </Link>
-          <Link 
-            to="/settings" 
-            className={`sidebarLink ${location.pathname === '/settings' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-cog"></i>
-            <span>Ajustes</span>
-          </Link>
         </div>
       </aside>
     </>
@@ -99,5 +91,4 @@ function Sidebar({ isOpen, onClose }) {
 }
 
 export default Sidebar
-
 

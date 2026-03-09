@@ -252,13 +252,18 @@ function CollectionArticles() {
   }
 
   const confirmDeleteSelected = async () => {
-
     const ids = pendingDeleteIds
-    
+
+    if (!selectedCollectionId || ids.length === 0) {
+      setShowDeleteModal(false)
+      setPendingDeleteIds([])
+      return
+    }
+
     try {
-      await Promise.all(ids.map(id => articlesAPI.delete(id)))
-      setNotification(`${ids.length} artículo(s) eliminado(s)`)
-      
+      await Promise.all(ids.map((id) => collectionsAPI.removeArticle(selectedCollectionId, id)))
+      setNotification(`${ids.length} artículo(s) quitado(s) de la colección`)
+
       const newOffset =
         documents.length === ids.length && pagination.offset > 0
           ? pagination.offset - pagination.limit
@@ -266,7 +271,7 @@ function CollectionArticles() {
 
       setPagination(prev => ({ ...prev, offset: Math.max(0, newOffset) }))
     } catch (e) {
-      setNotification('Error al eliminar artículos')
+      setNotification('Error al quitar artículos de la colección')
     } finally {
       setShowDeleteModal(false)
       setPendingDeleteIds([])
@@ -380,7 +385,7 @@ function CollectionArticles() {
             documents={documents}
             loading={loading}
             error={error}
-            linkState={{ from: 'search' }}
+            linkState={{ from: 'search', collectionId: selectedCollectionId }}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
@@ -392,7 +397,7 @@ function CollectionArticles() {
             documents={documents}
             loading={loading}
             error={error}
-            linkState={{ from: 'search' }}
+            linkState={{ from: 'search', collectionId: selectedCollectionId }}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onAddToCollectionsSingle={handleAddSingleArticleToCollections}
@@ -440,13 +445,13 @@ function CollectionArticles() {
               <div className="modal-header">
                 <h2>
                   <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                  {' '}Confirmar Eliminación
+                  {' '}Quitar de la colección
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Estás seguro de que quieres eliminar {pendingDeleteIds.length > 0 ? pendingDeleteIds.length : selectedArticles.length} artículo(s)?</p>
+                <p>¿Estás seguro de que quieres quitar {pendingDeleteIds.length > 0 ? pendingDeleteIds.length : selectedArticles.length} artículo(s) de esta colección?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Esta acción no se puede deshacer.
+                  Los artículos seguirán existiendo en tu biblioteca y en otras colecciones.
                 </p>
               </div>
               <div className="modal-footer">
@@ -461,7 +466,7 @@ function CollectionArticles() {
                   className="btn-primary"
                 >
                   <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-                  Eliminar Definitivamente
+                  Quitar de la colección
                 </button>
               </div>
             </div>

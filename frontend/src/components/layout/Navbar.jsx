@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/AuthContext'
 import { useCollection } from "../../context/CollectionContext";
 import AiAssistant from '../ai_assistant/AiAssistant'
 import '../../styles/App.css'
@@ -9,6 +10,7 @@ import { useLocation } from 'react-router-dom';
 
 function Navbar({ toggleSidebar }) {
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
   const [showCollectionMenu, setShowCollectionMenu] = useState(false);
   const collectionMenuRef = useRef(null);
   const { collections, selectedCollectionId, changeCollection  } = useCollection();
@@ -31,6 +33,11 @@ function Navbar({ toggleSidebar }) {
   const handleCollectionChange = (collectionId) => {
     changeCollection(collectionId);
     setShowCollectionMenu(false);
+  };
+
+  const handleLogout = () => {
+    setShowCollectionMenu(false);
+    logout();
   };
 
   const isCollectionButtonEnabled = [
@@ -116,6 +123,22 @@ function Navbar({ toggleSidebar }) {
           </div>
 
           <AiAssistant />
+
+          <div className="navbarActions">
+            <Link to="/profile" className="navIconButton" title="Perfil" aria-label="Perfil">
+              <i className="fas fa-user"></i>
+            </Link>
+            <button
+              type="button"
+              className="navLogoutButton"
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <i className="fas fa-sign-out-alt"></i>
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
 
           </div>
         </div>
