@@ -1,7 +1,17 @@
 import ArticleCard from './ArticleCard'
 import '../../styles/articles/ArticleGrid.css'
 
-function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onAddToCollectionsSingle, onDeleteArticle }) {
+function ArticleGrid({
+  documents,
+  loading,
+  error,
+  baseRoute = '/articles',
+  linkState,
+  selectedArticles = [],
+  onSelectArticle,
+  onAddToCollectionsSingle,
+  onDeleteArticle
+}) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -36,6 +46,7 @@ function ArticleGrid({ documents, loading, error, baseRoute = '/articles', selec
           key={doc._id || doc.id} 
           document={doc} 
           baseRoute={baseRoute}
+          linkState={linkState}
           selectedArticles={selectedArticles}
           onSelectArticle={onSelectArticle}
           onAddToCollectionsSingle={onAddToCollectionsSingle}

@@ -1,7 +1,18 @@
 import { Link } from 'react-router-dom'
 import '../../styles/articles/ArticleList.css'
 
-function ArticleList({ documents, loading, error, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onSelectAll, onAddToCollectionsSingle, onDeleteArticle }) {
+function ArticleList({
+  documents,
+  loading,
+  error,
+  baseRoute = '/articles',
+  linkState,
+  selectedArticles = [],
+  onSelectArticle,
+  onSelectAll,
+  onAddToCollectionsSingle,
+  onDeleteArticle
+}) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -74,7 +85,7 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
             </div>
             <div className="list-col-title" title={title}>
               <i className="fas fa-file-alt list-icon"></i>
-              <Link to={`${baseRoute}/${id}`} className="list-title-link">
+              <Link to={`${baseRoute}/${id}`} state={linkState} className="list-title-link">
                 {title}
               </Link>
             </div>
@@ -82,10 +93,10 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
             <div className="list-col-pages">{pages}</div>
             <div className="list-col-year">{year}</div>
             <div className="list-col-actions">
-              <Link to={`${baseRoute}/${id}`} className="list-action-btn" title="Ver">
+              <Link to={`${baseRoute}/${id}`} state={linkState} className="list-action-btn" title="Ver">
                 <i className="fas fa-eye"></i>
               </Link>
-              <Link to={`${baseRoute}/${id}/edit`} className="list-action-btn" title="Editar">
+              <Link to={`${baseRoute}/${id}/edit`} state={linkState} className="list-action-btn" title="Editar">
                 <i className="fas fa-edit"></i>
               </Link>
               {onAddToCollectionsSingle && (
@@ -125,7 +136,6 @@ function ArticleList({ documents, loading, error, baseRoute = '/articles', selec
 }
 
 export default ArticleList
-
 
 
 

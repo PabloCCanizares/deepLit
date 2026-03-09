@@ -91,7 +91,7 @@ function ArticleView({
       return
     }
 
-    navigate(`/articles/${encodedId}/edit`)
+    navigate(`/articles/${encodedId}/edit`, { state: location.state })
   }
 
   const handleBack = () => {
@@ -102,6 +102,16 @@ function ArticleView({
 
     if (location.state?.from === 'dashboard') {
       navigate('/dashboard')
+      return
+    }
+
+    if (location.state?.from === 'search') {
+      navigate('/search')
+      return
+    }
+
+    if (location.state?.from === 'collection' && location.state?.collectionId) {
+      navigate(`/collections/${encodeURIComponent(location.state.collectionId)}`)
       return
     }
 

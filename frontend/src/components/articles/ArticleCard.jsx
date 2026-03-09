@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom'
 import '../../styles/articles/ArticleCard.css'
 
-function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [], onSelectArticle, onAddToCollectionsSingle, onDeleteArticle }) {
+function ArticleCard({
+  document,
+  baseRoute = '/articles',
+  linkState,
+  selectedArticles = [],
+  onSelectArticle,
+  onAddToCollectionsSingle,
+  onDeleteArticle
+}) {
   const title = document.title || '-' //FIXME Cambiar por Untitled?
   const category = document.category || '-'
   const pages = document.pages || '-'
@@ -27,7 +35,7 @@ function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [],
           <i className={`fas ${isSelected ? 'fa-check-square' : 'fa-square'}`}></i>
         </div>
       )}
-      <Link to={`${baseRoute}/${encodedId}`} className="lib-cover-link">
+      <Link to={`${baseRoute}/${encodedId}`} state={linkState} className="lib-cover-link">
         <div className="lib-cover">
           <div className="lib-cover-overlay">
             <i className="fas fa-eye lib-cover-icon"></i>
@@ -42,7 +50,7 @@ function ArticleCard({ document, baseRoute = '/articles', selectedArticles = [],
         <div><strong>Páginas:</strong> {pages}</div>
         <div><strong>Año:</strong> {year}</div>
         <div className="lib-edit-btn">
-          <Link to={`${baseRoute}/${encodedId}/edit`} title="Editar">
+          <Link to={`${baseRoute}/${encodedId}/edit`} state={linkState} title="Editar">
             <i className="fas fa-edit"></i> Editar
           </Link>
           {onAddToCollectionsSingle && (

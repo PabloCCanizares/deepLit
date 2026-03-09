@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { articlesAPI } from '../api/api'
 import '../styles/articles/ArticleViewEdit.css'
 
@@ -23,6 +23,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
   const { id } = useParams()
   const decodedId = decodeURIComponent(previewId || id || '')
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -102,7 +103,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
       )
 
       await articlesAPI.update(decodedId, sanitizedData)
-      navigate(`/articles/${encodeURIComponent(decodedId)}`)
+      navigate(`/articles/${encodeURIComponent(decodedId)}`, { state: location.state })
     } catch (err) {
       console.error('Error saving document:', err)
       setError('Error al guardar el articulo')
@@ -117,7 +118,7 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
       return
     }
 
-    navigate(`/articles/${encodeURIComponent(decodedId)}`)
+    navigate(`/articles/${encodeURIComponent(decodedId)}`, { state: location.state })
   }
 
   const handleDelete = async () => {
@@ -128,6 +129,16 @@ function ArticleEdit({ previewMode = false, previewDocument = null, onLockedActi
 
     try {
       await articlesAPI.delete(decodedId)
+      if (location.state?.from === 'search') {
+        navigate('/search')
+        return
+      }
+
+      if (location.state?.from === 'collection' && location.state?.collectionId) {
+        navigate(`/collections/${encodeURIComponent(location.state.collectionId)}`)
+        return
+      }
+
       navigate('/articles')
     } catch (err) {
       console.error('Error deleting article:', err)

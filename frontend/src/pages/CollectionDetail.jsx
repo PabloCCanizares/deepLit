@@ -20,11 +20,14 @@ function CollectionDetail() {
   const [articles, setArticles] = useState([])
   const [filteredArticles, setFilteredArticles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('list')
   const [selectedArticles, setSelectedArticles] = useState([])
   const [successMessage, setSuccessMessage] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [pendingRemoveIds, setPendingRemoveIds] = useState([])
   const [sortCriteria, setSortCriteria] = useState('year-desc')
   const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' })
   const [pagination, setPagination] = useState({
@@ -101,13 +104,17 @@ function CollectionDetail() {
     setPagination(prev => ({
       ...prev,
       total: filtered.length,
-      offset: 0
+      offset: Math.min(
+        prev.offset,
+        filtered.length > 0 ? Math.floor((filtered.length - 1) / prev.limit) * prev.limit : 0
+      )
     }))
   }
 
   const loadCollection = async () => {
     try {
       setLoading(true)
+      setLoadError(null)
       const response = await collectionsAPI.getWithArticles(id)
       const collectionData = response.data
       
@@ -119,7 +126,9 @@ function CollectionDetail() {
       }))
     } catch (err) {
       console.error('Error loading collection:', err)
-      showMessage('Error al cargar la colección')
+      setCollection(null)
+      setArticles([])
+      setLoadError(err.message || 'Error al cargar la colección')
     } finally {
       setLoading(false)
     }
@@ -173,27 +182,46 @@ function CollectionDetail() {
       return
     }
 
+    setPendingRemoveIds(selectedArticles)
+    setShowDeleteModal(true)
+  }
+
+  const handleRemoveSingleArticle = (articleId) => {
+    if (!articleId) {
+      return
+    }
+
+    setPendingRemoveIds([articleId])
     setShowDeleteModal(true)
   }
 
   const confirmRemoveFromCollection = async () => {
-    const deletedCount = selectedArticles.length
+    const targetIds = pendingRemoveIds.length > 0 ? pendingRemoveIds : selectedArticles
+    const deletedCount = targetIds.length
+
+    if (deletedCount === 0 || removing) {
+      return
+    }
 
     try {
+      setRemoving(true)
       await Promise.all(
-        selectedArticles.map(articleId =>
+        targetIds.map(articleId =>
           collectionsAPI.removeArticle(id, articleId)
         )
       )
 
       showMessage(`${deletedCount} artículo(s) eliminado(s) de la colección`)
       setSelectedArticles([])
+      setPendingRemoveIds([])
       setShowDeleteModal(false)
       await loadCollection()
     } catch (err) {
       console.error('Error removing articles:', err)
       showMessage('Error al eliminar artículos de la colección')
       setShowDeleteModal(false)
+    } finally {
+      setRemoving(false)
     }
   }
 
@@ -213,10 +241,15 @@ function CollectionDetail() {
       <div className="page-container">
         <div className="empty-state">
           <i className="fas fa-exclamation-triangle"></i>
-          <p>Colección no encontrada</p>
-          <button onClick={() => navigate('/collections')} className="btn-primary">
-            Volver a Mis Colecciones
-          </button>
+          <p>{loadError || 'Colección no encontrada'}</p>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+            <button onClick={loadCollection} className="btn-secondary">
+              Reintentar
+            </button>
+            <button onClick={() => navigate('/collections')} className="btn-primary">
+              Volver a Mis Colecciones
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -317,17 +350,21 @@ function CollectionDetail() {
             documents={filteredArticles.slice(pagination.offset, pagination.offset + pagination.limit)} 
             loading={false} 
             error={null}
+            linkState={{ from: 'collection', collectionId: id }}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
+            onDeleteArticle={handleRemoveSingleArticle}
           />
         ) : (
           <ArticleGrid 
             documents={filteredArticles.slice(pagination.offset, pagination.offset + pagination.limit)} 
             loading={false} 
             error={null}
+            linkState={{ from: 'collection', collectionId: id }}
             selectedArticles={selectedArticles}
             onSelectArticle={handleSelectArticle}
+            onDeleteArticle={handleRemoveSingleArticle}
           />
         )}
 
@@ -351,24 +388,29 @@ function CollectionDetail() {
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Estás seguro de que quieres eliminar {selectedArticles.length} artículo(s) de esta colección?</p>
+                <p>¿Estás seguro de que quieres eliminar {(pendingRemoveIds.length > 0 ? pendingRemoveIds.length : selectedArticles.length)} artículo(s) de esta colección?</p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   Los artículos solo se eliminarán de esta colección, no de tu biblioteca.
                 </p>
               </div>
               <div className="modal-footer">
                 <button 
-                  onClick={() => setShowDeleteModal(false)} 
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setPendingRemoveIds([])
+                  }} 
                   className="btn-secondary"
+                  disabled={removing}
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={confirmRemoveFromCollection} 
                   className="btn-primary"
+                  disabled={removing}
                 >
-                  <i className="fas fa-trash" style={{ marginRight: '0.5rem' }}></i>
-                  Eliminar de Colección
+                  <i className={`fas ${removing ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ marginRight: '0.5rem' }}></i>
+                  {removing ? 'Eliminando...' : 'Eliminar de Colección'}
                 </button>
               </div>
             </div>
