@@ -1,0 +1,164 @@
+.activityCalendarWrapper {
+  width: 100%;
+  overflow: visible;
+}
+
+.activityCalendarYear {
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.activityMonthsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.activityMonthCard {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.activityMonthTitle {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.activityWeekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(18px, 1fr));
+  gap: 4px;
+  color: #64748b;
+  font-size: 0.62rem;
+  margin-bottom: 5px;
+}
+
+.activityMonthCells {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(18px, 1fr));
+  gap: 4px;
+}
+
+.activityCell {
+  width: 100%;
+  min-height: 18px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.52rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #0f172a;
+}
+
+.activityCell.outside-year {
+  background: rgba(148, 163, 184, 0.2);
+  color: transparent;
+}
+
+.activityCell.level-0 {
+  background: #e2e8f0;
+}
+
+.activityCell.level-1 {
+  background: #bfdbfe;
+}
+
+.activityCell.level-2 {
+  background: #93c5fd;
+}
+
+.activityCell.level-3 {
+  background: #60a5fa;
+}
+
+.activityCell.level-4 {
+  background: #2563eb;
+}
+
+.activityLegend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 14px;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.activityLegend .activityCell {
+  width: 16px;
+  min-height: 16px;
+}
+
+body[data-theme='dark'] .activityWeekHeader,
+body[data-theme='dark'] .activityLegend {
+  color: var(--text-secondary);
+}
+
+body[data-theme='dark'] .activityCalendarYear {
+  color: var(--text-primary);
+}
+
+body[data-theme='dark'] .activityMonthCard {
+  background: rgba(51, 65, 85, 0.25);
+  border-color: rgba(100, 116, 139, 0.5);
+}
+
+body[data-theme='dark'] .activityMonthTitle {
+  color: var(--text-primary);
+}
+
+body[data-theme='dark'] .activityCell.outside-year {
+  background: rgba(100, 116, 139, 0.25);
+}
+
+body[data-theme='dark'] .activityCell.level-0 {
+  background: #334155;
+}
+
+body[data-theme='dark'] .activityCell.level-1 {
+  background: #1d4ed8;
+}
+
+body[data-theme='dark'] .activityCell.level-2 {
+  background: #2563eb;
+}
+
+body[data-theme='dark'] .activityCell.level-3 {
+  background: #3b82f6;
+}
+
+body[data-theme='dark'] .activityCell.level-4 {
+  background: #60a5fa;
+}
+
+body[data-theme='dark'] .activityCell {
+  color: #f8fafc;
+}
+
+@media (max-width: 1280px) {
+  .activityMonthsGrid {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .activityMonthsGrid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .activityMonthsGrid {
+    grid-template-columns: 1fr;
+  }
+}

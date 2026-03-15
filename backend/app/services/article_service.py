@@ -373,6 +373,53 @@ class ArticleService:
 
         return [[keyword, count] for keyword, count in sorted_keywords]
 
+    async def get_type_distribution(self, user_id: str, collection_id: Optional[str] = None) -> List:
+        """
+        Obtener distribucion de tipos como lista de tuplas [type, count].
+        """
+        dashboard_docs = await self.article_repo.get_dashboard_fields(user_id, collection_id)
+        type_counts: Dict[str, int] = {}
+        for doc in dashboard_docs:
+            doc_type = doc.get("type")
+            if doc_type and isinstance(doc_type, str) and doc_type.strip():
+                label = doc_type.strip()
+                type_counts[label] = type_counts.get(label, 0) + 1
+        sorted_types = sorted(type_counts.items(), key=lambda item: item[1], reverse=True)
+        return [[t, c] for t, c in sorted_types]
+
+    async def get_category_distribution(self, user_id: str, collection_id: Optional[str] = None) -> List:
+        """
+        Obtener distribucion de categorias como lista de tuplas [category, count].
+        """
+        dashboard_docs = await self.article_repo.get_dashboard_fields(user_id, collection_id)
+        category_counts: Dict[str, int] = {}
+        for doc in dashboard_docs:
+            cat = doc.get("category")
+            if cat and isinstance(cat, str) and cat.strip():
+                label = cat.strip()
+                category_counts[label] = category_counts.get(label, 0) + 1
+        sorted_cats = sorted(category_counts.items(), key=lambda item: item[1], reverse=True)
+        return [[c, n] for c, n in sorted_cats]
+
+    async def get_authors_ranking(self, user_id: str, collection_id: Optional[str] = None) -> List:
+        """
+        Obtener ranking de autores como lista de tuplas [author, count].
+        """
+        dashboard_docs = await self.article_repo.get_dashboard_fields(user_id, collection_id)
+        author_counts: Dict[str, int] = {}
+        for doc in dashboard_docs:
+            authors = doc.get("authors", [])
+            if isinstance(authors, str):
+                authors = [a.strip() for a in authors.split(",") if a.strip()]
+            if not isinstance(authors, list):
+                continue
+            for author in authors:
+                if isinstance(author, str) and author.strip():
+                    name = author.strip()
+                    author_counts[name] = author_counts.get(name, 0) + 1
+        sorted_authors = sorted(author_counts.items(), key=lambda item: item[1], reverse=True)[:20]
+        return [[a, c] for a, c in sorted_authors]
+
     def _normalize_year(self, year_value: Any) -> Optional[int]:
         """
         Normaliza year a entero de 4 digitos.

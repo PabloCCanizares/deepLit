@@ -1,7 +1,7 @@
 .keyword-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.7rem 1rem;
   padding: 1.5rem;
   justify-content: center;
   align-items: center;
@@ -11,6 +11,7 @@
 }
 
 .keyword-cloud-item {
+  display: inline-block;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -18,6 +19,7 @@
   border-radius: 6px;
   user-select: none;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .keyword-cloud-item:hover {

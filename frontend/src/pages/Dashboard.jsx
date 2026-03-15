@@ -1,9 +1,13 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { statsAPI, uploadAPI, openalexAPI } from '../api/api'
+import { statsAPI, openalexAPI } from '../api/api'
 import StatCard from '../components/dashboard/StatCard'
 import YearChart from '../components/dashboard/YearChart'
 import KeywordRanking from '../components/dashboard/KeywordRanking'
+import TypePieChart from '../components/dashboard/TypePieChart'
+import CategoryBubbles from '../components/dashboard/CategoryBubbles'
+import AuthorsChart from '../components/dashboard/AuthorsChart'
+import ActivityCalendar from '../components/dashboard/ActivityCalendar'
 import '../styles/App.css'
 import '../styles/dashboard/Dashboard.css'
 import { useCollection } from '../context/CollectionContext'
@@ -22,13 +26,10 @@ function Dashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [uploading, setUploading] = useState(false)
 
   const [activityMode, setActivityMode] = useState('recent')
   const [activityItems, setActivityItems] = useState([])
   const [activityLoading, setActivityLoading] = useState(false)
-
-  const fileInputRef = useRef(null)
 
   useEffect(() => {
     loadDashboard()
@@ -126,34 +127,8 @@ function Dashboard() {
     }
   }
 
-  const handleUploadClick = () => {
-    fileInputRef.current.click()
-  }
-
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-
-    if (file.type !== 'application/pdf') {
-      alert('Por favor selecciona un archivo PDF')
-      return
-    }
-
-    try {
-      setUploading(true)
-      await uploadAPI.uploadPDF(file, selectedCollectionId || undefined)
-      alert(
-        selectedCollectionId
-          ? 'PDF subido a la colección actual'
-          : 'PDF subido correctamente'
-      )
-      loadDashboard()
-    } catch (err) {
-      alert(err.status ? err.message : 'Error de conexion con el servidor')
-    } finally {
-      setUploading(false)
-      fileInputRef.current.value = ''
-    }
+  const handleFilterClick = () => {
+    // Placeholder: filtro por implementar
   }
 
   const handleActivityClick = (item) => {
@@ -203,19 +178,10 @@ function Dashboard() {
     <div className="dashboardContainer">
       <div className="header">
         <h1 className="dashboard-main-title">Panel de Control</h1>
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-          <button onClick={handleUploadClick} disabled={uploading} className="btn-primary">
-            <i className={uploading ? 'fas fa-spinner fa-spin' : 'fas fa-upload'}></i>
-            {uploading ? 'Subiendo...' : 'Subir PDF'}
-          </button>
-        </div>
+        <button onClick={handleFilterClick} className="btn-primary">
+          <i className="fas fa-filter"></i>
+          Filtrar
+        </button>
       </div>
 
       <div className="statsGrid">
@@ -224,63 +190,70 @@ function Dashboard() {
         <StatCard title="Referencias por Articulo" value={stats?.avg_references || 0} icon="fa-chart-line" />
       </div>
 
-      <div className="gridLayout">
-        <div>
-          <div className="section">
-            <h3 className="sectionTitle">Articulos por Año</h3>
-            <YearChart labels={stats?.labels_by_year || []} values={stats?.values_by_year || []} />
-          </div>
-
-          <div className="section">
-            <h3 className="sectionTitle">Ranking de Keywords</h3>
-            <KeywordRanking keywords={stats?.sorted_keywords?.slice(0, 10) || []} />
-          </div>
+      <div className="sectionRow">
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">Distribución por Tipo</h3>
+          <TypePieChart data={stats?.type_distribution || []} />
         </div>
 
-        <div>
-          {stats?.wordcloud_img && (
-            <div className="section">
-              <h3 className="sectionTitle">WordCloud de Keywords</h3>
-              <div className="wordcloudContainer">
-                <img
-                  src={`data:image/png;base64,${stats.wordcloud_img}`}
-                  alt="Wordcloud de Keywords"
-                  className="wordcloudImg"
-                />
-              </div>
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">{activityMode === 'recent' ? 'Recientes' : 'Articulos recomendados'}</h3>
+
+          {activityLoading ? (
+            <div className="recentDocsLoading">
+              <i className="fas fa-spinner fa-spin"></i>
+              <span>Cargando...</span>
             </div>
+          ) : activityItems.length > 0 ? (
+            <ul className="recentDocsList">
+              {activityItems.map((item) => (
+                <li
+                  key={item.id}
+                  className="recentDocItem recentDocItemInteractive"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(item)}
+                  onKeyDown={(event) => handleActivityKeyDown(event, item)}
+                >
+                  <div className="recentDocTitle">{item.title}</div>
+                  <div className="recentDocDate">{item.meta}</div>
+                  <div className="recentDocHint">{item.secondary}</div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="recentDocsEmpty">No hay articulos recomendados disponibles.</p>
           )}
-
-          <div className="section">
-            <h3 className="sectionTitle">{activityMode === 'recent' ? 'Recientes' : 'Articulos recomendados'}</h3>
-
-            {activityLoading ? (
-              <div className="recentDocsLoading">
-                <i className="fas fa-spinner fa-spin"></i>
-                <span>Cargando...</span>
-              </div>
-            ) : activityItems.length > 0 ? (
-              <ul className="recentDocsList">
-                {activityItems.map((item) => (
-                  <li
-                    key={item.id}
-                    className="recentDocItem recentDocItemInteractive"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleActivityClick(item)}
-                    onKeyDown={(event) => handleActivityKeyDown(event, item)}
-                  >
-                    <div className="recentDocTitle">{item.title}</div>
-                    <div className="recentDocDate">{item.meta}</div>
-                    <div className="recentDocHint">{item.secondary}</div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="recentDocsEmpty">No hay articulos recomendados disponibles.</p>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className="sectionRow">
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">Ranking de Keywords</h3>
+          <KeywordRanking keywords={stats?.sorted_keywords?.slice(0, 30) || []} />
+        </div>
+
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">Distribución por Categoría</h3>
+          <CategoryBubbles data={stats?.category_distribution || []} />
+        </div>
+      </div>
+
+      <div className="sectionRow">
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">Top Autores</h3>
+          <AuthorsChart data={stats?.authors_ranking || []} />
+        </div>
+
+        <div className="section sectionInRow">
+          <h3 className="sectionTitle">Artículos por Año</h3>
+          <YearChart labels={stats?.labels_by_year || []} values={stats?.values_by_year || []} />
+        </div>
+      </div>
+
+      <div className="section">
+        <h3 className="sectionTitle">Actividad por Día</h3>
+        <ActivityCalendar />
       </div>
 
       {(stats?.notif_abstract > 0 || stats?.notif_keywords > 0) && (

@@ -1,5 +1,14 @@
 import '../../styles/dashboard/KeywordRanking.css'
 
+const hashText = (text) => {
+  let hash = 0
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
 function KeywordRanking({ keywords }) {
   if (!keywords || keywords.length === 0) {
     return <p className="text-muted">No hay keywords disponibles</p>
@@ -29,21 +38,31 @@ function KeywordRanking({ keywords }) {
     return 12 + normalized * 36 // De 12px a 48px
   }
 
+  const shuffledKeywords = [...keywords].sort((a, b) => hashText(a[0]) - hashText(b[0]))
+
   return (
     <div className="keyword-cloud">
-      {keywords.map(([word, freq], index) => (
-        <div
-          key={index}
-          className="keyword-cloud-item"
-          style={{
-            fontSize: `${getFontSize(freq)}px`,
-            color: colors[index % colors.length],
-          }}
-          title={`${word}: ${freq} apariciones`}
-        >
-          {word}
-        </div>
-      ))}
+      {shuffledKeywords.map(([word, freq], index) => {
+        const seed = hashText(`${word}-${freq}`)
+        const rotate = (seed % 13) - 6
+        const shiftX = (seed % 13) - 6
+        const shiftY = ((Math.floor(seed / 5)) % 13) - 6
+
+        return (
+          <div
+            key={index}
+            className="keyword-cloud-item"
+            style={{
+              fontSize: `${getFontSize(freq)}px`,
+              color: colors[index % colors.length],
+              transform: `translate(${shiftX}px, ${shiftY}px) rotate(${rotate}deg)`,
+            }}
+            title={`${word}: ${freq} apariciones`}
+          >
+            {word}
+          </div>
+        )
+      })}
     </div>
   )
 }

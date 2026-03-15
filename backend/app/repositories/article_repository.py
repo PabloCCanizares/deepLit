@@ -243,7 +243,10 @@ class ArticleRepository:
         projection = {
             "_id": 0,
             "year": 1,
-            "keywords": 1
+            "keywords": 1,
+            "type": 1,
+            "category": 1,
+            "authors": 1
         }
 
         cursor = self.collection.find(filter_query, projection)

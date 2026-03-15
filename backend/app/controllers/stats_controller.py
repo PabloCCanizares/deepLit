@@ -52,6 +52,24 @@ class StatsController:
             print(f"Warning /stats/dashboard keywords aggregation failed: {exc}")
             sorted_keywords = []
 
+        try:
+            type_distribution = await self.article_service.get_type_distribution(user_id, collection_id)
+        except Exception as exc:
+            print(f"Warning /stats/dashboard type aggregation failed: {exc}")
+            type_distribution = []
+
+        try:
+            category_distribution = await self.article_service.get_category_distribution(user_id, collection_id)
+        except Exception as exc:
+            print(f"Warning /stats/dashboard category aggregation failed: {exc}")
+            category_distribution = []
+
+        try:
+            authors_ranking = await self.article_service.get_authors_ranking(user_id, collection_id)
+        except Exception as exc:
+            print(f"Warning /stats/dashboard authors aggregation failed: {exc}")
+            authors_ranking = []
+
         return StandardResponse(
             success=True,
             message="Estadisticas obtenidas exitosamente",
@@ -60,6 +78,9 @@ class StatsController:
                 "article_count": article_count,
                 "labels_by_year": articles_by_year.get("labels", []),
                 "values_by_year": articles_by_year.get("values", []),
-                "sorted_keywords": sorted_keywords
+                "sorted_keywords": sorted_keywords,
+                "type_distribution": type_distribution,
+                "category_distribution": category_distribution,
+                "authors_ranking": authors_ranking
             }
         )
