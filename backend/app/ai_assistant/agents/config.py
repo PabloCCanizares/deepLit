@@ -70,7 +70,14 @@ def get_master_config():
     return {
         "modelo": get_model_name(),
         "temperatura": 0,
-        "valid_outputs": ['chatbot', 'metadata_researcher', 'deep_researcher', 'web_searcher', 'nexus'],
+        "valid_outputs": [
+            'chatbot',
+            'metadata_researcher',
+            'deep_researcher',
+            'web_searcher',
+            'collection_synthesizer',
+            'nexus',
+        ],
         "offline": offline
     }
 

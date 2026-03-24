@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { aiAssistantAPI } from '../../api/api'
 import { useCollection } from '../../context/CollectionContext'
+import { AI_ASSISTANT_TOOLS, getAiToolById, getInputPlaceholder } from './toolConfig'
 import '../../styles/App.css'
 
 function AiAssistant({ locked = false }) {
@@ -59,13 +60,19 @@ function AiAssistant({ locked = false }) {
     }
   }, [messages, showChat])
 
-  const tools = [
-    { id: 'deep_researcher', label: 'Deep research', icon: 'fas fa-brain' },
-    { id: 'web_searcher', label: 'Web research', icon: 'fas fa-globe' },
-    { id: 'nexus', label: 'Nexus', icon: 'fa-solid fa-diagram-project' },
-  ]
+  useEffect(() => {
+    if (selectedTool && getAiToolById(selectedTool)?.requiresCollection && !selectedCollectionId) {
+      setSelectedTool(null)
+    }
+  }, [selectedCollectionId, selectedTool])
 
-  const activeTool = tools.find((tool) => tool.id === selectedTool) || null
+  const activeTool = getAiToolById(selectedTool)
+  const needsSelectedCollection = Boolean(activeTool?.requiresCollection)
+  const inputPlaceholder = getInputPlaceholder({
+    locked,
+    activeTool,
+    selectedCollectionId,
+  })
 
   const handleSend = async () => {
     if (locked) {
@@ -74,6 +81,17 @@ function AiAssistant({ locked = false }) {
 
     const trimmed = message.trim()
     if (!trimmed || isSending) {
+      return
+    }
+
+    if (needsSelectedCollection && !selectedCollectionId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'bot',
+          content: activeTool?.missingCollectionMessage || 'Selecciona una coleccion activa para continuar.',
+        },
+      ])
       return
     }
 
@@ -155,15 +173,24 @@ function AiAssistant({ locked = false }) {
                   <span>Sin herramienta</span>
                 </button>
               )}
-              {tools
+              {AI_ASSISTANT_TOOLS
                 .filter((tool) => tool.id !== selectedTool)
-                .map((tool) => (
+                .map((tool) => {
+                  const isDisabled = tool.requiresCollection && !selectedCollectionId
+
+                  return (
                   <button
                     key={tool.id}
-                    className="tools-item"
+                    className={`tools-item${isDisabled ? ' disabled' : ''}`}
                     type="button"
                     role="menuitem"
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
+                    title={isDisabled ? 'Selecciona una coleccion para activar esta herramienta.' : tool.label}
                     onClick={() => {
+                      if (isDisabled) {
+                        return
+                      }
                       setSelectedTool(tool.id)
                       setShowTools(false)
                     }}
@@ -171,12 +198,13 @@ function AiAssistant({ locked = false }) {
                     <i className={tool.icon}></i>
                     <span>{tool.label}</span>
                   </button>
-                ))}
+                  )
+                })}
             </div>
           </div>
           <textarea
             rows={1}
-            placeholder={locked ? 'Inicia sesion para usar el asistente...' : 'Escribe tu consulta...'}
+            placeholder={inputPlaceholder}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             onKeyDown={handleKeyDown}

@@ -13,6 +13,7 @@ MODE_TIMEOUT_SECONDS = {
     "metadata_researcher": 35,
     "deep_researcher": 55,
     "web_searcher": 35,
+    "collection_synthesizer": 55,
     "nexus": 55,
 }
 
@@ -64,6 +65,7 @@ class AiAssistantService:
                 "agent": selected_mode or "assistant",
                 "prompt_version": None,
                 "web_search_meta": None,
+                "context_source": None,
                 "timed_out": True,
             }
 
@@ -72,5 +74,6 @@ class AiAssistantService:
             "agent": result["previous_agent"],
             "prompt_version": result.get("prompt_version"),
             "web_search_meta": result.get("web_search_meta"),
+            "context_source": result.get("context_source"),
             "timed_out": False,
         }

@@ -60,15 +60,8 @@ def process_pdf(file_path, article_id=None, user_id=None, offline=None):
     agent = RagAgent(**config, system_prompt=PDF_PROCESSOR_PROMPT)
     agent.set_structured_output(Metadata)
 
-    # RAG
     docs = load_document(file_path=file_path)
     number_pages = len(docs)
-    agent.process_documents(docs=docs)
-
-    # Persistir FAISS index a disco (por user_id/article_id)
-    if article_id and user_id:
-        faiss_index_path = str(Path(__file__).resolve().parents[4] / "storage" / "faiss_indexes" / str(user_id) / article_id)
-        agent.save_index(faiss_index_path)
 
     # Para metadatos principales usar primeras paginas y sin seccion de referencias
     first_pages_text = "\n".join([d.page_content for d in docs[: min(5, len(docs))]])
@@ -77,6 +70,22 @@ def process_pdf(file_path, article_id=None, user_id=None, offline=None):
     prompt = agent.create_prompt(message=f"Texto para metadatos principales:\n{metadata_text}")
     output = agent.invoke(prompt, structured_output=True)
     output["pages"] = number_pages
+
+    article_title = output.get("title") or article_id or Path(file_path).stem
+    for doc in docs:
+        metadata = doc.metadata or {}
+        if article_id:
+            metadata["article_id"] = article_id
+            metadata["source"] = f"article:{article_id}"
+        metadata["article_title"] = article_title
+        doc.metadata = metadata
+
+    agent.process_documents(docs=docs)
+
+    # Persistir FAISS index a disco (por user_id/article_id)
+    if article_id and user_id:
+        faiss_index_path = str(Path(__file__).resolve().parents[4] / "storage" / "faiss_indexes" / str(user_id) / article_id)
+        agent.save_index(faiss_index_path)
 
     agent.print_agent_execution(agent="PDF PROCESSOR", input=prompt, output=output)
     return {"docs": docs, "metadata": output}

@@ -22,6 +22,14 @@ METADATA_INDEXES_DIR = Path(__file__).resolve().parents[4] / "storage" / "faiss_
 _METADATA_INDEX_CACHE: Dict[str, Dict[str, object]] = {}
 
 
+def _build_prompt_input(user_message: str, history, rag_context: str) -> str:
+    return (
+        f"Pregunta del usuario: {user_message}\n"
+        f"Historial relevante: {history}\n\n"
+        f"{rag_context}"
+    )
+
+
 def metadata_research(state):
     prompt_spec = get_prompt_spec("metadata_researcher")
     config = get_metadata_config()
@@ -49,7 +57,13 @@ def metadata_research(state):
         user_message=user_message,
         strategy=get_rag_strategy_config(),
     )
-    prompt_final = agent.create_prompt(message=prompt_rag)
+    prompt_final = agent.create_prompt(
+        message=_build_prompt_input(
+            user_message=user_message,
+            history=history,
+            rag_context=prompt_rag,
+        )
+    )
     output = agent.invoke(prompt_final)
 
     new_history = agent.create_history_entry(user_message, output)
@@ -150,6 +164,7 @@ def load_documents(user_id: str, collection_id: Optional[str] = None) -> Tuple[L
                 page_content=content,
                 metadata={
                     "article_id": str(doc.get("_id", "")),
+                    "article_title": doc.get("title") or str(doc.get("_id", "")),
                     "source": f"article:{doc.get('_id', '')}",
                     "page": 1,
                 },

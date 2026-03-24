@@ -85,6 +85,21 @@ def _get_allowed_article_ids(user_id: str, collection_id: Optional[str] = None) 
     return {str(doc["_id"]) for doc in docs if doc.get("_id") is not None}
 
 
+def _get_article_titles(article_ids: Set[str]) -> Dict[str, str]:
+    if not article_ids:
+        return {}
+
+    cursor = ARTICLES_COLLECTION.find(
+        {"_id": {"$in": list(article_ids)}},
+        {"_id": 1, "title": 1},
+    )
+    return {
+        str(doc["_id"]): doc.get("title") or str(doc["_id"])
+        for doc in cursor
+        if doc.get("_id") is not None
+    }
+
+
 def _build_fingerprint(index_dirs: List[Path]) -> Tuple[Tuple[str, int, int], ...]:
     fingerprint = []
     for index_dir in sorted(index_dirs, key=lambda path: path.name):
@@ -110,6 +125,20 @@ def _collect_index_dirs(user_id: str, allowed_article_ids: Set[str]) -> List[Pat
     return valid_dirs
 
 
+def _enrich_store_metadata(store: FAISS, article_id: str, article_title: str) -> None:
+    docstore = getattr(store, "docstore", None)
+    docs_dict = getattr(docstore, "_dict", None)
+    if not isinstance(docs_dict, dict):
+        return
+
+    for doc in docs_dict.values():
+        metadata = doc.metadata or {}
+        metadata["article_id"] = article_id
+        metadata["article_title"] = article_title
+        metadata["source"] = f"article:{article_id}"
+        doc.metadata = metadata
+
+
 def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection_id: Optional[str] = None) -> None:
     """
     Carga índices FAISS solo del alcance del usuario/colección.
@@ -132,6 +161,8 @@ def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection_id: O
         logger.info("Sin indices FAISS para usuario=%s collection=%s", user_id, collection_id)
         return
 
+    article_titles = _get_article_titles(allowed_article_ids)
+
     scope_key = _scope_key(user_id=user_id, collection_id=collection_id)
     fingerprint = _build_fingerprint(index_dirs)
     cache_entry = _FAISS_SCOPE_CACHE.get(scope_key)
@@ -146,6 +177,12 @@ def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection_id: O
                 str(index_dir),
                 agent.embedding_model,
                 allow_dangerous_deserialization=True,
+            )
+            article_id = index_dir.name
+            _enrich_store_metadata(
+                store=loaded_store,
+                article_id=article_id,
+                article_title=article_titles.get(article_id, article_id),
             )
             if merged_store is None:
                 merged_store = loaded_store

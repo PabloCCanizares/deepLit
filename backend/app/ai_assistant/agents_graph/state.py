@@ -16,6 +16,7 @@ class AgentState(TypedDict):
     runtime_mode: Optional[str]
     web_provider: Optional[str]
     rag_context: Optional[str]
+    context_source: Optional[str]
     prompt_version: Optional[str]
     web_search_meta: Optional[dict]
     previous_agent: Optional[str]
