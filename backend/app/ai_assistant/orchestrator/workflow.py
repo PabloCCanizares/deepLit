@@ -1,12 +1,11 @@
 from langgraph.graph import StateGraph, END
 from .state import AgentState
-from ..agents.specific_agents.master_router import master_decider
-from ..agents.specific_agents.chat_bot import chat_bot
-from ..agents.specific_agents.collection_synthesizer import collection_synthesize
-from ..agents.specific_agents.deep_researcher import deep_research
-from ..agents.specific_agents.web_researcher import web_search
-from ..agents.specific_agents.nexus import nexus_node
-from ..agents.specific_agents.metadata_researcher import metadata_research
+from .router import master_decider
+from ..capabilities.chatbot import chat_bot
+from ..capabilities.collection_synthesizer import collection_synthesize
+from ..capabilities.deep_researcher import deep_research
+from ..capabilities.web_searcher import web_search
+from ..capabilities.metadata_researcher import metadata_research
 from pymongo import MongoClient 
 from langgraph.checkpoint.mongodb import MongoDBSaver 
 from app.config import settings
@@ -35,7 +34,6 @@ workflow.add_node("metadata_researcher", metadata_research)
 workflow.add_node("deep_researcher", deep_research)
 workflow.add_node("web_searcher", web_search)
 workflow.add_node("collection_synthesizer", collection_synthesize)
-workflow.add_node("nexus", nexus_node)
 
 workflow.set_entry_point("master")
 
@@ -49,7 +47,6 @@ workflow.add_conditional_edges(
         "deep_researcher": "deep_researcher",
         "web_searcher": "web_searcher",
         "collection_synthesizer": "collection_synthesizer",
-        "nexus": "nexus"
     }
 ) # Condicional porque debe ejecutar al funcion para elegir por que arista ir
 
@@ -58,6 +55,5 @@ workflow.add_edge("metadata_researcher", END)
 workflow.add_edge("deep_researcher", END)
 workflow.add_edge("web_searcher", END)
 workflow.add_edge("collection_synthesizer", END)
-workflow.add_edge("nexus", END)
 
 app = workflow.compile(checkpointer=checkpointer)

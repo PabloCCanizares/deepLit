@@ -54,7 +54,6 @@ class OpenAlexController:
         user_id = current_user.get("_id")
 
         if collection_id:
-            print("ENTRO")
             exists = await self.collection_service.collection_exists(user_id, collection_id)
             if not exists:
                 return StandardResponse(

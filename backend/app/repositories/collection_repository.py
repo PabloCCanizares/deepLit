@@ -2,7 +2,7 @@
 Repositorio de Colecciones
 """
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_database
 
 
@@ -15,7 +15,7 @@ class CollectionRepository:
     
     async def create(self, collection_data: dict) -> str:
         """Crear una nueva colección"""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         collection_data["created_at"] = now
         collection_data["updated_at"] = now
         
@@ -35,7 +35,7 @@ class CollectionRepository:
     
     async def update(self, collection_id: str, update_data: dict) -> bool:
         """Actualizar una colección existente"""
-        update_data["updated_at"] = datetime.utcnow().isoformat()
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
         
         result = await self.collection.update_one(
             {"_id": collection_id},
@@ -125,4 +125,3 @@ class CollectionRepository:
         # Eliminar las colecciones
         result = await self.collection.delete_many({"_id": {"$in": collection_ids}})
         return result.deleted_count
-

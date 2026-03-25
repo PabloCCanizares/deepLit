@@ -8,6 +8,7 @@ from app.database import connect_to_mongo, close_mongo_connection
 from app.core import register_exception_handlers
 from app.routers import include_routers
 from app.services import StorageService
+from app.workers.job_worker import JobWorker
 
 
 # ============================================
@@ -52,7 +53,9 @@ async def startup():
     # Conectar a MongoDB
     await connect_to_mongo()
     
-    storage = StorageService()
+    StorageService()
+    app.state.job_worker = JobWorker()
+    await app.state.job_worker.start()
     
     print(f"✅ {settings.APP_NAME} iniciado correctamente")
 
@@ -60,6 +63,9 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     """Ejecutado al cerrar el servidor"""
+    job_worker = getattr(app.state, "job_worker", None)
+    if job_worker is not None:
+        await job_worker.stop()
     await close_mongo_connection()
     print(f"👋 {settings.APP_NAME} cerrado")
 

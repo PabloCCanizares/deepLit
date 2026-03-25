@@ -5,7 +5,7 @@ Responsabilidad: ejecutar el agente y devolver la respuesta.
 """
 import asyncio
 from typing import Dict, Optional
-from app.ai_assistant.agents_graph.workflow import app
+from app.ai_assistant.orchestrator.workflow import app
 
 DEFAULT_TIMEOUT_SECONDS = 45
 MODE_TIMEOUT_SECONDS = {
@@ -14,7 +14,6 @@ MODE_TIMEOUT_SECONDS = {
     "deep_researcher": 55,
     "web_searcher": 35,
     "collection_synthesizer": 55,
-    "nexus": 55,
 }
 
 

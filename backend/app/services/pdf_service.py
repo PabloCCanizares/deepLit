@@ -2,11 +2,16 @@
 Servicio de PDFs.
 """
 import base64
+import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple
+
 from app.repositories import PdfRepository
 from app.models import PdfUpload
 from app.services import StorageService
+
+logger = logging.getLogger(__name__)
 
 
 class PdfService:
@@ -15,9 +20,10 @@ class PdfService:
         self.pdf_repo = PdfRepository()
         self.storage = StorageService()
         
-    async def save_pdf(self, pdf_data: PdfUpload, user_id: str) -> str:
+    async def save_pdf(self, pdf_data: PdfUpload, user_id: str) -> Tuple[str, str]:
         """
         Guardar PDF en disco y crear registro en base de datos.
+        Retorna (pdf_id, absolute_path).
         """
         # Generar ID único
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -53,18 +59,6 @@ class PdfService:
         await self.pdf_repo.create(pdf_dict)
         
         return unique_id, absolute_path
-
-    # async def save_embbedings(self, pdf_id: str, embbedings: list) -> dict:
-    #     """
-    #     Busca el PDF por id y guarda los chunks en el documento.
-    #     """
-    #     return await self.pdf_repo.update(pdf_id, {"embbedings": embbedings})
-    
-    # async def save_docs(self, pdf_id: str, docs: list) -> dict:
-    #     """
-    #     Busca el PDF por id y guarda los docs en el documento.
-    #     """
-    #     return await self.pdf_repo.update(pdf_id, {"docs": docs})
 
     async def get_document_count(self, user_id: str) -> int:
         """
@@ -105,17 +99,17 @@ class PdfService:
                 path = Path(file_path)
                 if path.exists():
                     path.unlink()
-                    print(f"PDF eliminado del disco: {file_path}")
-            except Exception as e:
-                print(f"Error al eliminar PDF del disco: {e}")
+                    logger.info("PDF eliminado del disco: %s", file_path)
+            except Exception as exc:
+                logger.warning("Error al eliminar PDF del disco: %s", exc)
                 # Continuamos de todas formas para eliminar el registro
         
         if filename:
             try:
                 # También intentar vía storage service si fue guardado con storage_location
                 self.storage.delete_file(filename, storage_location="uploads")
-            except Exception as e:
-                print(f"Error al eliminar PDF vía storage service: {e}")
+            except Exception as exc:
+                logger.warning("Error al eliminar PDF vía storage service: %s", exc)
         
         # Eliminar registro de la BD
         deleted = await self.pdf_repo.delete(pdf_id)

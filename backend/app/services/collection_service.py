@@ -3,6 +3,7 @@ Servicio de Colecciones.
 """
 import re
 import base64
+import logging
 from datetime import datetime
 from typing import List, Dict, Optional
 from app.repositories.collection_repository import CollectionRepository
@@ -10,6 +11,7 @@ from app.repositories.article_repository import ArticleRepository
 from app.services.storage_service import StorageService
 from app.core import NotFoundError, AuthorizationError
 
+logger = logging.getLogger(__name__)
 
 class CollectionService:
     
@@ -39,22 +41,12 @@ class CollectionService:
         
         # Guardar imagen si se proporciona (base64)
         if image:
-            print(f"Collection ID: {collection_id}")
-            print(f"Image type: {type(image)}")
-            print(f"Image length: {len(image) if image else 0}")
-            print(f"Image starts with: {image[:50] if image else 'None'}...")
             try:
                 filename = await self._save_collection_image(collection_id, image)
                 collection_data["image_url"] = filename
-                print(f"Image saved as: {filename}")
-                print(f"=== IMAGEN GUARDADA ===")
-            except Exception as e:
-                print(f"ERROR saving image: {e}")
-                import traceback
-                traceback.print_exc()
+            except Exception as exc:
+                logger.warning("Error guardando imagen de la coleccion %s: %s", collection_id, exc, exc_info=True)
                 # Continue without image
-        else:
-            print("No image provided")
         
         await self.collection_repo.create(collection_data)
         

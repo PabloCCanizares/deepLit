@@ -1,10 +1,9 @@
 ﻿"""
-Repositorio de usuarios
+Repositorio de artículos.
 """
-from typing import Optional
+from typing import Dict, List, Optional
 from app.database import get_database
 from app.models import QueryBody
-from typing import List, Optional
 from pymongo import ASCENDING, DESCENDING
 
 class ArticleRepository:
@@ -86,16 +85,50 @@ class ArticleRepository:
             {
                 "id_user": user_id,
                 "status": {"$in": ["processing", "error"]}
-            },
-            {
-                "_id": 1,
-                "title": 1,
-                "status": 1,
-                "error_message": 1,
-                "id_pdf": 1,
             }
+        ).sort("created_at", DESCENDING)
+        return await cursor.to_list(length=None)
+
+    async def get_scope_article_ids(self, user_id: str, collection_id: Optional[str] = None) -> List[str]:
+        """
+        Obtener IDs de artículos accesibles para un usuario y alcance opcional de colección.
+        """
+        filter_query = {"id_user": user_id}
+        if collection_id:
+            filter_query["collection_ids"] = {"$in": [collection_id]}
+
+        cursor = self.collection.find(filter_query, {"_id": 1})
+        docs = await cursor.to_list(length=None)
+        return [str(doc["_id"]) for doc in docs if doc.get("_id") is not None]
+
+    async def get_titles_by_ids(self, article_ids: List[str]) -> Dict[str, str]:
+        """
+        Obtener un mapa article_id -> title para una lista de artículos.
+        """
+        if not article_ids:
+            return {}
+
+        cursor = self.collection.find(
+            {"_id": {"$in": list(article_ids)}},
+            {"_id": 1, "title": 1},
         )
-        return await cursor.to_list(length=100)
+        docs = await cursor.to_list(length=None)
+        return {
+            str(doc["_id"]): doc.get("title") or str(doc["_id"])
+            for doc in docs
+            if doc.get("_id") is not None
+        }
+
+    async def get_articles_for_metadata_index(self, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
+        """
+        Obtener los artículos de un usuario/colección para construir el índice de metadatos.
+        """
+        filter_query = {"id_user": user_id}
+        if collection_id:
+            filter_query["collection_ids"] = {"$in": [collection_id]}
+
+        cursor = self.collection.find(filter_query).sort("_id", ASCENDING)
+        return await cursor.to_list(length=None)
 
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
         """Recuperar artÃ­culos del usuario actual con paginaciÃ³n y filtros"""
@@ -251,4 +284,3 @@ class ArticleRepository:
 
         cursor = self.collection.find(filter_query, projection)
         return await cursor.to_list(length=None)
-

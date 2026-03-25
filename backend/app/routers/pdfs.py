@@ -3,11 +3,10 @@ Rutas de PDFs.
 
 Endpoints para gestionar PDFs (subir, consultar, eliminar).
 """
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends
 from app.controllers import PdfsController
 from app.models import PdfUpload
 from app.core import StandardResponse, create_response_examples, get_current_user
-from typing import Optional
 
 router = APIRouter(prefix="/pdfs", tags=["PDFs"])
 
@@ -21,17 +20,13 @@ router = APIRouter(prefix="/pdfs", tags=["PDFs"])
     summary="Subir un PDF",
     responses=create_response_examples(
         success_example={
-            "message": "PDF subido exitosamente",
+            "message": "PDF recibido. Procesando en segundo plano...",
             "data": {
                 "id_pdf": "mi_articulo_20241021120000",
                 "article": {
                     "_id": "article_mi_articulo_20241021120000",
-                    "id_user": "user_123",
-                    "id_pdf": "mi_articulo_20241021120000",
-                    "title": "Título extraído",
-                    "abstract": "Resumen extraído",
-                    "keywords": "palabras clave",
-                    "year": "2024"
+                    "title": "mi_articulo.pdf",
+                    "status": "processing"
                 }
             }
         },
@@ -44,14 +39,11 @@ router = APIRouter(prefix="/pdfs", tags=["PDFs"])
 )
 async def create_pdf(
     pdf_data: PdfUpload,
-    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     controller: PdfsController = Depends()
 ):
     """
-    Subir un PDF y extraer su contenido automáticamente.
-    El procesamiento pesado se ejecuta en segundo plano.
+    Subir un PDF y dejar su procesamiento en cola.
+    La respuesta devuelve un artículo placeholder con status processing.
     """
-    return await controller.upload_pdf(pdf_data, current_user, background_tasks)
-
-
+    return await controller.upload_pdf(pdf_data, current_user)

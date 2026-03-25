@@ -10,20 +10,6 @@ class PromptSpec:
 
 
 PROMPT_REGISTRY: Dict[str, PromptSpec] = {
-    "cleaner": PromptSpec(
-        name="cleaner",
-        version="v1.0.0",
-        text="""
-Eres un editor de texto en espanol. Tu unica funcion es corregir errores.
-
-INSTRUCCIONES:
-1. Recibiras un texto de entrada.
-2. Corrige ortografia, gramatica y puntuacion.
-3. No cambies el significado ni el tono original.
-4. No respondas a preguntas ni mantengas conversacion.
-5. Devuelve unicamente el texto corregido.
-""".strip(),
-    ),
     "chatbot": PromptSpec(
         name="chatbot",
         version="v1.0.0",
@@ -50,7 +36,6 @@ SALIDAS VALIDAS:
 - deep_researcher
 - web_searcher
 - collection_synthesizer
-- nexus
 
 REGLAS:
 1. chatbot: saludos, identidad del asistente, charla general.
@@ -58,7 +43,6 @@ REGLAS:
 3. deep_researcher: preguntas que requieren analizar contenido interno del documento.
 4. web_searcher: consultas sobre actualidad o novedades externas.
 5. collection_synthesizer: sintetizar, comparar o resumir una coleccion o varios documentos del usuario dentro de una coleccion.
-6. nexus: solicitud explicita de generar un texto nuevo mas abierto o de redaccion multi-documento avanzada.
 """.strip(),
     ),
     "metadata_researcher": PromptSpec(
@@ -87,29 +71,6 @@ REGLAS ABSOLUTAS:
 2. Incluye citas [Doc N] en afirmaciones clave.
 3. Si no hay evidencia suficiente, di: "No he encontrado esa informacion en los documentos indexados."
 4. Separa claramente hechos, inferencias y limites.
-""".strip(),
-    ),
-    "nexus": PromptSpec(
-        name="nexus",
-        version="v1.0.0",
-        text="""
-Eres Nexus, un redactor cientifico de sintesis.
-Tu tarea es construir una salida nueva y coherente a partir de multiples documentos del usuario.
-
-OBJETIVO:
-- Integrar, comparar y resumir evidencia de varias fuentes.
-- Entregar una respuesta estructurada y accionable.
-
-FORMATO DE SALIDA:
-1. Resumen ejecutivo (3-5 lineas)
-2. Hallazgos clave (lista)
-3. Contradicciones o vacios detectados
-4. Recomendacion final
-
-REGLAS:
-- Usa solo el contexto recuperado.
-- Incluye citas [Doc N] en los puntos clave.
-- Si faltan datos para concluir, dilo explicitamente.
 """.strip(),
     ),
     "collection_synthesizer": PromptSpec(
@@ -151,17 +112,6 @@ Cada resultado debe citar fuente y fecha.
 No presentes rumores como hechos confirmados.
 """.strip(),
     ),
-    "pdf_processor": PromptSpec(
-        name="pdf_processor",
-        version="v1.0.0",
-        text="""
-Eres un analista de documentos cientificos experto en extraccion de metadatos.
-Extrae DOI, titulo, autores, ano, categoria, tipo, keywords, abstract y referencias.
-Para referencias devuelve la cita bibliografica completa en texto, sin indices numericos tipo [38].
-No uses la seccion de referencias para inferir titulo o tipo del documento.
-Si falta un dato, usa "No disponible".
-""".strip(),
-    ),
 }
 
 
@@ -173,12 +123,9 @@ def get_prompt_spec(name: str) -> PromptSpec:
 
 DEFAULT_SYSTEM_PROMPT = ""
 
-CLEANER_PROMPT = get_prompt_spec("cleaner").text
 CHATBOT_PROMPT = get_prompt_spec("chatbot").text
 MASTER_PROMPT = get_prompt_spec("master").text
 METADATA_RESEARCHER = get_prompt_spec("metadata_researcher").text
 DEEP_RESEARCHER_PROMPT = get_prompt_spec("deep_researcher").text
-NEXUS_PROMPT = get_prompt_spec("nexus").text
 COLLECTION_SYNTHESIZER_PROMPT = get_prompt_spec("collection_synthesizer").text
 WEB_SEARCHER_PROMPT = get_prompt_spec("web_searcher").text
-PDF_PROCESSOR_PROMPT = get_prompt_spec("pdf_processor").text

@@ -9,11 +9,11 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 import logging
 from typing import Optional, Tuple
 
-from ..base_agents.rag_agent import RagAgent
-from ..config import get_deep_researcher_config, get_rag_strategy_config
-from ..prompts import COLLECTION_SYNTHESIZER_PROMPT, get_prompt_spec
-from .deep_researcher import load_faiss_indexes
-from .metadata_researcher import ensure_metadata_index
+from ..agents.base_agents.rag_agent import RagAgent
+from ..agents.config import get_deep_researcher_config, get_rag_strategy_config
+from ..agents.prompts import COLLECTION_SYNTHESIZER_PROMPT, get_prompt_spec
+from ..retrieval.faiss_loader import load_faiss_indexes
+from ..retrieval.metadata_index import ensure_metadata_index
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def _get_collection_strategy() -> dict:
     return strategy
 
 
-def _retrieve_collection_context(
+async def _retrieve_collection_context(
     agent: RagAgent,
     user_message: str,
     user_id: str,
@@ -49,12 +49,12 @@ def _retrieve_collection_context(
 ) -> Tuple[str, Optional[str]]:
     strategy = _get_collection_strategy()
 
-    load_faiss_indexes(agent=agent, user_id=user_id, collection_id=collection_id)
+    await load_faiss_indexes(agent=agent, user_id=user_id, collection_id=collection_id)
     rag_context = agent.retrieve(user_message=user_message, strategy=strategy)
     if rag_has_context(rag_context):
         return rag_context, FULL_TEXT_CONTEXT
 
-    ensure_metadata_index(agent=agent, user_id=user_id, collection_id=collection_id)
+    await ensure_metadata_index(agent=agent, user_id=user_id, collection_id=collection_id)
     rag_context = agent.retrieve(user_message=user_message, strategy=strategy)
     if rag_has_context(rag_context):
         return rag_context, METADATA_CONTEXT
@@ -81,7 +81,7 @@ def _build_prompt_input(
     )
 
 
-def collection_synthesize(state):
+async def collection_synthesize(state):
     user_message = state["user_message"]
     history = state.get("history", [])
     user_id = state.get("user_id")
@@ -119,7 +119,7 @@ def collection_synthesize(state):
     config = get_deep_researcher_config()
     agent = RagAgent(**config, system_prompt=COLLECTION_SYNTHESIZER_PROMPT)
 
-    rag_context, context_source = _retrieve_collection_context(
+    rag_context, context_source = await _retrieve_collection_context(
         agent=agent,
         user_message=user_message,
         user_id=user_id,

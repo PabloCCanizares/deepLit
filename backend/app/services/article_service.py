@@ -2,9 +2,7 @@
 Servicio de Artículos.
 """
 import re
-import shutil
-from datetime import datetime
-from pathlib import Path
+from datetime import datetime, timezone
 from app.repositories import ArticleRepository
 from app.models import QueryBody
 from app.core import NotFoundError, AuthorizationError
@@ -206,43 +204,10 @@ class ArticleService:
         self.article_repo = ArticleRepository()
         # Importar aquí para evitar circular import
         from app.services.pdf_service import PdfService
+        from app.services.storage_service import StorageService
         self.pdf_service = PdfService()
+        self.storage_service = StorageService()
     
-    async def create_from_pdf_features(
-        self,
-        pdf_id: str,
-        user_id: str,
-        features: Dict,
-        collection_id: Optional[str] = None
-    ) -> str:
-        """
-        Crear artículo a partir de características extraídas.
-        """
-        # Generar ID del artículo
-        article_id = f"article_{pdf_id}"
-        
-        # Normalizar features para rellenar campos faltantes
-        normalized_features = normalize_article(features)
-        
-        # Preparar datos del artículo
-        article_dict = {
-            "_id": article_id,
-            "id_user": user_id,
-            "source": "pdf",
-            "id_pdf": pdf_id,
-            **normalized_features  # title, abstract, year, keywords, etc.
-        }
-
-        if collection_id:
-            # Aquí asignamos una lista que contiene el ID al nuevo campo "collection_ids"
-            article_dict["collection_ids"] = [collection_id]
-
-        
-        # Guardar en base de datos
-        result_id = await self.article_repo.create(article_dict)
-                
-        return result_id
-
     async def create_from_excel_row(
         self,
         excel_id: str,
@@ -293,6 +258,9 @@ class ArticleService:
             "id_pdf": pdf_id,
             "title": filename,
             "status": "processing",
+            "error_message": None,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
             "year": None,
             "category": None,
             "pages": None,
@@ -314,11 +282,40 @@ class ArticleService:
         Actualizar artículo después del procesamiento en background.
         Cambia status a 'ready' e inyecta la metadata extraída.
         """
+        article = await self.article_repo.find_by_id(article_id)
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para modificar este artículo")
+
         normalized = normalize_article(features)
         normalized["status"] = "ready"
+        normalized["error_message"] = None
+        normalized["updated_at"] = datetime.now(timezone.utc)
         
         updated = await self.article_repo.update(article_id, normalized)
         return updated
+
+    async def mark_processing_error(
+        self,
+        article_id: str,
+        user_id: str,
+        error_message: str,
+    ) -> Optional[Dict]:
+        article = await self.article_repo.find_by_id(article_id)
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para modificar este artículo")
+
+        return await self.article_repo.update(
+            article_id,
+            {
+                "status": "error",
+                "error_message": error_message,
+                "updated_at": datetime.now(timezone.utc),
+            },
+        )
     
     async def force_delete(self, article_id: str) -> bool:
         """
@@ -580,13 +577,7 @@ class ArticleService:
         Obtener artÃ­culos en cola de procesamiento (status='processing' o 'error').
         Retorna lista ordenada por fecha de creaciÃ³n (mÃ¡s reciente primero).
         """
-        queue_items = await self.article_repo.collection.find(
-            {
-                "id_user": user_id,
-                "status": {"$in": ["processing", "error"]}
-            }
-        ).sort("created_at", -1).to_list(length=None)
-        
+        queue_items = await self.article_repo.get_processing_articles(user_id)
         return queue_items if queue_items else []
     
     async def delete(self, article_id: str, user_id: str) -> bool:
@@ -622,20 +613,11 @@ class ArticleService:
             try:
                 await self.pdf_service.delete_pdf_by_id(pdf_id, user_id)
             except NotFoundError:
-                print(
-                    f"Advertencia: se omite borrado de PDF inexistente "
-                    f"para article_id={article_id}, pdf_id={pdf_id}"
-                )
+                pass
         
         # Eliminar Ã­ndice FAISS si existe
-        try:
-            faiss_index_path = Path(__file__).resolve().parents[2] / "storage" / "faiss_indexes" / str(user_id) / article_id
-            if faiss_index_path.exists():
-                shutil.rmtree(faiss_index_path, ignore_errors=True)
-                print(f"Ãndice FAISS eliminado: {faiss_index_path}")
-        except Exception as e:
-            print(f"Advertencia: Error al eliminar Ã­ndice FAISS: {e}")
-            # Continuamos de todas formas
+        faiss_index_path = self.storage_service.get_faiss_article_dir(user_id=user_id, article_id=article_id)
+        self.storage_service.delete_directory(faiss_index_path)
         
         # Eliminar registro del artÃ­culo en BD
         deleted = await self.article_repo.delete(article_id)

@@ -1,11 +1,7 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from pymongo import MongoClient
 from langchain_ollama import OllamaEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from app.config import settings
-
-CLIENT = MongoClient("mongodb://localhost:27017/")
-DATABASE = "deeplit"
 
 DEFAULT_TEXT_SPLITTER = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300, add_start_index=True)
 DEFAULT_OFFLINE_EMBBEDING_MODEL = "nomic-embed-text"
@@ -41,14 +37,6 @@ def get_model_name(offline=None):
     else:
         return "gemini-2.0-flash"
 
-def get_cleaner_config():
-    offline = settings.OFFLINE
-    return {
-        "modelo": get_model_name(),
-        "temperatura": 0,
-        "offline": offline
-    }
-
 def get_chatbot_config():
     offline = settings.OFFLINE
     return {
@@ -76,7 +64,6 @@ def get_master_config():
             'deep_researcher',
             'web_searcher',
             'collection_synthesizer',
-            'nexus',
         ],
         "offline": offline
     }
@@ -110,18 +97,6 @@ def get_deep_researcher_config(offline=None):
         "embedding_model": get_embeddings(offline),
         "offline": offline
     }
-
-def get_pdf_processor_config(offline=None):
-    if offline is None:
-        offline = settings.OFFLINE
-    return {
-        "modelo": get_model_name(offline),
-        "temperatura": 0,
-        "text_splitter": DEFAULT_TEXT_SPLITTER,
-        "embedding_model": get_embeddings(offline),
-        "offline": offline
-    }
-
 
 def get_rag_strategy_config():
     return DEFAULT_RAG_STRATEGY.copy()

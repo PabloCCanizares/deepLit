@@ -1,6 +1,6 @@
-from ..base_agents.language_agent import LanguageAgent
-from ..prompts import CHATBOT_PROMPT
-from ..config import get_chatbot_config
+from ..agents.base_agents.language_agent import LanguageAgent
+from ..agents.prompts import CHATBOT_PROMPT
+from ..agents.config import get_chatbot_config
 
 def chat_bot(state):
     config = get_chatbot_config()

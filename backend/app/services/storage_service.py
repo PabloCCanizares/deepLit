@@ -7,14 +7,16 @@ Ventajas:
 - Fácil migrar a cloud storage (S3, Azure, etc.) en el futuro
 - Código más limpio y mantenible
 """
-import os
+import logging
+import shutil
 from pathlib import Path
-from typing import Literal, BinaryIO
+from typing import Literal
 from app.config import settings
 
 
 # Tipos de almacenamiento disponibles
-StorageLocation = Literal["uploads", "profiles", "collections"]
+StorageLocation = Literal["uploads", "profiles", "collections", "faiss_indexes", "faiss_metadata"]
+logger = logging.getLogger(__name__)
 
 
 class StorageService:
@@ -26,6 +28,8 @@ class StorageService:
     ├── uploads/      # PDFs permanentes de usuarios
     ├── profiles/     # Fotos de perfil de usuarios
     ├── collections/  # Imágenes de colecciones
+    ├── faiss_indexes/   # Índices FAISS por artículo
+    └── faiss_metadata/  # Índices FAISS construidos desde metadatos
     """
     
     def __init__(self):
@@ -39,6 +43,8 @@ class StorageService:
             "uploads": self.base_dir / settings.UPLOADS_DIR,
             "profiles": self.base_dir / settings.PROFILES_DIR,
             "collections": self.base_dir / settings.COLLECTIONS_DIR,
+            "faiss_indexes": self.base_dir / "faiss_indexes",
+            "faiss_metadata": self.base_dir / "faiss_metadata",
         }
         
         # Crear todos los directorios al inicializar
@@ -93,11 +99,11 @@ class StorageService:
         try:
             if file_path.exists():
                 file_path.unlink()
-                print(f"Archivo {filename} eliminado correctamente")
+                logger.info("Archivo eliminado correctamente: %s", filename)
                 return True
             return False
-        except Exception as e:
-            print(f"Error al eliminar archivo {filename}: {e}")
+        except Exception as exc:
+            logger.warning("Error al eliminar archivo %s: %s", filename, exc)
             return False
     
     def get_path(self, filename: str, storage_location: StorageLocation = "uploads") -> Path:
@@ -106,3 +112,35 @@ class StorageService:
         """
         return self.storage_paths[storage_location] / filename
 
+    def get_directory(self, storage_location: StorageLocation) -> Path:
+        """
+        Obtiene la ruta base de una ubicación de almacenamiento.
+        """
+        return self.storage_paths[storage_location]
+
+    def get_faiss_article_dir(self, user_id: str, article_id: str) -> Path:
+        """
+        Obtiene la carpeta del índice FAISS de un artículo.
+        """
+        return self.get_directory("faiss_indexes") / str(user_id) / str(article_id)
+
+    def get_faiss_metadata_dir(self, user_id: str, collection_id: str | None = None) -> Path:
+        """
+        Obtiene la carpeta del índice FAISS construido desde metadatos.
+        """
+        scope_dir = collection_id or "__all__"
+        return self.get_directory("faiss_metadata") / str(user_id) / scope_dir
+
+    def delete_directory(self, directory: Path) -> bool:
+        """
+        Elimina un directorio completo si existe.
+        """
+        try:
+            if directory.exists():
+                shutil.rmtree(directory, ignore_errors=True)
+                logger.info("Directorio eliminado correctamente: %s", directory)
+                return True
+            return False
+        except Exception as exc:
+            logger.warning("Error al eliminar directorio %s: %s", directory, exc)
+            return False

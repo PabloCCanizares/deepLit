@@ -1,7 +1,7 @@
 """
 Servicio de autenticación
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.auth import hash_password, verify_password, create_access_token
 from app.core import AuthenticationError, ConflictError
 from app.repositories import UserRepository
@@ -32,7 +32,7 @@ class AuthService:
             "degree": "",
             "university": "",
             "experience": "",
-            "created_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc)
         }
         
         user_id = await self.user_repo.create(user_dict)
@@ -76,5 +76,4 @@ class AuthService:
                 "experience": user.get("experience", "")
             }
         }
-
 

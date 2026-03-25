@@ -1,6 +1,6 @@
-from ..base_agents.decision_agent import DecisionAgent
-from ..prompts import MASTER_PROMPT
-from ..config import get_master_config
+from ..agents.base_agents.decision_agent import DecisionAgent
+from ..agents.prompts import MASTER_PROMPT
+from ..agents.config import get_master_config
 
 def master_decider(state):
     config = get_master_config()

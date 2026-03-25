@@ -42,6 +42,4 @@ async def get_dashboard_stats(
     """
     Obtener estadísticas del dashboard del usuario autenticado.
     """
-    print("collection_dashboard:", collection_id)
     return await controller.get_dashboard_stats(current_user, collection_id)
-

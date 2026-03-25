@@ -26,6 +26,9 @@ from app.models.user import (
 from app.models.pdf import (
     PdfUpload
 )
+from app.models.pdf_processing import (
+    PdfMetadata
+)
 
 # Excel models
 from app.models.excel import (
@@ -66,6 +69,7 @@ __all__ = [
     
     # PDF
     "PdfUpload",
+    "PdfMetadata",
     "ExcelUpload",
     
     # Article
@@ -83,4 +87,3 @@ __all__ = [
     # Knowledge Graph
     "KnowledgeGraphBackfillRequest",
 ]
-
