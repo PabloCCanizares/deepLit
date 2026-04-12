@@ -248,7 +248,7 @@ export const articlesAPI = {
   },
 
   // SSE: subscribe to real-time article events
-  subscribeEvents: ({ onArticleReady, onArticleError, onError } = {}) => {
+  subscribeEvents: ({ onArticleReady, onArticleError, onScreeningReady, onScreeningError, onError } = {}) => {
     const token = getAuthToken();
     const url = `${API_BASE}/articles/events?token=${encodeURIComponent(token || '')}`;
 
@@ -272,6 +272,24 @@ export const articlesAPI = {
       }
     });
 
+    eventSource.addEventListener('screening_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onScreeningReady) onScreeningReady(data);
+      } catch (err) {
+        console.error('Error parsing screening_ready event:', err);
+      }
+    });
+
+    eventSource.addEventListener('screening_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onScreeningError) onScreeningError(data);
+      } catch (err) {
+        console.error('Error parsing screening_error event:', err);
+      }
+    });
+
     eventSource.onerror = (e) => {
       console.warn('SSE connection error, will auto-reconnect:', e);
       if (onError) onError(e);
@@ -281,6 +299,27 @@ export const articlesAPI = {
   },
 
 
+};
+
+export const screeningAPI = {
+  runCollection: async (collectionId, payload) => {
+    return apiFetch(`/screening/collections/${collectionId}/runs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listRuns: async (collectionId) => {
+    return apiFetch(`/screening/collections/${collectionId}/runs`, {
+      method: 'GET',
+    });
+  },
+
+  getRunResults: async (runId) => {
+    return apiFetch(`/screening/runs/${runId}/results`, {
+      method: 'GET',
+    });
+  },
 };
 
 

@@ -64,6 +64,14 @@ function Sidebar({ isOpen, onClose }) {
               <span>Zona de Trabajo</span>
             </Link>
             <Link 
+              to="/screening" 
+              className={`sidebarLink ${location.pathname === '/screening' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-filter"></i>
+              <span>Screening</span>
+            </Link>
+            <Link 
               to="/openalex" 
               className={`sidebarLink ${location.pathname === '/openalex' ? 'active' : ''}`}
               onClick={onClose}

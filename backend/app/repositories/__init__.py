@@ -5,6 +5,8 @@ from app.repositories.excel_repository import ExcelRepository
 from app.repositories.article_repository import ArticleRepository
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.job_repository import JobRepository
+from app.repositories.screening_decision_repository import ScreeningDecisionRepository
+from app.repositories.screening_run_repository import ScreeningRunRepository
 __all__ = [
     "UserRepository",
     "PdfRepository",
@@ -12,4 +14,6 @@ __all__ = [
     "ArticleRepository",
     "CollectionRepository",
     "JobRepository",
+    "ScreeningDecisionRepository",
+    "ScreeningRunRepository",
 ]

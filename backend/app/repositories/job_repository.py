@@ -18,9 +18,6 @@ class JobRepository:
         result = await self.collection.insert_one(job_data)
         return job_data.get("_id") or str(result.inserted_id)
 
-    async def find_by_id(self, job_id: str) -> Optional[dict]:
-        return await self.collection.find_one({"_id": job_id})
-
     async def claim_next(self, job_type: Optional[str] = None) -> Optional[dict]:
         filter_query = {"status": "queued"}
         if job_type:

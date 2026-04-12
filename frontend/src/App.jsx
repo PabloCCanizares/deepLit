@@ -16,6 +16,7 @@ import Profile from './pages/Profile'
 import OpenAlex from './pages/OpenAlex'
 import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
+import Screening from './pages/Screening'
 import PublicPreview from './pages/PublicPreview'
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
                 <Route path="settings" element={<Navigate to="/profile" replace />} />
 
                 <Route path="search" element={<CollectionArticles />} />
+                <Route path="screening" element={<Screening />} />
 
                 <Route path="openalex" element={<OpenAlex />} />
                 <Route path="openalex/:id" element={<OpenAlexView />} />

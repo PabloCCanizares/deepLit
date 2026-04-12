@@ -29,6 +29,11 @@ from app.models.pdf import (
 from app.models.pdf_processing import (
     PdfMetadata
 )
+from app.models.research_artifacts import (
+    ScreeningDecisionData,
+    ScreeningRunCounts,
+    ScreeningRunData,
+)
 
 # Excel models
 from app.models.excel import (
@@ -46,6 +51,10 @@ from app.models.article import (
 from app.models.collection import (
     CollectionCreate,
     AddArticleToCollection
+)
+from app.models.screening import (
+    ScreeningRunRequest,
+    ScreeningDecisionLLMResult,
 )
 
 # AI Assistant models
@@ -71,6 +80,9 @@ __all__ = [
     "PdfUpload",
     "PdfMetadata",
     "ExcelUpload",
+    "ScreeningDecisionData",
+    "ScreeningRunCounts",
+    "ScreeningRunData",
     
     # Article
     "Pagination",
@@ -80,6 +92,8 @@ __all__ = [
     # Collection
     "CollectionCreate",
     "AddArticleToCollection",
+    "ScreeningRunRequest",
+    "ScreeningDecisionLLMResult",
 
     # AI Assistant
     "ChatRequest",

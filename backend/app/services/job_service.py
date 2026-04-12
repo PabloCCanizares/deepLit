@@ -8,6 +8,7 @@ from app.repositories import JobRepository
 
 
 PDF_PROCESSING_JOB = "process_pdf"
+COLLECTION_SCREENING_JOB = "screen_collection"
 
 
 class JobService:
@@ -19,6 +20,7 @@ class JobService:
         *,
         job_type: str,
         payload: dict,
+        user_id: str | None = None,
     ) -> str:
         created_at = datetime.now(timezone.utc)
         job_id = f"{job_type}_{created_at.strftime('%Y%m%d%H%M%S%f')}"
@@ -34,6 +36,8 @@ class JobService:
             "error_message": None,
             "payload": payload,
         }
+        if user_id:
+            job_dict["id_user"] = user_id
         return await self.job_repo.create(job_dict)
 
     async def enqueue_pdf_processing(
@@ -48,6 +52,7 @@ class JobService:
     ) -> str:
         return await self.enqueue(
             job_type=PDF_PROCESSING_JOB,
+            user_id=user_id,
             payload={
                 "pdf_id": pdf_id,
                 "article_id": article_id,
@@ -57,6 +62,30 @@ class JobService:
                 "collection_id": collection_id,
             },
         )
+
+    async def enqueue_collection_screening(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        collection_id: str,
+        research_question: str,
+        inclusion_criteria: list[str] | None = None,
+        exclusion_criteria: list[str] | None = None,
+    ) -> str:
+        return await self.enqueue(
+            job_type=COLLECTION_SCREENING_JOB,
+            user_id=user_id,
+            payload={
+                "user_id": user_id,
+                "run_id": run_id,
+                "collection_id": collection_id,
+                "research_question": research_question,
+                "inclusion_criteria": inclusion_criteria or [],
+                "exclusion_criteria": exclusion_criteria or [],
+            },
+        )
+
 
     async def claim_next(self, job_type: Optional[str] = None) -> Optional[dict]:
         return await self.job_repo.claim_next(job_type=job_type)

@@ -6,7 +6,13 @@ import logging
 from typing import Optional
 
 from app.services.article_service import ArticleService
-from app.services.job_service import JobService, PDF_PROCESSING_JOB
+from app.services.screening_run_service import ScreeningRunService
+from app.services.collection_screening_service import CollectionScreeningService
+from app.services.job_service import (
+    JobService,
+    PDF_PROCESSING_JOB,
+    COLLECTION_SCREENING_JOB,
+)
 from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.pdf_processing_service import PdfProcessingService
 from app.services.sse_manager import sse_manager
@@ -20,11 +26,14 @@ class JobWorker:
         self.poll_interval_seconds = poll_interval_seconds
         self.job_service = JobService()
         self.article_service = ArticleService()
+        self.screening_run_service = ScreeningRunService()
+        self.collection_screening_service = CollectionScreeningService()
         self.knowledge_graph_service = KnowledgeGraphService()
         self.pdf_processing_service = PdfProcessingService()
         self.storage_service = StorageService()
         self.handlers = {
             PDF_PROCESSING_JOB: self._process_pdf_job,
+            COLLECTION_SCREENING_JOB: self._process_screening_job,
         }
         self._task: Optional[asyncio.Task] = None
         self._running = False
@@ -38,7 +47,7 @@ class JobWorker:
 
         recovered = await self.job_service.requeue_processing_jobs()
         if recovered:
-            logger.info("Reencolados %s jobs PDF que quedaron en processing", recovered)
+            logger.info("Reencolados %s jobs que quedaron en processing", recovered)
 
         self._running = True
         self._task = asyncio.create_task(self.run(), name="deeplit-job-worker")
@@ -187,6 +196,97 @@ class JobWorker:
                     "_id": article_id,
                     "title": filename,
                     "status": "error",
+                    "error_message": str(exc),
+                },
+            )
+
+    async def _process_screening_job(self, job: dict) -> None:
+        payload = job.get("payload", {})
+        job_id = str(job.get("_id"))
+        user_id = payload.get("user_id")
+        run_id = payload.get("run_id")
+        collection_id = payload.get("collection_id")
+        research_question = payload.get("research_question")
+        inclusion_criteria = payload.get("inclusion_criteria") or []
+        exclusion_criteria = payload.get("exclusion_criteria") or []
+
+        try:
+            logger.info(
+                "Procesando job screening %s para collection_id=%s",
+                job_id,
+                collection_id,
+            )
+
+            await self.screening_run_service.mark_processing(
+                run_id=run_id,
+                user_id=user_id,
+            )
+
+            summary = await self.collection_screening_service.run_collection_screening(
+                run_id=run_id,
+                user_id=user_id,
+                collection_id=collection_id,
+                research_question=research_question,
+                inclusion_criteria=inclusion_criteria,
+                exclusion_criteria=exclusion_criteria,
+            )
+
+            await self.job_service.mark_completed(job_id)
+            await self.screening_run_service.mark_completed(
+                run_id=run_id,
+                user_id=user_id,
+                total_articles=summary["total_articles"],
+                processed_articles=summary["processed_articles"],
+                counts=summary["counts"],
+            )
+
+            sse_manager.notify(
+                user_id,
+                "screening_ready",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "research_question": research_question,
+                    "status": "completed",
+                    "summary": summary,
+                },
+            )
+            logger.info("Job screening %s completado", job_id)
+        except Exception as exc:
+            logger.exception("Error procesando job screening %s", job_id)
+
+            try:
+                await self.job_service.mark_failed(job_id, str(exc))
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el job %s como failed",
+                    job_id,
+                    exc_info=True,
+                )
+
+            try:
+                await self.screening_run_service.mark_failed(
+                    run_id=run_id,
+                    user_id=user_id,
+                    error_message=str(exc),
+                )
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el run %s como failed",
+                    run_id,
+                    exc_info=True,
+                )
+
+            sse_manager.notify(
+                user_id,
+                "screening_error",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "research_question": research_question,
+                    "status": "failed",
                     "error_message": str(exc),
                 },
             )
