@@ -4,9 +4,10 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from langchain_community.vectorstores import FAISS
 
-from ..agents.base_agents.rag_agent import RagAgent
+from ..agents.base_agents.rag_engine import RagEngine
 from app.repositories import ArticleRepository
 from app.services.storage_service import StorageService
+from app.services.vector_index_service import VectorIndexService
 
 logger = logging.getLogger(__name__)
 _FAISS_SCOPE_CACHE: Dict[str, Dict[str, object]] = {}
@@ -74,7 +75,7 @@ def _enrich_store_metadata(store: FAISS, article_id: str, article_title: str) ->
         doc.metadata = metadata
 
 
-async def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection_id: Optional[str] = None) -> None:
+async def load_faiss_indexes(agent: RagEngine, user_id: Optional[str], collection_id: Optional[str] = None) -> None:
     """
     Carga indices FAISS solo del alcance del usuario/coleccion.
     Estructura esperada: storage/faiss_indexes/{user_id}/{article_id}/index.faiss
@@ -97,6 +98,7 @@ async def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection
         return
 
     article_titles = await _get_article_titles(allowed_article_ids)
+    vector_index_service = VectorIndexService(embedding_model=agent.embedding_model)
 
     scope_key = _scope_key(user_id=user_id, collection_id=collection_id)
     fingerprint = _build_fingerprint(index_dirs)
@@ -108,11 +110,7 @@ async def load_faiss_indexes(agent: RagAgent, user_id: Optional[str], collection
     merged_store = None
     for index_dir in index_dirs:
         try:
-            loaded_store = FAISS.load_local(
-                str(index_dir),
-                agent.embedding_model,
-                allow_dangerous_deserialization=True,
-            )
+            loaded_store = vector_index_service.load_index(str(index_dir))
             article_id = index_dir.name
             _enrich_store_metadata(
                 store=loaded_store,

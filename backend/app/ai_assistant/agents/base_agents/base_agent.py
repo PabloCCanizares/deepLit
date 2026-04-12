@@ -1,7 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from ..prompts import DEFAULT_SYSTEM_PROMPT
+from ...prompts import DEFAULT_SYSTEM_PROMPT
 from app.config import settings
 
 class BaseAgent:
@@ -21,6 +21,14 @@ class BaseAgent:
 
     def get_model(self):
         return self.llm
+
+    def invoke(self, prompt, web_search=False, structured_output=False):
+        result = self.get_model().invoke(prompt)
+        if structured_output:
+            return result.model_dump()
+        if web_search:
+            return result.text
+        return result.content
 
     def set_structured_output(self, esquema):
         self.llm = self.llm.with_structured_output(esquema)

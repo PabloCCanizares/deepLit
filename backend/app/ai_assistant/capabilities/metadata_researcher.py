@@ -1,10 +1,10 @@
-from ..agents.base_agents.rag_agent import RagAgent
-from ..agents.config import (
+from ..agents.base_agents.rag_engine import RagEngine
+from ..config import (
     get_metadata_config,
     get_rag_strategy_config,
 )
-from ..agents.prompts import METADATA_RESEARCHER
-from ..agents.prompts import get_prompt_spec
+from ..prompts import METADATA_RESEARCHER
+from ..prompts import get_prompt_spec
 from ..retrieval.metadata_index import ensure_metadata_index
 
 
@@ -19,7 +19,7 @@ def _build_prompt_input(user_message: str, history, rag_context: str) -> str:
 async def metadata_research(state):
     prompt_spec = get_prompt_spec("metadata_researcher")
     config = get_metadata_config()
-    agent = RagAgent(**config, system_prompt=METADATA_RESEARCHER)
+    agent = RagEngine(**config, system_prompt=METADATA_RESEARCHER)
 
     user_message = state["user_message"]
     history = state.get("history", [])

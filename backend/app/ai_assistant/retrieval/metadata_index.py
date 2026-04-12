@@ -6,9 +6,10 @@ from typing import Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 
-from ..agents.base_agents.rag_agent import RagAgent
+from ..agents.base_agents.rag_engine import RagEngine
 from app.repositories import ArticleRepository
 from app.services.storage_service import StorageService
+from app.services.vector_index_service import VectorIndexService
 
 logger = logging.getLogger(__name__)
 _METADATA_INDEX_CACHE: Dict[str, Dict[str, object]] = {}
@@ -108,10 +109,14 @@ async def load_metadata_documents(user_id: str, collection_id: Optional[str] = N
     return documents, signature
 
 
-async def ensure_metadata_index(agent: RagAgent, user_id: str, collection_id: Optional[str] = None) -> None:
+async def ensure_metadata_index(agent: RagEngine, user_id: str, collection_id: Optional[str] = None) -> None:
     scope_key = _scope_key(user_id=user_id, collection_id=collection_id)
     index_dir = _scope_index_dir(user_id=user_id, collection_id=collection_id)
     docs, signature = await load_metadata_documents(user_id=user_id, collection_id=collection_id)
+    vector_index_service = VectorIndexService(
+        embedding_model=agent.embedding_model,
+        text_splitter=agent.text_splitter,
+    )
 
     if not docs:
         agent.vector_store = None
@@ -124,12 +129,12 @@ async def ensure_metadata_index(agent: RagAgent, user_id: str, collection_id: Op
 
     signature_on_disk = _load_signature(index_dir)
     if (index_dir / "index.faiss").exists() and signature_on_disk == signature:
-        agent.vector_store = RagAgent.load_index(str(index_dir), agent.embedding_model)
+        agent.vector_store = vector_index_service.load_index(str(index_dir))
         _METADATA_INDEX_CACHE[scope_key] = {"signature": signature, "store": agent.vector_store}
         return
 
-    agent.process_documents(docs=docs)
-    agent.save_index(str(index_dir))
+    agent.vector_store = vector_index_service.index_documents(docs=docs)
+    vector_index_service.save_index(vector_store=agent.vector_store, save_path=str(index_dir))
     _save_signature(index_dir=index_dir, signature=signature, count=len(docs))
     _METADATA_INDEX_CACHE[scope_key] = {"signature": signature, "store": agent.vector_store}
     logger.info(

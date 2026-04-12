@@ -2,7 +2,7 @@ import logging
 
 from app.services.web_search_service import WebSearchService
 
-from ..agents.prompts import get_prompt_spec
+from ..prompts import get_prompt_spec
 
 logger = logging.getLogger(__name__)
 

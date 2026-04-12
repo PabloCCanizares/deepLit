@@ -8,8 +8,8 @@ from typing import Optional
 from langchain_community.document_loaders.parsers import RapidOCRBlobParser
 from langchain_community.document_loaders.pdf import PyMuPDFLoader
 
-from app.ai_assistant.agents.base_agents.rag_agent import RagAgent
-from app.ai_assistant.agents.config import (
+from app.ai_assistant.agents.base_agents.base_agent import BaseAgent
+from app.ai_assistant.config import (
     DEFAULT_TEXT_SPLITTER,
     get_embeddings,
     get_model_name,
@@ -17,6 +17,7 @@ from app.ai_assistant.agents.config import (
 from app.config import settings
 from app.models import PdfMetadata
 from app.services.storage_service import StorageService
+from app.services.vector_index_service import VectorIndexService
 
 
 PDF_PROCESSOR_PROMPT = """
@@ -63,7 +64,16 @@ class PdfProcessingService:
         offline: Optional[bool] = None,
     ) -> dict:
         config = _build_pdf_processing_config(offline)
-        agent = RagAgent(**config, system_prompt=PDF_PROCESSOR_PROMPT)
+        agent = BaseAgent(
+            modelo=config["modelo"],
+            temperatura=config["temperatura"],
+            offline=config["offline"],
+            system_prompt=PDF_PROCESSOR_PROMPT,
+        )
+        vector_index_service = VectorIndexService(
+            embedding_model=config["embedding_model"],
+            text_splitter=config["text_splitter"],
+        )
         agent.set_structured_output(PdfMetadata)
 
         docs = self.load_document(file_path=file_path)
@@ -85,11 +95,11 @@ class PdfProcessingService:
             metadata["article_title"] = article_title
             doc.metadata = metadata
 
-        agent.process_documents(docs=docs)
+        vector_store = vector_index_service.index_documents(docs=docs)
 
         if article_id and user_id:
             faiss_index_path = self.storage_service.get_faiss_article_dir(user_id=user_id, article_id=article_id)
-            agent.save_index(str(faiss_index_path))
+            vector_index_service.save_index(vector_store=vector_store, save_path=str(faiss_index_path))
 
         agent.print_agent_execution(agent="PDF PROCESSOR", input=prompt, output=output)
         return {"docs": docs, "metadata": output}

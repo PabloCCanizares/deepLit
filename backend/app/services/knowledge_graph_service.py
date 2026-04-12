@@ -5,8 +5,8 @@ from typing import Dict, List, Optional
 from langchain_core.documents import Document
 from pymongo import MongoClient
 
-from app.ai_assistant.agents.base_agents.language_agent import LanguageAgent
-from app.ai_assistant.agents.config import get_knowledge_graph_config
+from app.ai_assistant.agents.base_agents.base_agent import BaseAgent
+from app.ai_assistant.config import get_knowledge_graph_config
 from app.ai_assistant.knowledge_graph.schema import (
     KG_NODE_TYPES,
     KG_RELATIONSHIP_SCHEMA,
@@ -56,7 +56,7 @@ class KnowledgeGraphService:
         from langchain_experimental.graph_transformers import LLMGraphTransformer
 
         config = get_knowledge_graph_config()
-        llm = LanguageAgent(**config, system_prompt="")
+        llm = BaseAgent(**config, system_prompt="")
         return LLMGraphTransformer(
             llm=llm.get_model(),
             allowed_nodes=KG_NODE_TYPES,

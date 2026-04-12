@@ -1,13 +1,13 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
-from ..agents.base_agents.rag_agent import RagAgent
-from ..agents.config import (
+from ..agents.base_agents.rag_engine import RagEngine
+from ..config import (
     get_deep_researcher_config,
     get_rag_strategy_config,
 )
-from ..agents.prompts import DEEP_RESEARCHER_PROMPT
-from ..agents.prompts import get_prompt_spec
+from ..prompts import DEEP_RESEARCHER_PROMPT
+from ..prompts import get_prompt_spec
 from ..retrieval.faiss_loader import load_faiss_indexes
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ LLM_TIMEOUT_SECONDS = 45
 async def deep_research(state):
     prompt_spec = get_prompt_spec("deep_researcher")
     config = get_deep_researcher_config()
-    agent = RagAgent(**config, system_prompt=DEEP_RESEARCHER_PROMPT)
+    agent = RagEngine(**config, system_prompt=DEEP_RESEARCHER_PROMPT)
 
     user_message = state["user_message"]
     history = state.get("history", [])
