@@ -7,6 +7,7 @@ Reutiliza la base de RAG ya existente:
 """
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import logging
+import re
 from typing import Optional, Tuple
 
 from ..agents.base_agents.rag_engine import RagEngine
@@ -79,6 +80,22 @@ def _build_prompt_input(
         f"Historial relevante: {history}\n"
         f"Fuente principal disponible: {source_label}\n\n"
     )
+
+
+def _normalize_output(raw_output: str) -> str:
+    if not raw_output:
+        return raw_output
+
+    cleaned_lines = []
+    for line in str(raw_output).replace("\r\n", "\n").split("\n"):
+        normalized = line.rstrip()
+        normalized = re.sub(r"^\s{0,3}#{1,6}\s*", "", normalized)
+        normalized = normalized.replace("**", "")
+        cleaned_lines.append(normalized)
+
+    cleaned_text = "\n".join(cleaned_lines)
+    cleaned_text = re.sub(r"\n{3,}", "\n\n", cleaned_text)
+    return cleaned_text.strip()
 
 
 async def collection_synthesize(state):
@@ -165,6 +182,8 @@ async def collection_synthesize(state):
             "porque no encontre suficiente texto completo indexado en la coleccion.\n\n"
             f"{output}"
         )
+
+    output = _normalize_output(output)
 
     new_history = agent.create_history_entry(user_message, output)
     agent.print_agent_execution(agent="COLLECTION SYNTHESIZER", input=prompt_final, output=output)

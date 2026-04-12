@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, screeningAPI } from '../api/api'
+import { articlesAPI, collectionsAPI, screeningAPI } from '../api/api'
+import CreateCollectionModal from '../components/collections/CreateCollectionModal'
 import { useCollection } from '../context/CollectionContext'
 
 import '../styles/App.css'
@@ -22,17 +24,14 @@ const DECISION_ORDER = {
 
 const DECISION_DISPLAY_LABELS = {
   include: 'Incluido',
-  review: 'Revisar',
+  review: 'En revision',
   exclude: 'Excluido',
 }
 
-const SOURCE_TYPE_LABELS = {
-  full_text: 'Texto completo',
-  metadata: 'Metadatos',
-}
-
-function formatSourceType(sourceType) {
-  return SOURCE_TYPE_LABELS[sourceType] || 'Contexto mixto'
+const DECISION_COLLECTION_SUFFIX = {
+  include: 'incluidos',
+  review: 'en revision',
+  exclude: 'excluidos',
 }
 
 function formatDecision(decision) {
@@ -54,8 +53,14 @@ function formatArticleFallback(articleId) {
   return normalized || String(articleId)
 }
 
+function buildCollectionName(baseName, decisionLabel) {
+  const rawName = `${baseName || 'Coleccion'} - ${decisionLabel}`
+  return rawName.length > 100 ? rawName.slice(0, 100).trim() : rawName
+}
+
 function Screening() {
-  const { selectedCollectionId, collections } = useCollection()
+  const navigate = useNavigate()
+  const { selectedCollectionId, collections, refreshCollections } = useCollection()
 
   const [runs, setRuns] = useState([])
   const [selectedRunId, setSelectedRunId] = useState(null)
@@ -69,8 +74,18 @@ function Screening() {
   const [resultsError, setResultsError] = useState(null)
 
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false)
+  const [showDeleteRunModal, setShowDeleteRunModal] = useState(false)
+  const [runToDeleteId, setRunToDeleteId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [creatingCollection, setCreatingCollection] = useState(false)
+  const [deletingRun, setDeletingRun] = useState(false)
+  const [updatingResultId, setUpdatingResultId] = useState(null)
   const [notification, setNotification] = useState('')
+  const [collectionFormData, setCollectionFormData] = useState({
+    name: '',
+    description: '',
+  })
   const [formData, setFormData] = useState({
     researchQuestion: '',
     inclusionCriteria: '',
@@ -100,6 +115,8 @@ function Screening() {
     })
   }, [decisionFilter, results])
 
+  const filteredCount = filteredResults.length
+
   useEffect(() => {
     if (!notification) return undefined
     const timer = setTimeout(() => setNotification(''), 4000)
@@ -112,6 +129,7 @@ function Screening() {
       setSelectedRunId(null)
       setSelectedRun(null)
       setResults([])
+      setRunToDeleteId(null)
       return undefined
     }
 
@@ -275,6 +293,153 @@ function Screening() {
     }
   }
 
+  const handleOpenArticle = (articleId) => {
+    if (!articleId) return
+
+    navigate(`/articles/${encodeURIComponent(articleId)}`, {
+      state: {
+        from: 'screening',
+        collectionId: selectedCollectionId,
+        runId: selectedRunId,
+      },
+    })
+  }
+
+  const handleCreateCollectionFromResults = async () => {
+    if (!selectedCollectionId || !selectedRun || decisionFilter === 'all' || filteredResults.length === 0) {
+      return
+    }
+
+    const decisionLabel = DECISION_LABELS[decisionFilter]
+    const decisionSuffix = DECISION_COLLECTION_SUFFIX[decisionFilter]
+    const newCollectionName = buildCollectionName(collectionName, decisionLabel)
+
+    setCollectionFormData({
+      name: newCollectionName,
+      description: `Coleccion generada desde el screening "${selectedRun.research_question}" con articulos ${decisionSuffix}.`,
+    })
+    setShowCreateCollectionModal(true)
+  }
+
+  const handleConfirmCreateCollectionFromResults = async (collectionData) => {
+    if (
+      !selectedCollectionId ||
+      !selectedRun ||
+      decisionFilter === 'all' ||
+      filteredResults.length === 0 ||
+      creatingCollection
+    ) {
+      return
+    }
+
+    const newCollectionName = (collectionData?.name || '').trim()
+    const newCollectionDescription = (collectionData?.description || '').trim()
+    const collectionImage = collectionData?.image || null
+
+    if (!newCollectionName) {
+      setNotification('Introduce un nombre para la coleccion')
+      return
+    }
+
+    try {
+      setCreatingCollection(true)
+
+      const response = await collectionsAPI.create({
+        name: newCollectionName,
+        description: newCollectionDescription,
+        color: '#3B82F6',
+        image: collectionImage,
+      })
+
+      const createdCollectionId = response?.data?._id
+      if (!createdCollectionId) {
+        throw new Error('No se pudo crear la coleccion')
+      }
+
+      await Promise.all(
+        filteredResults.map((item) => collectionsAPI.addArticle(createdCollectionId, item.article_id))
+      )
+
+      await refreshCollections()
+      setShowCreateCollectionModal(false)
+      setNotification(`Coleccion "${newCollectionName}" creada correctamente`)
+    } catch (err) {
+      setNotification(err.message || 'Error al crear la coleccion desde los resultados')
+    } finally {
+      setCreatingCollection(false)
+    }
+  }
+
+  const handleDeleteSelectedRun = async () => {
+    if (!runToDeleteId || deletingRun) return
+
+    const deletingSelectedRun = runToDeleteId === selectedRunId
+
+    try {
+      setDeletingRun(true)
+      await screeningAPI.deleteRun(runToDeleteId)
+      setShowDeleteRunModal(false)
+      setRunToDeleteId(null)
+
+      if (deletingSelectedRun) {
+        setSelectedRun(null)
+        setResults([])
+      }
+
+      await loadRuns({ preserveSelection: !deletingSelectedRun })
+      setNotification('Screening eliminado correctamente')
+    } catch (err) {
+      setNotification(err.message || 'Error al eliminar el screening')
+    } finally {
+      setDeletingRun(false)
+    }
+  }
+
+  const handleMoveReviewResult = async (item, nextDecision) => {
+    if (!selectedRunId || !item?.article_id || updatingResultId) return
+
+    try {
+      setUpdatingResultId(item.article_id)
+      const response = await screeningAPI.updateRunResult(selectedRunId, item.article_id, {
+        decision: nextDecision,
+        reason:
+          nextDecision === 'include'
+            ? 'Decision ajustada manualmente a incluido desde Screening.'
+            : 'Decision ajustada manualmente a excluido desde Screening.',
+      })
+
+      const updatedRun = response?.data?.run || null
+      const updatedResult = response?.data?.result || null
+
+      if (updatedRun) {
+        setSelectedRun(updatedRun)
+        setRuns((prev) =>
+          prev.map((run) => (run._id === updatedRun._id ? updatedRun : run))
+        )
+      }
+
+      if (updatedResult) {
+        setResults((prev) =>
+          prev.map((currentItem) =>
+            currentItem.article_id === item.article_id ? updatedResult : currentItem
+          )
+        )
+      } else {
+        await loadRunResults(selectedRunId)
+      }
+
+      setNotification(
+        nextDecision === 'include'
+          ? 'Articulo movido a incluidos'
+          : 'Articulo movido a excluidos'
+      )
+    } catch (err) {
+      setNotification(err.message || 'Error al actualizar la decision del articulo')
+    } finally {
+      setUpdatingResultId(null)
+    }
+  }
+
   if (!selectedCollectionId) {
     return (
       <div className="page-container collection-empty-state-page">
@@ -301,7 +466,7 @@ function Screening() {
             <div className="header-stats">
               <div className="stat-item">
                 <span className="stat-number">{totalRuns}</span>
-                <span className="stat-label">Runs</span>
+                <span className="stat-label">Ejecuciones</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
@@ -311,7 +476,7 @@ function Screening() {
               <div className="stat-divider"></div>
               <div className="stat-item">
                 <span className="stat-number">{completedRuns}</span>
-                <span className="stat-label">Completados</span>
+                <span className="stat-label">Finalizados</span>
               </div>
             </div>
           </div>
@@ -407,8 +572,10 @@ function Screening() {
         <div className="screening-layout">
           <aside className="screening-runs-panel">
             <div className="screening-panel-header">
-              <h3>Runs guardados</h3>
-              <span>{runs.length}</span>
+              <div className="screening-panel-header-main">
+                <h3>Ejecuciones guardadas</h3>
+                <span>{runs.length}</span>
+              </div>
             </div>
 
             {runsError && <div className="screening-panel-error">{runsError}</div>}
@@ -422,23 +589,46 @@ function Screening() {
 
             <div className="screening-runs-list">
               {runs.map((run) => (
-                <button
+                <article
                   key={run._id}
-                  type="button"
                   className={`screening-run-card ${selectedRunId === run._id ? 'active' : ''}`}
                   onClick={() => setSelectedRunId(run._id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setSelectedRunId(run._id)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="screening-run-card-top">
                     <span className={`screening-status-badge ${run.status || 'queued'}`}>{run.status || 'queued'}</span>
-                    <span className="screening-run-date">{formatDateTime(run.created_at)}</span>
+                    <div className="screening-run-card-meta">
+                      <span className="screening-run-date">{formatDateTime(run.created_at)}</span>
+                      <button
+                        type="button"
+                        className="screening-run-card-delete"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setRunToDeleteId(run._id)
+                          setShowDeleteRunModal(true)
+                        }}
+                        disabled={deletingRun}
+                        aria-label={`Eliminar screening ${run.research_question}`}
+                        title="Eliminar screening"
+                      >
+                        <i className={`fas ${deletingRun && runToDeleteId === run._id ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
+                      </button>
+                    </div>
                   </div>
                   <h4>{run.research_question}</h4>
                   <div className="screening-run-counts">
-                    <span className="include">{run.counts?.include || 0} in</span>
-                    <span className="review">{run.counts?.review || 0} review</span>
-                    <span className="exclude">{run.counts?.exclude || 0} out</span>
+                    <span className="include">{run.counts?.include || 0} incluidos</span>
+                    <span className="review">{run.counts?.review || 0} revision</span>
+                    <span className="exclude">{run.counts?.exclude || 0} excluidos</span>
                   </div>
-                </button>
+                </article>
               ))}
             </div>
           </aside>
@@ -472,15 +662,15 @@ function Screening() {
                   <div className="screening-detail-stats">
                     <div className="screening-metric include">
                       <strong>{activeCounts.include || 0}</strong>
-                      <span>Include</span>
+                      <span>Incluidos</span>
                     </div>
                     <div className="screening-metric review">
                       <strong>{activeCounts.review || 0}</strong>
-                      <span>Review</span>
+                      <span>Revision</span>
                     </div>
                     <div className="screening-metric exclude">
                       <strong>{activeCounts.exclude || 0}</strong>
-                      <span>Exclude</span>
+                      <span>Excluidos</span>
                     </div>
                   </div>
                 </div>
@@ -501,6 +691,24 @@ function Screening() {
                     </button>
                   ))}
                 </div>
+
+                {decisionFilter !== 'all' && !loadingResults && (
+                  <div className="screening-actions-row">
+                    <div className="screening-actions-copy">
+                      <strong>{filteredCount}</strong>
+                      <span> articulos en {DECISION_LABELS[decisionFilter].toLowerCase()}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleCreateCollectionFromResults}
+                      disabled={creatingCollection || filteredResults.length === 0}
+                    >
+                      <i className="fas fa-folder-plus"></i>
+                      <span>{creatingCollection ? 'Creando coleccion...' : `Crear coleccion de ${DECISION_LABELS[decisionFilter].toLowerCase()}`}</span>
+                    </button>
+                  </div>
+                )}
 
                 {resultsError && <div className="screening-panel-error">{resultsError}</div>}
 
@@ -525,7 +733,19 @@ function Screening() {
                 {!loadingResults && filteredResults.length > 0 && (
                   <div className="screening-results-list">
                     {filteredResults.map((item) => (
-                      <article key={`${item.run_id}:${item.article_id}`} className="screening-result-card">
+                      <article
+                        key={`${item.run_id}:${item.article_id}`}
+                        className="screening-result-card"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleOpenArticle(item.article_id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            handleOpenArticle(item.article_id)
+                          }
+                        }}
+                      >
                         <div className="screening-result-top">
                           <h3>{item.article_title || formatArticleFallback(item.article_id)}</h3>
                           <div className="screening-result-meta">
@@ -538,8 +758,35 @@ function Screening() {
                           <span className="screening-result-label">Justificación</span>
                           <p className="screening-result-reason">{item.reason}</p>
                         </div>
+                        {item.decision === 'review' && (
+                          <div className="screening-result-actions">
+                            <button
+                              type="button"
+                              className="screening-inline-action include"
+                              disabled={updatingResultId === item.article_id}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleMoveReviewResult(item, 'include')
+                              }}
+                            >
+                              <i className="fas fa-check"></i>
+                              <span>Pasar a incluidos</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="screening-inline-action exclude"
+                              disabled={updatingResultId === item.article_id}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleMoveReviewResult(item, 'exclude')
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                              <span>Pasar a excluidos</span>
+                            </button>
+                          </div>
+                        )}
                         <div className="screening-result-footer">
-                          <span>Fuente usada: {formatSourceType(item.source_type)}</span>
                           <span>
                             Confianza: {formatConfidence(item.confidence)}
                           </span>
@@ -557,6 +804,55 @@ function Screening() {
           <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
             <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
             <span>{notification}</span>
+          </div>
+        )}
+
+        <CreateCollectionModal
+          isOpen={showCreateCollectionModal}
+          onClose={() => !creatingCollection && setShowCreateCollectionModal(false)}
+          onSave={handleConfirmCreateCollectionFromResults}
+          allowArticleSelection={false}
+          initialData={collectionFormData}
+        />
+
+        {showDeleteRunModal && (
+          <div className="modal-overlay" onClick={() => {
+            if (!deletingRun) {
+              setShowDeleteRunModal(false)
+              setRunToDeleteId(null)
+            }
+          }}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>
+                  <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
+                  {' '}Eliminar screening
+                </h2>
+              </div>
+              <div className="modal-body">
+                <p>¿Seguro que quieres eliminar este screening y todos sus resultados guardados?</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  onClick={() => {
+                    setShowDeleteRunModal(false)
+                    setRunToDeleteId(null)
+                  }}
+                  className="btn-secondary"
+                  disabled={deletingRun}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteSelectedRun}
+                  className="btn-danger"
+                  disabled={deletingRun}
+                >
+                  <i className={`fas ${deletingRun ? 'fa-spinner fa-spin' : 'fa-trash'}`} style={{ marginRight: '0.5rem' }}></i>
+                  {deletingRun ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

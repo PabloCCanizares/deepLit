@@ -3,13 +3,14 @@ import { articlesAPI, collectionsAPI } from '../../api/api'
 import SearchBarDebounced from '../articles/SearchBarDebounced'
 import '../../styles/collections/CreateCollectionModal.css'
 
-function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
+function CreateCollectionModal({ isOpen, onClose, onSave, collection, allowArticleSelection = true, initialData = null }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     image: null,
     selectedArticles: []
   })
+  const [isSaving, setIsSaving] = useState(false)
   const [imagePreview, setImagePreview] = useState(null)
   const [showArticleSelector, setShowArticleSelector] = useState(false)
   const fileInputRef = useRef(null)
@@ -51,12 +52,14 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
       }
 
       // Cargar artículos de la colección
-      loadCollectionArticles()
+      if (allowArticleSelection) {
+        loadCollectionArticles()
+      }
     } else if (isOpen) {
       // Resetear formulario en modo creación
       setFormData({
-        name: '',
-        description: '',
+        name: initialData?.name || '',
+        description: initialData?.description || '',
         image: null,
         selectedArticles: []
       })
@@ -69,7 +72,7 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
         URL.revokeObjectURL(imagePreview)
       }
     }
-  }, [isOpen, collection])
+  }, [isOpen, collection, initialData, allowArticleSelection])
 
   const loadCollectionArticles = async () => {
     if (!collection) return
@@ -86,10 +89,10 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
 
   // Cargar artículos cuando se abre el selector
   useEffect(() => {
-    if (isOpen && showArticleSelector) {
+    if (isOpen && showArticleSelector && allowArticleSelection) {
       loadArticles()
     }
-  }, [isOpen, showArticleSelector, pagination.offset, pagination.limit, searchQuery])
+  }, [isOpen, showArticleSelector, pagination.offset, pagination.limit, searchQuery, allowArticleSelection])
 
   // Cerrar con ESC
   useEffect(() => {
@@ -127,7 +130,9 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
     setPagination(prev => ({ ...prev, offset: 0 }))
   }
 
-  const handleClose = () => {
+  const handleClose = (force = false) => {
+    if (isSaving && !force) return
+
     // Reset form
     setFormData({
       name: '',
@@ -187,30 +192,20 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
     })
   }
 
-  const handleSelectAll = () => {
-    if (formData.selectedArticles.length === articles.length) {
-      setFormData(prev => ({ ...prev, selectedArticles: [] }))
-    } else {
-      setFormData(prev => ({ 
-        ...prev, 
-        selectedArticles: articles.map(article => article._id || article.id)
-      }))
-    }
-  }
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       alert('Por favor ingresa un nombre para la colección')
       return
     }
-    
-    console.log('\n=== SAVE COLLECTION ===')
-    console.log('Form data:', formData)
-    console.log('Image type:', typeof formData.image)
-    console.log('Image:', formData.image ? formData.image.substring(0, 100) + '...' : 'None')
-    
-    onSave(formData)
-    handleClose()
+
+    try {
+      setIsSaving(true)
+      await onSave(formData)
+      setIsSaving(false)
+      handleClose(true)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   if (!isOpen) return null
@@ -264,21 +259,22 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
             />
           </div>
 
-          {/* Selector de artículos */}
-          <div className="form-group">
-            {!showArticleSelector && (
-              <button
-                type="button"
-                className="add-articles-btn"
-                onClick={() => setShowArticleSelector(true)}
-              >
-                <i className="fas fa-plus"></i>
-                Añadir artículos ({formData.selectedArticles.length})
-              </button>
-            )}
+          {allowArticleSelection && (
+            <div className="form-group">
+              {!showArticleSelector && (
+                <button
+                  type="button"
+                  className="add-articles-btn"
+                  onClick={() => setShowArticleSelector(true)}
+                  disabled={isSaving}
+                >
+                  <i className="fas fa-plus"></i>
+                  Añadir artículos ({formData.selectedArticles.length})
+                </button>
+              )}
 
-            {showArticleSelector && (
-              <div className="article-selector-expanded">
+              {showArticleSelector && (
+                <div className="article-selector-expanded">
                 <div className="article-selector-header">
                   <div className="header-left">
                     <h3>Seleccionar Artículos</h3>
@@ -290,6 +286,7 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
                     className="collapse-btn"
                     onClick={() => setShowArticleSelector(false)}
                     title="Colapsar"
+                    disabled={isSaving}
                   >
                     <i className="fas fa-chevron-up"></i>
                   </button>
@@ -386,17 +383,18 @@ function CreateCollectionModal({ isOpen, onClose, onSave, collection }) {
                     </button>
                   </div>
                 )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={handleClose}>
+          <button className="btn-cancel" onClick={handleClose} disabled={isSaving}>
             Cancelar
           </button>
-          <button className="btn-save" onClick={handleSave}>
-            {collection ? 'Guardar Cambios' : 'Guardar Colección'}
+          <button className="btn-save" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Guardando...' : collection ? 'Guardar Cambios' : 'Guardar Colección'}
           </button>
         </div>
       </div>

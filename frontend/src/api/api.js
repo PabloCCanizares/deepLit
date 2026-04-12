@@ -248,7 +248,15 @@ export const articlesAPI = {
   },
 
   // SSE: subscribe to real-time article events
-  subscribeEvents: ({ onArticleReady, onArticleError, onScreeningReady, onScreeningError, onError } = {}) => {
+  subscribeEvents: ({
+    onArticleReady,
+    onArticleError,
+    onScreeningReady,
+    onScreeningError,
+    onCollectionSynthesisReady,
+    onCollectionSynthesisError,
+    onError,
+  } = {}) => {
     const token = getAuthToken();
     const url = `${API_BASE}/articles/events?token=${encodeURIComponent(token || '')}`;
 
@@ -290,6 +298,24 @@ export const articlesAPI = {
       }
     });
 
+    eventSource.addEventListener('collection_synthesis_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onCollectionSynthesisReady) onCollectionSynthesisReady(data);
+      } catch (err) {
+        console.error('Error parsing collection_synthesis_ready event:', err);
+      }
+    });
+
+    eventSource.addEventListener('collection_synthesis_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onCollectionSynthesisError) onCollectionSynthesisError(data);
+      } catch (err) {
+        console.error('Error parsing collection_synthesis_error event:', err);
+      }
+    });
+
     eventSource.onerror = (e) => {
       console.warn('SSE connection error, will auto-reconnect:', e);
       if (onError) onError(e);
@@ -318,6 +344,19 @@ export const screeningAPI = {
   getRunResults: async (runId) => {
     return apiFetch(`/screening/runs/${runId}/results`, {
       method: 'GET',
+    });
+  },
+
+  updateRunResult: async (runId, articleId, payload) => {
+    return apiFetch(`/screening/runs/${runId}/results/${articleId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteRun: async (runId) => {
+    return apiFetch(`/screening/runs/${runId}`, {
+      method: 'DELETE',
     });
   },
 };
@@ -457,6 +496,34 @@ export const aiAssistantAPI = {
   }
 };
 
+export const collectionResearcherAPI = {
+  runSynthesis: async (collectionId, prompt) => {
+    return apiFetch(`/collection-researcher/collections/${collectionId}/runs`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+  },
+
+  listRuns: async (collectionId) => {
+    return apiFetch(`/collection-researcher/collections/${collectionId}/runs`, {
+      method: 'GET',
+    });
+  },
+
+  savePaper: async (runId, payload) => {
+    return apiFetch(`/collection-researcher/runs/${runId}/paper`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteRun: async (runId) => {
+    return apiFetch(`/collection-researcher/runs/${runId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 
 // Exportar por defecto para import por defecto
 export default {
@@ -467,5 +534,6 @@ export default {
   openalex: openalexAPI,
   collections: collectionsAPI,
   aiAssistant: aiAssistantAPI,
+  collectionResearcher: collectionResearcherAPI,
 
 };

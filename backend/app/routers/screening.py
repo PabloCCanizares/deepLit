@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from app.controllers import ScreeningController
 from app.core.auth import get_current_user
 from app.core.responses import StandardResponse, create_response_examples
-from app.models import ScreeningRunRequest
+from app.models import ScreeningDecisionUpdateRequest, ScreeningRunRequest
 
 router = APIRouter(
     prefix="/screening",
@@ -60,6 +60,42 @@ async def get_screening_run_results(
     controller: ScreeningController = Depends(),
 ):
     return await controller.get_results(
+        run_id=run_id,
+        current_user=current_user,
+    )
+
+
+@router.patch(
+    "/runs/{run_id}/results/{article_id}",
+    response_model=StandardResponse,
+    summary="Actualizar manualmente un resultado de screening",
+)
+async def update_screening_run_result(
+    run_id: str,
+    article_id: str,
+    payload: ScreeningDecisionUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    controller: ScreeningController = Depends(),
+):
+    return await controller.update_result(
+        run_id=run_id,
+        article_id=article_id,
+        payload=payload,
+        current_user=current_user,
+    )
+
+
+@router.delete(
+    "/runs/{run_id}",
+    response_model=StandardResponse,
+    summary="Eliminar un screening run",
+)
+async def delete_screening_run(
+    run_id: str,
+    current_user: dict = Depends(get_current_user),
+    controller: ScreeningController = Depends(),
+):
+    return await controller.delete_run(
         run_id=run_id,
         current_user=current_user,
     )

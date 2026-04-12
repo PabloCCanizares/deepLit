@@ -5,10 +5,10 @@ from pymongo import DESCENDING, ReturnDocument
 from app.database import get_database
 
 
-class ScreeningRunRepository:
+class CollectionSynthesisRepository:
     def __init__(self):
         self.db = get_database()
-        self.collection = self.db.screening_runs
+        self.collection = self.db.collection_synthesis_runs
 
     async def upsert(self, run_id: str, run_data: dict) -> dict:
         return await self.collection.find_one_and_update(

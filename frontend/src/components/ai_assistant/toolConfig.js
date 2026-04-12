@@ -9,15 +9,6 @@ export const AI_ASSISTANT_TOOLS = [
     label: 'Web research',
     icon: 'fas fa-globe',
   },
-  {
-    id: 'collection_synthesizer',
-    label: 'Collection synthesis',
-    icon: 'fa-solid fa-diagram-project',
-    requiresCollection: true,
-    missingCollectionMessage: 'Selecciona una coleccion activa en la barra superior para usar la sintesis de coleccion.',
-    placeholder: 'Pregunta que quieres sintetizar de la coleccion activa...',
-    disabledPlaceholder: 'Selecciona una coleccion para sintetizarla...',
-  },
 ]
 
 export function getAiToolById(toolId) {

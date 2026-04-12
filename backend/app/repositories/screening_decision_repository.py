@@ -34,3 +34,15 @@ class ScreeningDecisionRepository:
 
         cursor = self.collection.find(filter_query).sort("updated_at", ASCENDING)
         return await cursor.to_list(length=None)
+
+    async def delete_by_run(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+    ) -> int:
+        result = await self.collection.delete_many({
+            "id_user": user_id,
+            "run_id": run_id,
+        })
+        return result.deleted_count

@@ -7,7 +7,6 @@ import KeywordRanking from '../components/dashboard/KeywordRanking'
 import TypePieChart from '../components/dashboard/TypePieChart'
 import CategoryBubbles from '../components/dashboard/CategoryBubbles'
 import AuthorsChart from '../components/dashboard/AuthorsChart'
-import ActivityCalendar from '../components/dashboard/ActivityCalendar'
 import '../styles/App.css'
 import '../styles/dashboard/Dashboard.css'
 import { useCollection } from '../context/CollectionContext'
@@ -249,11 +248,6 @@ function Dashboard() {
           <h3 className="sectionTitle">Artículos por Año</h3>
           <YearChart labels={stats?.labels_by_year || []} values={stats?.values_by_year || []} />
         </div>
-      </div>
-
-      <div className="section">
-        <h3 className="sectionTitle">Actividad por Día</h3>
-        <ActivityCalendar />
       </div>
 
       {(stats?.notif_abstract > 0 || stats?.notif_keywords > 0) && (

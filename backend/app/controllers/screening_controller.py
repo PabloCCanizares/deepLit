@@ -1,7 +1,7 @@
 from fastapi import Depends
 
 from app.core import NotFoundError, StandardResponse
-from app.models import ScreeningRunData, ScreeningRunRequest
+from app.models import ScreeningDecisionUpdateRequest, ScreeningRunData, ScreeningRunRequest
 from app.services.collection_service import CollectionService
 from app.services.job_service import JobService
 from app.services.screening_decision_service import ScreeningDecisionService
@@ -126,5 +126,79 @@ class ScreeningController:
                 "runs": runs,
                 "total": len(runs),
                 "collection_id": collection_id,
+            },
+        )
+
+    async def update_result(
+        self,
+        run_id: str,
+        article_id: str,
+        payload: ScreeningDecisionUpdateRequest,
+        current_user: dict,
+    ) -> StandardResponse:
+        await self.screening_run_service.get_run(
+            run_id=run_id,
+            user_id=current_user["_id"],
+        )
+
+        updated_result = await self.screening_decision_service.update_decision(
+            user_id=current_user["_id"],
+            run_id=run_id,
+            article_id=article_id,
+            decision=payload.decision,
+            reason=payload.reason,
+        )
+
+        results = await self.screening_decision_service.list_run_decisions(
+            user_id=current_user["_id"],
+            run_id=run_id,
+        )
+        counts = {"include": 0, "review": 0, "exclude": 0}
+        for item in results:
+            item_decision = item.get("decision")
+            if item_decision in counts:
+                counts[item_decision] += 1
+
+        run = await self.screening_run_service.sync_counts(
+            run_id=run_id,
+            user_id=current_user["_id"],
+            counts=counts,
+        )
+
+        return StandardResponse(
+            success=True,
+            message="Resultado de screening actualizado correctamente",
+            data={
+                "result": updated_result,
+                "run": run,
+                "counts": counts,
+            },
+        )
+
+    async def delete_run(
+        self,
+        run_id: str,
+        current_user: dict,
+    ) -> StandardResponse:
+        await self.screening_run_service.get_run(
+            run_id=run_id,
+            user_id=current_user["_id"],
+        )
+
+        await self.screening_decision_service.delete_run_decisions(
+            user_id=current_user["_id"],
+            run_id=run_id,
+        )
+        await self.screening_run_service.delete_run(
+            run_id=run_id,
+            user_id=current_user["_id"],
+        )
+
+        return StandardResponse(
+            success=True,
+            message="Screening eliminado correctamente",
+            data={
+                "run_id": run_id,
+                "deleted": True,
             },
         )

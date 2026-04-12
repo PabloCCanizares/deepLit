@@ -30,6 +30,9 @@ from app.models.pdf_processing import (
     PdfMetadata
 )
 from app.models.research_artifacts import (
+    CollectionSynthesisData,
+    CollectionSynthesisPaperRequest,
+    CollectionSynthesisRunRequest,
     ScreeningDecisionData,
     ScreeningRunCounts,
     ScreeningRunData,
@@ -55,6 +58,7 @@ from app.models.collection import (
 from app.models.screening import (
     ScreeningRunRequest,
     ScreeningDecisionLLMResult,
+    ScreeningDecisionUpdateRequest,
 )
 
 # AI Assistant models
@@ -80,6 +84,9 @@ __all__ = [
     "PdfUpload",
     "PdfMetadata",
     "ExcelUpload",
+    "CollectionSynthesisData",
+    "CollectionSynthesisPaperRequest",
+    "CollectionSynthesisRunRequest",
     "ScreeningDecisionData",
     "ScreeningRunCounts",
     "ScreeningRunData",
@@ -94,6 +101,7 @@ __all__ = [
     "AddArticleToCollection",
     "ScreeningRunRequest",
     "ScreeningDecisionLLMResult",
+    "ScreeningDecisionUpdateRequest",
 
     # AI Assistant
     "ChatRequest",

@@ -110,6 +110,11 @@ function ArticleView({
       return
     }
 
+    if (location.state?.from === 'screening') {
+      navigate('/screening')
+      return
+    }
+
     if (location.state?.from === 'collection' && location.state?.collectionId) {
       navigate(`/collections/${encodeURIComponent(location.state.collectionId)}`)
       return

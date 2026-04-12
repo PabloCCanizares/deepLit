@@ -35,3 +35,15 @@ class ScreeningDecisionLLMResult(BaseModel):
         le=1,
         description="Confianza estimada de 0 a 1.",
     )
+
+
+class ScreeningDecisionUpdateRequest(BaseModel):
+    decision: Literal["include", "review", "exclude"] = Field(
+        ...,
+        description="Nueva decision manual para el articulo.",
+    )
+    reason: Optional[str] = Field(
+        None,
+        min_length=1,
+        description="Justificacion opcional de la actualizacion manual.",
+    )

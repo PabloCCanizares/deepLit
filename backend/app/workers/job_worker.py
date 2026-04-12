@@ -8,10 +8,13 @@ from typing import Optional
 from app.services.article_service import ArticleService
 from app.services.screening_run_service import ScreeningRunService
 from app.services.collection_screening_service import CollectionScreeningService
+from app.services.collection_synthesis_service import CollectionSynthesisService
+from app.services.ai_assistant_service import AiAssistantService
 from app.services.job_service import (
     JobService,
     PDF_PROCESSING_JOB,
     COLLECTION_SCREENING_JOB,
+    COLLECTION_SYNTHESIS_JOB,
 )
 from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.pdf_processing_service import PdfProcessingService
@@ -28,12 +31,15 @@ class JobWorker:
         self.article_service = ArticleService()
         self.screening_run_service = ScreeningRunService()
         self.collection_screening_service = CollectionScreeningService()
+        self.collection_synthesis_service = CollectionSynthesisService()
+        self.ai_assistant_service = AiAssistantService()
         self.knowledge_graph_service = KnowledgeGraphService()
         self.pdf_processing_service = PdfProcessingService()
         self.storage_service = StorageService()
         self.handlers = {
             PDF_PROCESSING_JOB: self._process_pdf_job,
             COLLECTION_SCREENING_JOB: self._process_screening_job,
+            COLLECTION_SYNTHESIS_JOB: self._process_collection_synthesis_job,
         }
         self._task: Optional[asyncio.Task] = None
         self._running = False
@@ -286,6 +292,98 @@ class JobWorker:
                     "job_id": job_id,
                     "collection_id": collection_id,
                     "research_question": research_question,
+                    "status": "failed",
+                    "error_message": str(exc),
+                },
+            )
+
+    async def _process_collection_synthesis_job(self, job: dict) -> None:
+        payload = job.get("payload", {})
+        job_id = str(job.get("_id"))
+        user_id = payload.get("user_id")
+        run_id = payload.get("run_id")
+        collection_id = payload.get("collection_id")
+        prompt = payload.get("prompt")
+
+        try:
+            logger.info(
+                "Procesando job collection synthesis %s para collection_id=%s",
+                job_id,
+                collection_id,
+            )
+
+            await self.collection_synthesis_service.mark_processing(
+                run_id=run_id,
+                user_id=user_id,
+            )
+
+            result = await self.ai_assistant_service.chat(
+                message=prompt,
+                user_id=user_id,
+                user_name=str(user_id),
+                selected_mode="collection_synthesizer",
+                collection_id=collection_id,
+            )
+
+            if result.get("timed_out"):
+                raise RuntimeError(result.get("reply") or "La sintesis ha agotado el tiempo de ejecucion.")
+
+            await self.job_service.mark_completed(job_id)
+            run = await self.collection_synthesis_service.mark_completed(
+                run_id=run_id,
+                user_id=user_id,
+                response=result.get("reply") or "",
+                context_source=result.get("context_source"),
+                agent=result.get("agent"),
+                prompt_version=result.get("prompt_version"),
+            )
+
+            sse_manager.notify(
+                user_id,
+                "collection_synthesis_ready",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "prompt": prompt,
+                    "status": "completed",
+                    "run": run,
+                },
+            )
+            logger.info("Job collection synthesis %s completado", job_id)
+        except Exception as exc:
+            logger.exception("Error procesando job collection synthesis %s", job_id)
+
+            try:
+                await self.job_service.mark_failed(job_id, str(exc))
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el job %s como failed",
+                    job_id,
+                    exc_info=True,
+                )
+
+            try:
+                await self.collection_synthesis_service.mark_failed(
+                    run_id=run_id,
+                    user_id=user_id,
+                    error_message=str(exc),
+                )
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar la sintesis %s como failed",
+                    run_id,
+                    exc_info=True,
+                )
+
+            sse_manager.notify(
+                user_id,
+                "collection_synthesis_error",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "prompt": prompt,
                     "status": "failed",
                     "error_message": str(exc),
                 },

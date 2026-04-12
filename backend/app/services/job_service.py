@@ -9,6 +9,7 @@ from app.repositories import JobRepository
 
 PDF_PROCESSING_JOB = "process_pdf"
 COLLECTION_SCREENING_JOB = "screen_collection"
+COLLECTION_SYNTHESIS_JOB = "synthesize_collection"
 
 
 class JobService:
@@ -83,6 +84,25 @@ class JobService:
                 "research_question": research_question,
                 "inclusion_criteria": inclusion_criteria or [],
                 "exclusion_criteria": exclusion_criteria or [],
+            },
+        )
+
+    async def enqueue_collection_synthesis(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        collection_id: str,
+        prompt: str,
+    ) -> str:
+        return await self.enqueue(
+            job_type=COLLECTION_SYNTHESIS_JOB,
+            user_id=user_id,
+            payload={
+                "user_id": user_id,
+                "run_id": run_id,
+                "collection_id": collection_id,
+                "prompt": prompt,
             },
         )
 

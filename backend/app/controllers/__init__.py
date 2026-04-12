@@ -10,6 +10,7 @@ from .openalex_controller import OpenAlexController
 from .ai_assistant_controller import AiAssistantController
 from .knowledge_graph_controller import KnowledgeGraphController
 from .screening_controller import ScreeningController
+from .collection_researcher_controller import CollectionResearcherController
 
 __all__ = [
     "AuthController",
@@ -22,4 +23,5 @@ __all__ = [
     "AiAssistantController",
     "KnowledgeGraphController",
     "ScreeningController",
+    "CollectionResearcherController",
 ]

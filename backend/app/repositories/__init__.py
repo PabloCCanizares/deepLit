@@ -7,6 +7,7 @@ from app.repositories.collection_repository import CollectionRepository
 from app.repositories.job_repository import JobRepository
 from app.repositories.screening_decision_repository import ScreeningDecisionRepository
 from app.repositories.screening_run_repository import ScreeningRunRepository
+from app.repositories.collection_synthesis_repository import CollectionSynthesisRepository
 __all__ = [
     "UserRepository",
     "PdfRepository",
@@ -16,4 +17,5 @@ __all__ = [
     "JobRepository",
     "ScreeningDecisionRepository",
     "ScreeningRunRepository",
+    "CollectionSynthesisRepository",
 ]

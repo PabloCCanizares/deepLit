@@ -53,3 +53,32 @@ class ScreeningRunData(BaseModel):
         description="Resumen de decisiones del run.",
     )
     error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
+
+
+class CollectionSynthesisRunRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, description="Prompt del usuario para sintetizar la coleccion.")
+
+
+class CollectionSynthesisPaperRequest(BaseModel):
+    paper_response: str = Field(..., min_length=1, description="Version paper de la sintesis.")
+    paper_title: Optional[str] = Field(None, description="Titulo opcional de la version paper.")
+
+
+class CollectionSynthesisData(BaseModel):
+    collection_id: str = Field(..., description="Coleccion sobre la que se ejecuta la sintesis.")
+    prompt: str = Field(..., min_length=1, description="Prompt original del usuario.")
+    response: str = Field(default="", description="Respuesta generada para la sintesis.")
+    status: Literal["queued", "processing", "completed", "failed"] = Field(
+        default="queued",
+        description="Estado actual de la sintesis.",
+    )
+    job_id: Optional[str] = Field(None, description="Job asociado a la sintesis.")
+    context_source: Optional[Literal["full_text", "metadata"]] = Field(
+        default=None,
+        description="Fuente principal usada en la sintesis.",
+    )
+    agent: Optional[str] = Field(None, description="Agente utilizado para generar la respuesta.")
+    prompt_version: Optional[str] = Field(None, description="Version del prompt usada por el agente.")
+    error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
+    paper_response: Optional[str] = Field(None, description="Version paper persistida de la sintesis.")
+    paper_title: Optional[str] = Field(None, description="Titulo de la version paper.")
