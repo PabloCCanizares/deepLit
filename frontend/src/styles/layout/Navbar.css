@@ -168,6 +168,20 @@
   opacity: 0.8;
 }
 
+.collectionButton.disabled {
+  opacity: 0.48;
+  filter: saturate(0.35) blur(0.25px);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.collectionButton.disabled:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: none;
+  box-shadow: none;
+}
+
 .collectionDropdown {
   position: absolute;
   top: calc(100% + 0.5rem);

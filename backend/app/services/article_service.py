@@ -3,10 +3,12 @@ Servicio de Artículos.
 """
 import re
 from datetime import datetime, timezone
-from app.repositories import ArticleRepository
-from app.models import QueryBody
-from app.core import NotFoundError, AuthorizationError
+from pathlib import Path
 from typing import List, Dict, Optional, Any
+
+from app.core import NotFoundError, AuthorizationError
+from app.models import QueryBody
+from app.repositories import ArticleRepository, PdfRepository
 
 
 # Campos alineados con OpenAlexService.select_fields
@@ -202,6 +204,7 @@ class ArticleService:
     
     def __init__(self):
         self.article_repo = ArticleRepository()
+        self.pdf_repo = PdfRepository()
         # Importar aquí para evitar circular import
         from app.services.pdf_service import PdfService
         from app.services.storage_service import StorageService
@@ -480,12 +483,12 @@ class ArticleService:
 
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> Dict:
         """
-        Recuperar artÃ­culos del usuario actual.
+        Recuperar artí­culos del usuario actual.
         """
-        # Obtener artÃ­culos con paginaciÃ³n
+        # Obtener artí­culos con paginación
         articles = await self.article_repo.get_user_articles(query, user_id, collection_id)
         
-        # Obtener total de artÃ­culos del usuario (para metadatos de paginaciÃ³n)
+        # Obtener total de artí­culos del usuario (para metadatos de paginación)
         total = await self.article_repo.count_documents(user_id, collection_id)
         return {
             "articles": articles,
@@ -494,33 +497,77 @@ class ArticleService:
     
     async def get_by_id(self, article_id: str, user_id: str) -> Dict:
         """
-        Obtener artÃ­culo por ID.
-        Verifica que el artÃ­culo pertenezca al usuario.
+        Obtener artí­culo por ID.
+        Verifica que el artí­culo pertenezca al usuario.
         """
         article = await self.article_repo.find_by_id(article_id)
         
         if not article:
-            raise NotFoundError("ArtÃ­culo no encontrado")
+            raise NotFoundError("Artí­culo no encontrado")
         
-        # Verificar que el artÃ­culo pertenece al usuario
+        # Verificar que el artí­culo pertenece al usuario
         if article.get("id_user") != user_id:
-            raise AuthorizationError("No tienes permiso para acceder a este artÃ­culo")
+            raise AuthorizationError("No tienes permiso para acceder a este artí­culo")
         
         return article
+
+    async def get_pdf_file(self, article_id: str, user_id: str) -> tuple[Path, str]:
+        """
+        Recuperar el PDF asociado a un artículo del usuario.
+        """
+        article = await self.article_repo.find_by_id(article_id)
+
+        if not article:
+            raise NotFoundError("Artículo no encontrado")
+
+        if article.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para acceder a este artículo")
+
+        pdf_id = article.get("id_pdf")
+        if (
+            not pdf_id
+            and article.get("source") != "excel"
+            and isinstance(article_id, str)
+            and article_id.startswith("article_")
+        ):
+            pdf_id = article_id[len("article_"):]
+
+        if not pdf_id:
+            raise NotFoundError("Este artículo no tiene un PDF asociado")
+
+        pdf = await self.pdf_repo.find_by_id(pdf_id)
+        if not pdf:
+            raise NotFoundError("PDF no encontrado")
+
+        if pdf.get("id_user") != user_id:
+            raise AuthorizationError("No tienes permiso para acceder a este PDF")
+
+        filename = pdf.get("filename") or f"{pdf_id}.pdf"
+        file_path = pdf.get("file_path")
+        candidate_path = Path(file_path) if file_path else self.storage_service.get_path(filename, "uploads")
+
+        if not candidate_path.exists():
+            fallback_path = self.storage_service.get_path(filename, "uploads")
+            if fallback_path.exists():
+                candidate_path = fallback_path
+            else:
+                raise NotFoundError("El PDF asociado ya no está disponible en almacenamiento")
+
+        return candidate_path, filename
     
     async def update(self, article_id: str, user_id: str, update_data: Dict) -> Dict:
         """
-        Actualizar artÃ­culo por ID.
-        Verifica que el artÃ­culo pertenezca al usuario.
+        Actualizar artí­culo por ID.
+        Verifica que el artí­culo pertenezca al usuario.
         """
-        # Verificar que el artÃ­culo existe y pertenece al usuario
+        # Verificar que el artí­culo existe y pertenece al usuario
         article = await self.article_repo.find_by_id(article_id)
         
         if not article:
-            raise NotFoundError("ArtÃ­culo no encontrado")
+            raise NotFoundError("Artí­culo no encontrado")
         
         if article.get("id_user") != user_id:
-            raise AuthorizationError("No tienes permiso para modificar este artÃ­culo")
+            raise AuthorizationError("No tienes permiso para modificar este artí­culo")
         
         # Solo campos alineados con esquema OpenAlex
         allowed_fields = set(ARTICLE_DEFAULT_FIELDS.keys())
@@ -574,29 +621,29 @@ class ArticleService:
     
     async def get_queue(self, user_id: str) -> List[Dict]:
         """
-        Obtener artÃ­culos en cola de procesamiento (status='processing' o 'error').
-        Retorna lista ordenada por fecha de creaciÃ³n (mÃ¡s reciente primero).
+        Obtener artí­culos en cola de procesamiento (status='processing' o 'error').
+        Retorna lista ordenada por fecha de creación (mí¡s reciente primero).
         """
         queue_items = await self.article_repo.get_processing_articles(user_id)
         return queue_items if queue_items else []
     
     async def delete(self, article_id: str, user_id: str) -> bool:
         """
-        Eliminar artÃ­culo por ID, incluyendo:
-        1. Registro del artÃ­culo en BD
+        Eliminar artí­culo por ID, incluyendo:
+        1. Registro del artí­culo en BD
         2. PDF del almacenamiento local (si existe)
-        3. Ãndice FAISS del artÃ­culo (si existe)
+        3. índice FAISS del artí­culo (si existe)
         
-        Verifica que el artÃ­culo pertenezca al usuario.
+        Verifica que el artí­culo pertenezca al usuario.
         """
-        # Verificar que el artÃ­culo existe y pertenece al usuario
+        # Verificar que el artí­culo existe y pertenece al usuario
         article = await self.article_repo.find_by_id(article_id)
         
         if not article:
-            raise NotFoundError("ArtÃ­culo no encontrado")
+            raise NotFoundError("Artí­culo no encontrado")
         
         if article.get("id_user") != user_id:
-            raise AuthorizationError("No tienes permiso para eliminar este artÃ­culo")
+            raise AuthorizationError("No tienes permiso para eliminar este artí­culo")
         
         # Obtener id_pdf para eliminar el PDF (fallback por convencion article_<pdf_id>)
         pdf_id = article.get("id_pdf")
@@ -615,10 +662,10 @@ class ArticleService:
             except NotFoundError:
                 pass
         
-        # Eliminar Ã­ndice FAISS si existe
+        # Eliminar í­ndice FAISS si existe
         faiss_index_path = self.storage_service.get_faiss_article_dir(user_id=user_id, article_id=article_id)
         self.storage_service.delete_directory(faiss_index_path)
         
-        # Eliminar registro del artÃ­culo en BD
+        # Eliminar registro del artí­culo en BD
         deleted = await self.article_repo.delete(article_id)
         return deleted

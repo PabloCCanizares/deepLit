@@ -104,6 +104,29 @@
   border-bottom: 2px solid var(--main_color);
 }
 
+.documentSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.documentSectionHeader h3 {
+  margin: 0;
+  flex: 1;
+}
+
+.documentSectionAction {
+  color: var(--main_color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.documentSectionAction:hover {
+  text-decoration: underline;
+}
+
 .documentField {
   display: flex;
   margin-bottom: 12px;
@@ -129,6 +152,27 @@
   line-height: 1.6;
   font-size: 15px;
   margin: 0;
+}
+
+.documentHelperText {
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.documentPdfViewer {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.documentPdfFrame {
+  width: 100%;
+  min-height: 75vh;
+  border: none;
+  background: white;
 }
 
 .documentKeywords {
@@ -339,6 +383,15 @@
   .formSection {
     padding: 1.5rem;
   }
+
+  .documentSectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .documentPdfFrame {
+    min-height: 60vh;
+  }
 }
 
 /* Articles Header Panel */
@@ -408,7 +461,7 @@
   margin: 0;
   color: #6b7280;
 }
-/* Responsive para el header de artÃ­culos */
+/* Responsive para el header de artí­culos */
 @media (max-width: 768px) {
   .documents-header {
     flex-direction: column;
@@ -496,7 +549,7 @@
   gap: 0.5rem;
 }
 
-/* Hover rojo para botÃ³n de eliminar */
+/* Hover rojo para botón de eliminar */
 .modal-footer .btn-primary {
   background: var(--color-danger) !important;
 }
@@ -556,7 +609,7 @@
   }
 }
 
-/* BotÃ³n de eliminar principal */
+/* Botón de eliminar principal */
 .btn-delete-article {
   background: var(--main_color) !important;
   transition: all 0.3s ease;
@@ -619,6 +672,19 @@ body[data-theme='dark'] .documentField span {
 body[data-theme='dark'] .documentAbstract,
 body[data-theme='dark'] .documentReferences p {
   color: var(--text-secondary);
+}
+
+body[data-theme='dark'] .documentHelperText {
+  color: var(--text-secondary);
+}
+
+body[data-theme='dark'] .documentPdfViewer {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+body[data-theme='dark'] .documentPdfFrame {
+  background: white;
 }
 
 /* Form inputs */
@@ -698,5 +764,5 @@ body[data-theme='dark'] .collection-empty-state-card h1 {
 body[data-theme='dark'] .collection-empty-state-card p {
   color: var(--text-secondary);
 }
-/* AnimaciÃ³n spin ahora en common.css */
+/* Animación spin ahora en common.css */
 

@@ -24,6 +24,9 @@ function ArticleView({
 
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [notification, setNotification] = useState('')
+  const [embeddedPdfUrl, setEmbeddedPdfUrl] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState('')
 
   useEffect(() => {
     if (previewMode) {
@@ -83,6 +86,66 @@ function ArticleView({
     const timer = setTimeout(() => setNotification(''), 3000)
     return () => clearTimeout(timer)
   }, [notification])
+
+  useEffect(() => {
+    let shouldKeepState = true
+    let localBlobUrl = ''
+
+    const loadEmbeddedPdf = async () => {
+      if (!document || !articleId) {
+        setEmbeddedPdfUrl('')
+        setPdfError('')
+        setPdfLoading(false)
+        return
+      }
+
+      const hasLocalPdf = !previewMode && Boolean(document.id_pdf || document.source === 'pdf')
+      setPdfError('')
+
+      if (!hasLocalPdf) {
+        setEmbeddedPdfUrl('')
+        setPdfLoading(false)
+        return
+      }
+
+      try {
+        setPdfLoading(true)
+        const pdfUrl = await articlesAPI.getPdfUrl(articleId)
+        if (!shouldKeepState) {
+          if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+          return
+        }
+
+        if (pdfUrl) {
+          localBlobUrl = pdfUrl
+          setEmbeddedPdfUrl(pdfUrl)
+          setPdfError('')
+        } else {
+          setEmbeddedPdfUrl('')
+          setPdfError('El PDF local no esta disponible en este momento.')
+        }
+      } catch (err) {
+        console.error('Error loading PDF viewer:', err)
+        if (shouldKeepState) {
+          setEmbeddedPdfUrl('')
+          setPdfError('No se pudo cargar el PDF dentro del articulo.')
+        }
+      } finally {
+        if (shouldKeepState) {
+          setPdfLoading(false)
+        }
+      }
+    }
+
+    loadEmbeddedPdf()
+
+    return () => {
+      shouldKeepState = false
+      if (localBlobUrl) {
+        URL.revokeObjectURL(localBlobUrl)
+      }
+    }
+  }, [articleId, document, previewMode])
 
   const handleEdit = () => {
     const encodedId = encodeURIComponent(resolvedId)
@@ -186,6 +249,8 @@ function ArticleView({
   const referencedWorks = Array.isArray(document.referenced_works) ? document.referenced_works : []
   const relatedWorks = Array.isArray(document.related_works) ? document.related_works : []
   const countsByYear = Array.isArray(document.counts_by_year) ? document.counts_by_year : []
+  const viewerPdfUrl = embeddedPdfUrl || document.pdf_url || ''
+  const hasPdfSource = Boolean(viewerPdfUrl || document.id_pdf || document.pdf_url)
 
   return (
     <div className="documentViewContainer">
@@ -283,6 +348,41 @@ function ArticleView({
             </div>
           )}
         </div>
+
+        {hasPdfSource && (
+          <div className="documentSection">
+            <div className="documentSectionHeader">
+              <h3>PDF</h3>
+              {viewerPdfUrl && (
+                <a
+                  className="documentSectionAction"
+                  href={viewerPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Abrir en una pestana
+                </a>
+              )}
+            </div>
+
+            {pdfLoading ? (
+              <div className="loading">
+                <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', color: 'var(--main_color)' }}></i>
+                <p>Cargando PDF...</p>
+              </div>
+            ) : viewerPdfUrl ? (
+              <div className="documentPdfViewer">
+                <iframe
+                  src={viewerPdfUrl}
+                  title={`PDF de ${document.title || 'articulo'}`}
+                  className="documentPdfFrame"
+                />
+              </div>
+            ) : (
+              <p className="documentHelperText">{pdfError || 'No hay un PDF disponible para este articulo.'}</p>
+            )}
+          </div>
+        )}
 
         {hasAbstract && (
           <div className="documentSection">

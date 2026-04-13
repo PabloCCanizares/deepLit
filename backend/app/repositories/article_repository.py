@@ -13,19 +13,19 @@ class ArticleRepository:
         self.collection = self.db.articles
     
     async def create(self, article_data: dict) -> str:
-        """Crear un nuevo artÃ­culo"""
+        """Crear un nuevo artí­culo"""
         result = await self.collection.insert_one(article_data)
-        # Si usamos _id personalizado, inserted_id serÃ¡ ese _id
+        # Si usamos _id personalizado, inserted_id serí¡ ese _id
         # Si MongoDB genera el _id, usamos result.inserted_id
         return article_data.get("_id") or str(result.inserted_id)
     
     async def find_by_id(self, article_id: str) -> Optional[dict]:
-        """Buscar artÃ­culo por ID"""
+        """Buscar artí­culo por ID"""
         article = await self.collection.find_one({"_id": article_id})
         return article
     
     async def update(self, article_id: str, update_data: dict) -> Optional[dict]:
-        """Actualizar artÃ­culo por ID"""
+        """Actualizar artí­culo por ID"""
         result = await self.collection.update_one(
             {"_id": article_id},
             {"$set": update_data}
@@ -34,11 +34,11 @@ class ArticleRepository:
         if result.matched_count == 0:
             return None
         
-        # Devolver el artÃ­culo actualizado
+        # Devolver el artí­culo actualizado
         return await self.find_by_id(article_id)
     
     async def delete(self, article_id: str) -> bool:
-        """Eliminar artÃ­culo por ID"""
+        """Eliminar artí­culo por ID"""
         result = await self.collection.delete_one({"_id": article_id})
         return result.deleted_count > 0
     
@@ -50,7 +50,7 @@ class ArticleRepository:
             "status": {"$nin": ["processing", "error"]}
         }
         
-        if collection_id:  # Si collection no es None ni vacÃ­o
+        if collection_id:  # Si collection no es None ni vací­o
             filter_query["collection_ids"] = {"$in": [collection_id]}
         
         count = await self.collection.count_documents(filter_query)
@@ -58,7 +58,7 @@ class ArticleRepository:
         return count
     
     async def count_documents_by_year(self, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
-        """Contar artÃ­culos agrupados por aÃ±o para un usuario"""
+        """Contar artí­culos agrupados por aí±o para un usuario"""
         # Filtro base
         match_filter = {"id_user": user_id}
 
@@ -66,21 +66,21 @@ class ArticleRepository:
         if collection_id:
             match_filter["collection_ids"] = {"$in": [collection_id]}
 
-        # Pipeline de agregaciÃ³n
+        # Pipeline de agregación
         pipeline = [
             {"$match": match_filter},
             {"$group": {"_id": "$year", "count": {"$sum": 1}}},
             {"$sort": {"_id": 1}}
         ]
 
-        # Ejecutar agregaciÃ³n
+        # Ejecutar agregación
         cursor = self.collection.aggregate(pipeline)
         results = await cursor.to_list(length=None)
         return results
         
 
     async def get_processing_articles(self, user_id: str) -> List[dict]:
-        """Obtener artÃ­culos en cola (status processing o error) del usuario."""
+        """Obtener artí­culos en cola (status processing o error) del usuario."""
         cursor = self.collection.find(
             {
                 "id_user": user_id,
@@ -131,11 +131,11 @@ class ArticleRepository:
         return await cursor.to_list(length=None)
 
     async def get_user_articles(self, query: QueryBody, user_id: str, collection_id: Optional[str] = None) -> List[dict]:
-        """Recuperar artÃ­culos del usuario actual con paginaciÃ³n y filtros"""
+        """Recuperar artí­culos del usuario actual con paginación y filtros"""
         
         filter_criteria = {"id_user": user_id}
 
-        # Excluir artÃ­culos en procesamiento o con error de la lista normal
+        # Excluir artí­culos en procesamiento o con error de la lista normal
         filter_criteria["status"] = {"$nin": ["processing", "error"]}
 
         if collection_id:
@@ -172,7 +172,7 @@ class ArticleRepository:
                 {"category": None}
             ]
 
-        # ProyecciÃ³n: solo devolver campos necesarios para la lista
+        # Proyección: solo devolver campos necesarios para la lista
         projection = {
             "_id": 1,
             "title": 1,
@@ -182,12 +182,12 @@ class ArticleRepository:
             "status": 1
         }
 
-        # ðŸš€ APLICAR LA LÃ“GICA DE ORDENACIÃ“N
+        # ðŸš€ APLICAR LA Lí“GICA DE ORDENACIí“N
         # Creamos la cadena base del cursor
         cursor = self.collection.find(filter_criteria, projection)
 
 
-        #FIXME hacer con mas campos: aÃ±adir campo sortBy (campo), y sortOrder (asc, desc)
+        #FIXME hacer con mas campos: aí±adir campo sortBy (campo), y sortOrder (asc, desc)
         if sort_criteria == "year-asc":
             # Orden ascendente por el campo "year"
             cursor = cursor.sort("year", ASCENDING)
@@ -196,10 +196,10 @@ class ArticleRepository:
             cursor = cursor.sort("year", DESCENDING)
         else:
             # Si es nulo o no coincide con los valores esperados, 
-            # PyMongo no aÃ±ade ningÃºn sort por defecto (usa el orden natural/inserciÃ³n)
+            # PyMongo no aí±ade ningíºn sort por defecto (usa el orden natural/inserción)
             pass
 
-        # Aplicar paginaciÃ³n despuÃ©s del sort
+        # Aplicar paginación despuí©s del sort
         cursor = (
             cursor
             .skip(offset)
@@ -226,7 +226,7 @@ class ArticleRepository:
         if collection_id:
             match_filter["collection_ids"] = {"$in": [collection_id]}
 
-        # Pipeline de agregaciÃ³n
+        # Pipeline de agregación
         # keywords es un array de objetos {key: string, score: number}
         pipeline = [
             {"$match": match_filter},
@@ -236,7 +236,7 @@ class ArticleRepository:
                 "count": {"$sum": 1}
             }},
             {"$sort": {"count": -1}},  # Ordenar por count descendente
-            {"$limit": 50}  # Limitar a las 50 mÃ¡s frecuentes
+            {"$limit": 50}  # Limitar a las 50 mí¡s frecuentes
         ]
 
         cursor = self.collection.aggregate(pipeline)
@@ -245,8 +245,8 @@ class ArticleRepository:
 
     async def get_article_ids_by_collection(self, collection_id: str) -> List[str]:
         """
-        Devuelve una lista de IDs de artÃ­culos que pertenecen a una colecciÃ³n.
-        Busca por artÃ­culos donde 'collection_ids' contiene el collection_id.
+        Devuelve una lista de IDs de artí­culos que pertenecen a una colección.
+        Busca por artí­culos donde 'collection_ids' contiene el collection_id.
         """
 
         cursor = self.collection.find(

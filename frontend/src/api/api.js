@@ -218,6 +218,10 @@ export const articlesAPI = {
     });
   },
 
+  getPdfUrl: async (id) => {
+    return fetchFile(`/articles/${encodeURIComponent(id)}/pdf`);
+  },
+
   // Update article by ID
   update: async (id, data) => {
     return apiFetch(`/articles/${id}`, {

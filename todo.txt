@@ -1,8 +1,27 @@
-Crear un componente de filtros en vez de tener 20 paginas distintas (Además añadir más filtros (por campos))
+DONE (REVISAR):
 
-Difuminar navbar cuando estamos en colecciones o mis articulos.
+Difuminar collectionButon cuando estamos en Biblioteca o Colecciones.
 
-Componente para gestionar multiples articulos. (Eliminar, guardar en varias colecciones, etc)
+Poder ver los pdfs dentro del ArticleView.
 
-Usar complete o inclomplete con openalex igual que lo usa con articulo. (No sabemos si tiene solución investigar)
+Arreglar citas en la extracción de pdf.
 
+Arreglar OpenAlex para mostrar solo artículos del presente o pasado.
+
+
+POR HACER:
+
+Crear un componente de filtros en vez de tener 20 paginas distintas (Además añadir más filtros (por campos)).
+
+Arreglar dashboard.
+    Tener cuidado porque es posible que se consideren autores iguales escritos diferente como autores distintos.
+
+Los Papers se deben crear donde Evidence Extraction, pudiendo añadir conocimiento propio en un prompt (texto, pdf). Meter en la ui una ventana grande para esto.
+
+Añadir Forward y Backward SnowBalling
+
+Clustering después del evidence Extraction (decidir su uso - si informativo o si se integra con otras cosas)
+
+Crear tabla de Paper y guardar los pdfs referenciando a la colección.
+
+Enlazar Screening y Evidence Extraction (Collection Synthesis) en un flujo completo.

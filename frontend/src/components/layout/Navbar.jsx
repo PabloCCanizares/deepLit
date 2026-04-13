@@ -49,6 +49,12 @@ function Navbar({ toggleSidebar }) {
     "/dashboard"
   ].includes(location.pathname);
 
+  useEffect(() => {
+    if (!isCollectionButtonEnabled) {
+      setShowCollectionMenu(false);
+    }
+  }, [isCollectionButtonEnabled]);
+
   
   const selectedCollection = collections.find(c => c._id === selectedCollectionId);
   const scopeLabel = selectedCollection ? selectedCollection.name : 'Toda la biblioteca'
@@ -76,6 +82,7 @@ function Navbar({ toggleSidebar }) {
           <div className="collectionSelector" ref={collectionMenuRef}>
             <button 
               className={`collectionButton ${!isCollectionButtonEnabled ? 'disabled' : ''}`}
+              aria-disabled={!isCollectionButtonEnabled}
               onClick={() => {
                 if (isCollectionButtonEnabled) {
                   setShowCollectionMenu(!showCollectionMenu)

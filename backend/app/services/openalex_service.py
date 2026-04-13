@@ -38,6 +38,46 @@ class OpenAlexService:
                 return int(stripped[:4])
         return None
 
+    def _get_current_year(self) -> int:
+        return datetime.utcnow().year
+
+    def _sanitize_year(self, value):
+        year = self._normalize_year_value(value)
+        if year is None:
+            return None
+
+        current_year = self._get_current_year()
+        if 1000 <= year <= current_year:
+            return year
+        return None
+
+    def _sanitize_counts_by_year(self, values: Any) -> List[Dict[str, int]]:
+        if not isinstance(values, list):
+            return []
+
+        current_year = self._get_current_year()
+        cleaned: List[Dict[str, int]] = []
+        for item in values:
+            if not isinstance(item, dict):
+                continue
+
+            year = self._sanitize_year(item.get("year"))
+            if year is None or year > current_year:
+                continue
+
+            cited_by_count = item.get("cited_by_count")
+            try:
+                cited_by_count = int(cited_by_count) if cited_by_count is not None else 0
+            except (TypeError, ValueError):
+                cited_by_count = 0
+
+            cleaned.append({
+                "year": year,
+                "cited_by_count": max(0, cited_by_count),
+            })
+
+        return cleaned
+
     def _extract_year(self, payload: Dict[str, Any]):
         """
         Extrae el año desde distintas variantes del esquema OpenAlex.
@@ -58,7 +98,7 @@ class OpenAlexService:
             direct_candidates.append(biblio.get("publication_year"))
 
         for candidate in direct_candidates:
-            normalized = self._normalize_year_value(candidate)
+            normalized = self._sanitize_year(candidate)
             if normalized is not None:
                 return normalized
 
@@ -200,6 +240,7 @@ class OpenAlexService:
         mode_filter = raw_filters.pop("mode", None)
         
         filters = self.map_filters(raw_filters)
+        filters["to_publication_date"] = datetime.utcnow().date().isoformat()
         works_query = Works()
         if filters:
             works_query = works_query.filter(**filters)
@@ -248,6 +289,13 @@ class OpenAlexService:
                     result["category"] = primary_topic.get("display_name")
 
                 year_value = self._extract_year(result)
+                raw_year_value = self._normalize_year_value(
+                    result.get("year") or result.get("publication_year")
+                )
+                if raw_year_value is not None and raw_year_value > self._get_current_year():
+                    continue
+                if year_value is None and result.get("publication_date"):
+                    continue
 
                 #Escoger solo 4 campos relevantes
 
@@ -310,6 +358,7 @@ class OpenAlexService:
             article["category"] = article["primary_topic"]["display_name"]
         # Normalizar año con fallback robusto
         article["year"] = self._extract_year(article)
+        article["counts_by_year"] = self._sanitize_counts_by_year(article.get("counts_by_year"))
         
         best_loc = None
         best_loc_is_oa_bool = False

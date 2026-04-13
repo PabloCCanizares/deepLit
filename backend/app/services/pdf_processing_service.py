@@ -23,6 +23,10 @@ from app.services.vector_index_service import VectorIndexService
 PDF_PROCESSOR_PROMPT = """
 Eres un analista de documentos cientificos experto en extraccion de metadatos.
 Extrae DOI, titulo, autores, ano, categoria, tipo, keywords, abstract y referencias.
+Para referencias usa solo el contexto de bibliografia/referencias cuando este disponible.
+Cada elemento de `referenced_works` debe incluir autores, ano y titulo del trabajo citado cuando aparezcan.
+No devuelvas citas parenteticas incompletas del cuerpo como "Wang et al. (2024)".
+Si no hay una referencia suficientemente completa, omitela.
 Para referencias devuelve la cita bibliografica completa en texto, sin indices numericos tipo [38].
 No uses la seccion de referencias para inferir titulo o tipo del documento.
 Si falta un dato, usa "No disponible".
@@ -38,6 +42,36 @@ def _remove_references_section(text: str) -> str:
     if match:
         return text[:match.start()].strip()
     return text
+
+
+def _extract_references_section(text: str) -> str:
+    if not text:
+        return ""
+
+    pattern = re.compile(r"(?im)^\s*(references|bibliography|bibliografia)\s*$")
+    match = pattern.search(text)
+    if not match:
+        return ""
+
+    return text[match.start():].strip()
+
+
+def _build_references_context(docs: list, max_chars: int = 16000) -> str:
+    if not docs:
+        return ""
+
+    tail_docs = docs[-min(len(docs), 8):]
+    tail_text = "\n".join(doc.page_content for doc in tail_docs)
+    references_text = _extract_references_section(tail_text)
+
+    if not references_text:
+        full_text = "\n".join(doc.page_content for doc in docs)
+        references_text = _extract_references_section(full_text)
+
+    if not references_text:
+        return ""
+
+    return references_text[:max_chars].strip()
 
 
 def _build_pdf_processing_config(offline: Optional[bool] = None) -> dict:
@@ -81,8 +115,15 @@ class PdfProcessingService:
 
         first_pages_text = "\n".join([d.page_content for d in docs[: min(5, len(docs))]])
         metadata_text = _remove_references_section(first_pages_text) or first_pages_text
+        references_text = _build_references_context(docs)
 
-        prompt = agent.create_prompt(message=f"Texto para metadatos principales:\n{metadata_text}")
+        prompt = agent.create_prompt(
+            message=(
+                f"Texto para metadatos principales:\n{metadata_text}\n\n"
+                "Contexto de referencias/bibliografia:\n"
+                f"{references_text or 'No disponible. Si no hay bibliografia fiable, devuelve referenced_works vacio.'}"
+            )
+        )
         output = agent.invoke(prompt, structured_output=True)
         output["pages"] = number_pages
 

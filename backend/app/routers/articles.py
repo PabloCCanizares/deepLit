@@ -5,8 +5,9 @@ Endpoints para gestionar artículos.
 """
 import asyncio
 import json
+
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from app.controllers import ArticlesController
 from app.models import QueryBody, Pagination, ArticleUpdate
 from app.core import StandardResponse, create_response_examples, get_current_user
@@ -134,6 +135,26 @@ async def get_user_articles(
     Excluye artículos en estado 'processing' o 'error'.
     """
     return await controller.get_user_articles(query, current_user)
+
+
+@router.get(
+    "/{article_id}/pdf",
+    summary="Obtener PDF asociado a un artículo",
+)
+async def get_article_pdf(
+    article_id: str,
+    current_user: dict = Depends(get_current_user),
+    controller: ArticlesController = Depends()
+):
+    """
+    Devuelve el PDF asociado al artículo para visualización o descarga.
+    """
+    pdf_path, filename = await controller.get_pdf_file(article_id, current_user)
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=filename,
+    )
 
 
 @router.get(
