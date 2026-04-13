@@ -72,6 +72,14 @@ function Sidebar({ isOpen, onClose }) {
               <span>Screening</span>
             </Link>
             <Link 
+              to="/evidence-extraction" 
+              className={`sidebarLink ${location.pathname === '/evidence-extraction' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-microscope"></i>
+              <span>Evidence Extraction</span>
+            </Link>
+            <Link 
               to="/collection-synthesis" 
               className={`sidebarLink ${location.pathname === '/collection-synthesis' ? 'active' : ''}`}
               onClick={onClose}

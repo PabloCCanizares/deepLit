@@ -43,6 +43,7 @@ function Navbar({ toggleSidebar }) {
   const isCollectionButtonEnabled = [
     "/search",
     "/screening",
+    "/evidence-extraction",
     "/collection-synthesis",
     "/openalex",
     "/dashboard"
