@@ -59,11 +59,6 @@ class CollectionSynthesisRunRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="Prompt del usuario para sintetizar la coleccion.")
 
 
-class CollectionSynthesisPaperRequest(BaseModel):
-    paper_response: str = Field(..., min_length=1, description="Version paper de la sintesis.")
-    paper_title: Optional[str] = Field(None, description="Titulo opcional de la version paper.")
-
-
 class CollectionSynthesisData(BaseModel):
     collection_id: str = Field(..., description="Coleccion sobre la que se ejecuta la sintesis.")
     prompt: str = Field(..., min_length=1, description="Prompt original del usuario.")
@@ -77,8 +72,7 @@ class CollectionSynthesisData(BaseModel):
         default=None,
         description="Fuente principal usada en la sintesis.",
     )
-    agent: Optional[str] = Field(None, description="Agente utilizado para generar la respuesta.")
-    prompt_version: Optional[str] = Field(None, description="Version del prompt usada por el agente.")
+    prompt_version: Optional[str] = Field(None, description="Version del prompt usada por el workflow.")
     error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
     paper_response: Optional[str] = Field(None, description="Version paper persistida de la sintesis.")
     paper_title: Optional[str] = Field(None, description="Titulo de la version paper.")

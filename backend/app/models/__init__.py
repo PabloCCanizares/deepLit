@@ -31,7 +31,6 @@ from app.models.pdf_processing import (
 )
 from app.models.research_artifacts import (
     CollectionSynthesisData,
-    CollectionSynthesisPaperRequest,
     CollectionSynthesisRunRequest,
     ScreeningDecisionData,
     ScreeningRunCounts,
@@ -85,7 +84,6 @@ __all__ = [
     "PdfMetadata",
     "ExcelUpload",
     "CollectionSynthesisData",
-    "CollectionSynthesisPaperRequest",
     "CollectionSynthesisRunRequest",
     "ScreeningDecisionData",
     "ScreeningRunCounts",

@@ -13,7 +13,6 @@ MODE_TIMEOUT_SECONDS = {
     "metadata_researcher": 35,
     "deep_researcher": 55,
     "web_searcher": 35,
-    "collection_synthesizer": 55,
 }
 
 

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 
-from app.controllers import CollectionResearcherController
+from app.controllers import CollectionSynthesisController
 from app.core.auth import get_current_user
 from app.core.responses import StandardResponse
-from app.models import CollectionSynthesisPaperRequest, CollectionSynthesisRunRequest
+from app.models import CollectionSynthesisRunRequest
 
 router = APIRouter(
-    prefix="/collection-researcher",
-    tags=["Collection Researcher"],
+    prefix="/collection-synthesis",
+    tags=["Collection Synthesis"],
 )
 
 
@@ -20,7 +20,7 @@ async def run_collection_synthesis(
     collection_id: str,
     payload: CollectionSynthesisRunRequest,
     current_user: dict = Depends(get_current_user),
-    controller: CollectionResearcherController = Depends(),
+    controller: CollectionSynthesisController = Depends(),
 ):
     return await controller.run_synthesis(collection_id, payload, current_user)
 
@@ -33,23 +33,22 @@ async def run_collection_synthesis(
 async def list_collection_syntheses(
     collection_id: str,
     current_user: dict = Depends(get_current_user),
-    controller: CollectionResearcherController = Depends(),
+    controller: CollectionSynthesisController = Depends(),
 ):
     return await controller.list_runs(collection_id, current_user)
 
 
-@router.patch(
+@router.post(
     "/runs/{run_id}/paper",
     response_model=StandardResponse,
-    summary="Guardar la version paper de una sintesis",
+    summary="Generar y guardar la version paper de una sintesis",
 )
-async def save_collection_synthesis_paper(
+async def generate_collection_synthesis_paper(
     run_id: str,
-    payload: CollectionSynthesisPaperRequest,
     current_user: dict = Depends(get_current_user),
-    controller: CollectionResearcherController = Depends(),
+    controller: CollectionSynthesisController = Depends(),
 ):
-    return await controller.save_paper(run_id, payload, current_user)
+    return await controller.generate_paper(run_id, current_user)
 
 
 @router.delete(
@@ -60,6 +59,6 @@ async def save_collection_synthesis_paper(
 async def delete_collection_synthesis(
     run_id: str,
     current_user: dict = Depends(get_current_user),
-    controller: CollectionResearcherController = Depends(),
+    controller: CollectionSynthesisController = Depends(),
 ):
     return await controller.delete_run(run_id, current_user)

@@ -3,7 +3,10 @@ from typing import List, Tuple
 
 from app.ai_assistant.agents.base_agents.base_agent import BaseAgent
 from app.ai_assistant.agents.base_agents.rag_engine import RagEngine
-from app.ai_assistant.config import get_deep_researcher_config, get_rag_strategy_config
+from app.ai_assistant.config import (
+    get_collection_screening_config,
+    get_rag_strategy_config,
+)
 from app.models import (
     ScreeningDecisionData,
     ScreeningDecisionLLMResult,
@@ -85,7 +88,7 @@ class CollectionScreeningService:
         self.storage_service = StorageService()
 
     def _build_agents(self) -> Tuple[BaseAgent, RagEngine, VectorIndexService]:
-        config = get_deep_researcher_config()
+        config = get_collection_screening_config()
         llm_agent = BaseAgent(
             modelo=config["modelo"],
             temperatura=config["temperatura"],

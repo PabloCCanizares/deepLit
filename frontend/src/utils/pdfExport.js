@@ -295,7 +295,7 @@ function paginatePaper({ title, collectionName, sections }) {
   cursorY -= Math.max(wrapText(normalizedTitle, 54).length * 24, 24)
 
   addText(firstPage, {
-    text: 'Collection Researcher Manuscript',
+    text: 'Collection Synthesis Manuscript',
     x: pageWidth / 2,
     y: cursorY - 4,
     font: 'F2',

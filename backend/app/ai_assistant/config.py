@@ -63,7 +63,6 @@ def get_master_config():
             'metadata_researcher',
             'deep_researcher',
             'web_searcher',
-            'collection_synthesizer',
         ],
         "offline": offline
     }
@@ -97,6 +96,12 @@ def get_deep_researcher_config(offline=None):
         "embedding_model": get_embeddings(offline),
         "offline": offline
     }
+
+def get_collection_screening_config(offline=None):
+    return get_deep_researcher_config(offline)
+
+def get_collection_synthesis_config(offline=None):
+    return get_deep_researcher_config(offline)
 
 def get_rag_strategy_config():
     return DEFAULT_RAG_STRATEGY.copy()

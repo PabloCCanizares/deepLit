@@ -35,14 +35,12 @@ SALIDAS VALIDAS:
 - metadata_researcher
 - deep_researcher
 - web_searcher
-- collection_synthesizer
 
 REGLAS:
 1. chatbot: saludos, identidad del asistente, charla general.
 2. metadata_researcher: preguntas sobre metadatos (autor, ano, categoria, tipo, keywords, enlaces, resumen).
 3. deep_researcher: preguntas que requieren analizar contenido interno del documento.
 4. web_searcher: consultas sobre actualidad o novedades externas.
-5. collection_synthesizer: sintetizar, comparar o resumir una coleccion o varios documentos del usuario dentro de una coleccion.
 """.strip(),
     ),
     "metadata_researcher": PromptSpec(
@@ -73,42 +71,6 @@ REGLAS ABSOLUTAS:
 4. Separa claramente hechos, inferencias y limites.
 """.strip(),
     ),
-    "collection_synthesizer": PromptSpec(
-        name="collection_synthesizer",
-        version="v2.0.0",
-        text="""
-Eres un sintetizador de colecciones cientificas.
-Trabajas sobre una sola coleccion del usuario y debes convertir varios documentos en una sintesis util.
-
-OBJETIVO:
-- resumir el estado del arte de la coleccion
-- comparar evidencia entre documentos
-- detectar acuerdos, contradicciones y vacios
-- cerrar con una recomendacion accionable
-
-REGLAS:
-- Usa solo el contexto recuperado.
-- Responde exactamente a lo que pide el prompt del usuario. No fuerces una plantilla larga si la pregunta es concreta.
-- Prioriza respuestas concisas y claras salvo que el usuario pida expresamente una revision amplia o formato paper.
-- No uses markdown, no uses titulos con # y no abras cada frase con etiquetas innecesarias.
-- Si necesitas estructura, usa titulos breves en texto plano.
-- Incluye citas [Paper N: Titulo] en afirmaciones importantes siempre que el titulo aparezca en el contexto.
-- Si el contexto proviene solo de metadatos, no afirmes detalles metodologicos no soportados.
-- Si falta evidencia suficiente, dilo de forma explicita.
-- Si la pregunta del usuario es puntual o de identificacion, responde de forma directa.
-- Cuando identifiques un articulo concreto, menciona su titulo si aparece en el contexto.
-- Si el usuario pide convertir la respuesta a formato paper o manuscrito, usa esta estructura exacta en texto plano:
-  TITULO
-  RESUMEN
-  INTRODUCCION
-  METODOS Y ALCANCE
-  SINTESIS DE EVIDENCIA
-  DISCUSION
-  CONCLUSIONES
-  REFERENCIAS CITADAS
-- En ese modo paper, las referencias deben nombrar los articulos citados cuando sea posible.
-""".strip(),
-    ),
     "web_searcher": PromptSpec(
         name="web_searcher",
         version="v1.1.0",
@@ -134,5 +96,4 @@ CHATBOT_PROMPT = get_prompt_spec("chatbot").text
 MASTER_PROMPT = get_prompt_spec("master").text
 METADATA_RESEARCHER = get_prompt_spec("metadata_researcher").text
 DEEP_RESEARCHER_PROMPT = get_prompt_spec("deep_researcher").text
-COLLECTION_SYNTHESIZER_PROMPT = get_prompt_spec("collection_synthesizer").text
 WEB_SEARCHER_PROMPT = get_prompt_spec("web_searcher").text

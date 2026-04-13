@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { aiAssistantAPI, articlesAPI, collectionResearcherAPI } from '../api/api'
+import { articlesAPI, collectionSynthesisAPI } from '../api/api'
 import { useCollection } from '../context/CollectionContext'
 import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfExport'
 
@@ -163,11 +163,11 @@ function renderSectionBlocks(section, runId) {
     }
 
     return (
-      <ol className="collection-researcher-citations">
+      <ol className="collection-synthesis-citations">
         {citations.map((citation, index) => (
-          <li key={`${runId}-${section.heading}-citation-${index}`} className="collection-researcher-citation-item">
-            <span className="collection-researcher-citation-index">{index + 1}</span>
-            <p className="collection-researcher-citation-text">{citation}</p>
+          <li key={`${runId}-${section.heading}-citation-${index}`} className="collection-synthesis-citation-item">
+            <span className="collection-synthesis-citation-index">{index + 1}</span>
+            <p className="collection-synthesis-citation-text">{citation}</p>
           </li>
         ))}
       </ol>
@@ -179,21 +179,6 @@ function renderSectionBlocks(section, runId) {
   ))
 }
 
-function buildPaperPrompt(entry) {
-  return [
-    'Convierte la coleccion activa en un texto con formato de paper academico breve.',
-    `Pregunta original del usuario: ${entry.prompt}`,
-    `Respuesta previa disponible: ${cleanAssistantText(entry.response)}`,
-    'Requisitos obligatorios:',
-    '- Responde en espanol.',
-    '- Usa texto plano, sin markdown y sin simbolos #.',
-    '- Usa exactamente estas cabeceras, cada una en su propia linea: TITULO, RESUMEN, INTRODUCCION, METODOS Y ALCANCE, SINTESIS DE EVIDENCIA, DISCUSION, CONCLUSIONES, REFERENCIAS CITADAS.',
-    '- La sintesis debe estar bien formada, sonar a manuscrito academico y responder a la pregunta original.',
-    '- En REFERENCIAS CITADAS, nombra los articulos citados de la coleccion cuando sea posible usando el formato [Paper N: Titulo].',
-    '- No inventes estudios, citas ni detalles no presentes en el contexto recuperado.',
-  ].join('\n')
-}
-
 function buildPdfFilename(title) {
   const safeBase = String(title || 'paper-coleccion')
     .toLowerCase()
@@ -203,7 +188,11 @@ function buildPdfFilename(title) {
   return `${safeBase || 'paper-coleccion'}.pdf`
 }
 
-function CollectionResearcher() {
+function isActiveRunStatus(status) {
+  return ['queued', 'processing'].includes(status)
+}
+
+function CollectionSynthesis() {
   const { selectedCollectionId, collections } = useCollection()
 
   const [prompt, setPrompt] = useState('')
@@ -215,6 +204,8 @@ function CollectionResearcher() {
   const [showDeleteRunModal, setShowDeleteRunModal] = useState(false)
   const [runToDeleteId, setRunToDeleteId] = useState(null)
   const [notification, setNotification] = useState('')
+  const activeCollectionIdRef = useRef(selectedCollectionId)
+  const loadRunsRequestIdRef = useRef(0)
 
   const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
   const collectionName = selectedCollection?.name || null
@@ -238,14 +229,18 @@ function CollectionResearcher() {
   }, [notification])
 
   useEffect(() => {
+    activeCollectionIdRef.current = selectedCollectionId
+    loadRunsRequestIdRef.current += 1
+    setRuns([])
+    setSelectedRunId(null)
+    setRunToDeleteId(null)
+
     if (!selectedCollectionId) {
-      setRuns([])
-      setSelectedRunId(null)
-      setRunToDeleteId(null)
+      setLoadingRuns(false)
       return undefined
     }
 
-    loadRuns(selectedCollectionId)
+    loadRuns(selectedCollectionId, null, { preserveSelection: false })
     return undefined
   }, [selectedCollectionId])
 
@@ -282,10 +277,21 @@ function CollectionResearcher() {
     return () => clearInterval(interval)
   }, [selectedCollectionId, selectedRun])
 
-  const loadRuns = async (collectionId, preferredRunId = null) => {
+  const loadRuns = async (collectionId, preferredRunId = null, options = {}) => {
+    const { preserveSelection = true } = options
+    const requestId = loadRunsRequestIdRef.current + 1
+    loadRunsRequestIdRef.current = requestId
+
     try {
       setLoadingRuns(true)
-      const response = await collectionResearcherAPI.listRuns(collectionId)
+      const response = await collectionSynthesisAPI.listRuns(collectionId)
+      if (
+        activeCollectionIdRef.current !== collectionId ||
+        loadRunsRequestIdRef.current !== requestId
+      ) {
+        return
+      }
+
       const nextRuns = response?.data?.runs || []
       setRuns(nextRuns)
 
@@ -294,15 +300,30 @@ function CollectionResearcher() {
         return
       }
 
-      if (selectedRunId && nextRuns.some((run) => run._id === selectedRunId)) {
+      if (
+        preserveSelection &&
+        selectedRunId &&
+        nextRuns.some((run) => run._id === selectedRunId)
+      ) {
         return
       }
 
       setSelectedRunId(nextRuns[0]?._id || null)
     } catch (error) {
+      if (
+        activeCollectionIdRef.current !== collectionId ||
+        loadRunsRequestIdRef.current !== requestId
+      ) {
+        return
+      }
       setNotification(error.message || 'Error al cargar las sintesis guardadas')
     } finally {
-      setLoadingRuns(false)
+      if (
+        activeCollectionIdRef.current === collectionId &&
+        loadRunsRequestIdRef.current === requestId
+      ) {
+        setLoadingRuns(false)
+      }
     }
   }
 
@@ -315,7 +336,7 @@ function CollectionResearcher() {
 
     try {
       setIsSubmitting(true)
-      const response = await collectionResearcherAPI.runSynthesis(selectedCollectionId, trimmedPrompt)
+      const response = await collectionSynthesisAPI.runSynthesis(selectedCollectionId, trimmedPrompt)
       const createdRun = response?.data?.run || null
 
       if (createdRun) {
@@ -335,7 +356,8 @@ function CollectionResearcher() {
 
   const handleGeneratePaper = async (runId) => {
     const run = runs.find((item) => item._id === runId)
-    if (!run || !selectedCollectionId) {
+    const collectionId = selectedCollectionId
+    if (!run || !collectionId) {
       return
     }
 
@@ -348,22 +370,12 @@ function CollectionResearcher() {
         )
       )
 
-      const response = await aiAssistantAPI.chat(
-        buildPaperPrompt(run),
-        'collection_synthesizer',
-        selectedCollectionId
-      )
-
-      const paperResponse = cleanAssistantText(response?.data?.reply || '')
-      const parsedSections = parsePaperSections(paperResponse)
-      const titleSection = parsedSections.find((section) => section.heading === 'TITULO')
-
-      const savedResponse = await collectionResearcherAPI.savePaper(runId, {
-        paper_response: paperResponse,
-        paper_title: titleSection?.content || 'Paper de coleccion',
-      })
-
+      const savedResponse = await collectionSynthesisAPI.generatePaper(runId)
       const updatedRun = savedResponse?.data?.run || null
+      if (activeCollectionIdRef.current !== collectionId) {
+        return
+      }
+
       if (updatedRun) {
         setRuns((prev) =>
           prev.map((item) =>
@@ -373,9 +385,12 @@ function CollectionResearcher() {
           )
         )
       } else {
-        await loadRuns(selectedCollectionId, runId)
+        await loadRuns(collectionId, runId)
       }
     } catch (error) {
+      if (activeCollectionIdRef.current !== collectionId) {
+        return
+      }
       setRuns((prev) =>
         prev.map((item) =>
           item._id === runId
@@ -389,10 +404,17 @@ function CollectionResearcher() {
 
   const handleDeleteRun = async () => {
     if (!runToDeleteId || deletingRun) return
+    const runToDelete = runs.find((run) => run._id === runToDeleteId)
+    if (runToDelete && isActiveRunStatus(runToDelete.status)) {
+      setShowDeleteRunModal(false)
+      setRunToDeleteId(null)
+      setNotification('No puedes eliminar una sintesis que sigue en cola o en procesamiento')
+      return
+    }
 
     try {
       setDeletingRun(true)
-      await collectionResearcherAPI.deleteRun(runToDeleteId)
+      await collectionSynthesisAPI.deleteRun(runToDeleteId)
       setShowDeleteRunModal(false)
       setRunToDeleteId(null)
       await loadRuns(selectedCollectionId)
@@ -442,19 +464,19 @@ function CollectionResearcher() {
             <i className="fas fa-folder-open"></i>
           </div>
           <h1>Selecciona una coleccion</h1>
-          <p>Collection Researcher trabaja sobre una coleccion concreta. Elige una en la barra superior para empezar.</p>
+          <p>Collection Synthesis trabaja sobre una coleccion concreta. Elige una en la barra superior para empezar.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="page-container collection-researcher-page">
+    <div className="page-container collection-synthesis-page">
       <div className="container">
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
-              <h1 className="header-title">Collection Researcher</h1>
+              <h1 className="header-title">Collection Synthesis</h1>
               <span className="header-subtitle">Coleccion activa: {collectionName}</span>
             </div>
             <div className="header-stats">
@@ -466,16 +488,16 @@ function CollectionResearcher() {
           </div>
         </div>
 
-        <section className="collection-researcher-toolbar">
-          <div className="collection-researcher-toolbar-copy">
+        <section className="collection-synthesis-toolbar">
+          <div className="collection-synthesis-toolbar-copy">
             <h2>Sintesis guardadas</h2>
             <p>Cada consulta queda registrada en esta coleccion para poder retomarla despues.</p>
           </div>
         </section>
 
-        <div className="collection-researcher-layout">
-          <aside className="collection-researcher-info">
-            <div className="collection-researcher-card-header">
+        <div className="collection-synthesis-layout">
+          <aside className="collection-synthesis-info">
+            <div className="collection-synthesis-card-header">
               <div>
                 <h2>Nueva sintesis</h2>
                 <p>Haz una pregunta concreta y la respuesta quedara guardada como un run.</p>
@@ -483,7 +505,7 @@ function CollectionResearcher() {
             </div>
 
             <textarea
-              className="collection-researcher-textarea"
+              className="collection-synthesis-textarea"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               placeholder="Ejemplo: sintetiza las contradicciones principales de la coleccion y concluye en 5-6 frases."
@@ -491,7 +513,7 @@ function CollectionResearcher() {
               disabled={isSubmitting}
             />
 
-            <div className="collection-researcher-actions">
+            <div className="collection-synthesis-actions">
               <button
                 type="button"
                 className="btn-primary"
@@ -503,23 +525,23 @@ function CollectionResearcher() {
               </button>
             </div>
 
-            <div className="collection-researcher-tip-list">
-              <div className="collection-researcher-tip">
+            <div className="collection-synthesis-tip-list">
+              <div className="collection-synthesis-tip">
                 <strong>Ejemplo</strong>
                 <span>Resume los hallazgos principales en tres ideas clave.</span>
               </div>
-              <div className="collection-researcher-tip">
+              <div className="collection-synthesis-tip">
                 <strong>Ejemplo</strong>
                 <span>Compara los articulos sobre metodologia, resultados y limitaciones.</span>
               </div>
-              <div className="collection-researcher-tip">
+              <div className="collection-synthesis-tip">
                 <strong>Ejemplo</strong>
                 <span>Detecta vacios de investigacion y una recomendacion final.</span>
               </div>
             </div>
           </aside>
 
-          <section className="collection-researcher-main">
+          <section className="collection-synthesis-main">
             <div className="screening-layout">
               <aside className="screening-runs-panel">
                 <div className="screening-panel-header">
@@ -544,49 +566,60 @@ function CollectionResearcher() {
                 )}
 
                 <div className="screening-runs-list">
-                  {runs.map((run) => (
-                    <article
-                      key={run._id}
-                      className={`screening-run-card ${selectedRunId === run._id ? 'active' : ''}`}
-                      onClick={() => setSelectedRunId(run._id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          setSelectedRunId(run._id)
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="screening-run-card-top">
-                        <span className={`screening-status-badge ${run.status || 'processing'}`}>{run.status || 'processing'}</span>
-                        <div className="screening-run-card-meta">
-                          <span className="screening-run-date">{formatTimestamp(run.created_at)}</span>
-                          <button
-                            type="button"
-                            className="screening-run-card-delete"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setRunToDeleteId(run._id)
-                              setShowDeleteRunModal(true)
-                            }}
-                            disabled={deletingRun}
-                            aria-label={`Eliminar sintesis ${run.prompt}`}
-                            title="Eliminar sintesis"
-                          >
-                            <i className={`fas ${deletingRun && runToDeleteId === run._id ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
-                          </button>
+                  {runs.map((run) => {
+                    const runIsActive = isActiveRunStatus(run.status)
+
+                    return (
+                      <article
+                        key={run._id}
+                        className={`screening-run-card ${selectedRunId === run._id ? 'active' : ''}`}
+                        onClick={() => setSelectedRunId(run._id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            setSelectedRunId(run._id)
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <div className="screening-run-card-top">
+                          <span className={`screening-status-badge ${run.status || 'processing'}`}>{run.status || 'processing'}</span>
+                          <div className="screening-run-card-meta">
+                            <span className="screening-run-date">{formatTimestamp(run.created_at)}</span>
+                            <button
+                              type="button"
+                              className="screening-run-card-delete"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                if (runIsActive) {
+                                  return
+                                }
+                                setRunToDeleteId(run._id)
+                                setShowDeleteRunModal(true)
+                              }}
+                              disabled={deletingRun || runIsActive}
+                              aria-label={`Eliminar sintesis ${run.prompt}`}
+                              title={
+                                runIsActive
+                                  ? 'No disponible mientras la sintesis esta activa'
+                                  : 'Eliminar sintesis'
+                              }
+                            >
+                              <i className={`fas ${deletingRun && runToDeleteId === run._id ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <h4>{run.prompt}</h4>
-                    </article>
-                  ))}
+                        <h4>{run.prompt}</h4>
+                      </article>
+                    )
+                  })}
                 </div>
               </aside>
 
               <section className="screening-detail-panel">
                 {!selectedRun && !loadingRuns && (
-                  <div className="collection-researcher-empty">
+                  <div className="collection-synthesis-empty">
                     <i className="fas fa-diagram-project"></i>
                     <h3>Sin sintesis seleccionada</h3>
                     <p>Elige una ejecucion guardada o crea una nueva consulta para esta coleccion.</p>
@@ -594,17 +627,17 @@ function CollectionResearcher() {
                 )}
 
                 {selectedRun && (
-                  <article className="collection-researcher-result-card collection-researcher-detail-card">
-                    <div className="collection-researcher-result-top">
+                  <article className="collection-synthesis-result-card collection-synthesis-detail-card">
+                    <div className="collection-synthesis-result-top">
                       <div>
-                        <span className="collection-researcher-result-label">Prompt</span>
+                        <span className="collection-synthesis-result-label">Prompt</span>
                         <h3>{selectedRun.prompt}</h3>
                       </div>
                       <div className="screening-result-meta">
                         <span className={`screening-status-badge ${selectedRun.status || 'queued'}`}>
                           {selectedRun.status || 'queued'}
                         </span>
-                        <span className="collection-researcher-result-date">{formatTimestamp(selectedRun.created_at)}</span>
+                        <span className="collection-synthesis-result-date">{formatTimestamp(selectedRun.created_at)}</span>
                       </div>
                     </div>
 
@@ -613,7 +646,7 @@ function CollectionResearcher() {
                     )}
 
                     {selectedRun.status === 'queued' && (
-                      <div className="collection-researcher-empty">
+                      <div className="collection-synthesis-empty">
                         <i className="fas fa-clock"></i>
                         <h3>Sintesis en cola</h3>
                         <p>El worker la procesara en cuanto llegue su turno.</p>
@@ -621,7 +654,7 @@ function CollectionResearcher() {
                     )}
 
                     {selectedRun.status === 'processing' && (
-                      <div className="collection-researcher-empty">
+                      <div className="collection-synthesis-empty">
                         <i className="fas fa-spinner fa-spin"></i>
                         <h3>Generando sintesis</h3>
                         <p>La consulta se esta resolviendo ahora mismo para esta coleccion.</p>
@@ -629,14 +662,14 @@ function CollectionResearcher() {
                     )}
 
                     {selectedRun.status === 'completed' && (
-                      <div className="collection-researcher-result-body">
-                        <span className="collection-researcher-result-label">Respuesta</span>
+                      <div className="collection-synthesis-result-body">
+                        <span className="collection-synthesis-result-label">Respuesta</span>
                         {selectedRunResponseSections.length > 0 ? (
-                          <div className="collection-researcher-paper-content">
+                          <div className="collection-synthesis-paper-content">
                             {selectedRunResponseSections.map((section) => (
                               <section
                                 key={`${selectedRun._id}-response-${section.heading}`}
-                                className="collection-researcher-paper-section"
+                                className="collection-synthesis-paper-section"
                               >
                                 <h5>{section.heading}</h5>
                                 {renderSectionBlocks(section, `${selectedRun._id}-response`)}
@@ -644,7 +677,7 @@ function CollectionResearcher() {
                             ))}
                           </div>
                         ) : (
-                          <div className="collection-researcher-text-blocks">
+                          <div className="collection-synthesis-text-blocks">
                             {getTextBlocks(selectedRun.response).map((block, index) => (
                               <p key={`${selectedRun._id}-paragraph-${index}`}>{block}</p>
                             ))}
@@ -653,7 +686,7 @@ function CollectionResearcher() {
                       </div>
                     )}
 
-                    <div className="collection-researcher-result-actions">
+                    <div className="collection-synthesis-result-actions">
                       <button
                         type="button"
                         className="btn-secondary"
@@ -687,17 +720,17 @@ function CollectionResearcher() {
                     </div>
 
                     {selectedRun.paper_response && (
-                      <div className="collection-researcher-paper-preview">
-                        <div className="collection-researcher-paper-preview-header">
+                      <div className="collection-synthesis-paper-preview">
+                        <div className="collection-synthesis-paper-preview-header">
                           <div>
-                            <span className="collection-researcher-result-label">Vista paper</span>
+                            <span className="collection-synthesis-result-label">Vista paper</span>
                             <h4>{selectedRun.paper_title || 'Paper de coleccion'}</h4>
                           </div>
                         </div>
 
-                        <div className="collection-researcher-paper-content">
+                        <div className="collection-synthesis-paper-content">
                           {parsePaperSections(selectedRun.paper_response).map((section) => (
-                            <section key={`${selectedRun._id}-${section.heading}`} className="collection-researcher-paper-section">
+                            <section key={`${selectedRun._id}-${section.heading}`} className="collection-synthesis-paper-section">
                               <h5>{section.heading}</h5>
                               {renderSectionBlocks(section, selectedRun._id)}
                             </section>
@@ -764,4 +797,4 @@ function CollectionResearcher() {
   )
 }
 
-export default CollectionResearcher
+export default CollectionSynthesis

@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from app.core import NotFoundError, StandardResponse
+from app.core import ConflictError, NotFoundError, StandardResponse
 from app.models import ScreeningDecisionUpdateRequest, ScreeningRunData, ScreeningRunRequest
 from app.services.collection_service import CollectionService
 from app.services.job_service import JobService
@@ -180,10 +180,12 @@ class ScreeningController:
         run_id: str,
         current_user: dict,
     ) -> StandardResponse:
-        await self.screening_run_service.get_run(
+        run = await self.screening_run_service.get_run(
             run_id=run_id,
             user_id=current_user["_id"],
         )
+        if run.get("status") in {"queued", "processing"}:
+            raise ConflictError("No puedes eliminar un screening que sigue en cola o en procesamiento")
 
         await self.screening_decision_service.delete_run_decisions(
             user_id=current_user["_id"],

@@ -9,7 +9,7 @@ from app.services.article_service import ArticleService
 from app.services.screening_run_service import ScreeningRunService
 from app.services.collection_screening_service import CollectionScreeningService
 from app.services.collection_synthesis_service import CollectionSynthesisService
-from app.services.ai_assistant_service import AiAssistantService
+from app.services.collection_synthesis_run_service import CollectionSynthesisRunService
 from app.services.job_service import (
     JobService,
     PDF_PROCESSING_JOB,
@@ -32,7 +32,7 @@ class JobWorker:
         self.screening_run_service = ScreeningRunService()
         self.collection_screening_service = CollectionScreeningService()
         self.collection_synthesis_service = CollectionSynthesisService()
-        self.ai_assistant_service = AiAssistantService()
+        self.collection_synthesis_run_service = CollectionSynthesisRunService()
         self.knowledge_graph_service = KnowledgeGraphService()
         self.pdf_processing_service = PdfProcessingService()
         self.storage_service = StorageService()
@@ -312,29 +312,24 @@ class JobWorker:
                 collection_id,
             )
 
-            await self.collection_synthesis_service.mark_processing(
+            await self.collection_synthesis_run_service.mark_processing(
                 run_id=run_id,
                 user_id=user_id,
             )
 
-            result = await self.ai_assistant_service.chat(
-                message=prompt,
+            result = await self.collection_synthesis_service.synthesize_collection(
+                user_message=prompt,
                 user_id=user_id,
-                user_name=str(user_id),
-                selected_mode="collection_synthesizer",
                 collection_id=collection_id,
+                fail_on_timeout=True,
             )
 
-            if result.get("timed_out"):
-                raise RuntimeError(result.get("reply") or "La sintesis ha agotado el tiempo de ejecucion.")
-
             await self.job_service.mark_completed(job_id)
-            run = await self.collection_synthesis_service.mark_completed(
+            run = await self.collection_synthesis_run_service.mark_completed(
                 run_id=run_id,
                 user_id=user_id,
                 response=result.get("reply") or "",
                 context_source=result.get("context_source"),
-                agent=result.get("agent"),
                 prompt_version=result.get("prompt_version"),
             )
 
@@ -364,7 +359,7 @@ class JobWorker:
                 )
 
             try:
-                await self.collection_synthesis_service.mark_failed(
+                await self.collection_synthesis_run_service.mark_failed(
                     run_id=run_id,
                     user_id=user_id,
                     error_message=str(exc),
