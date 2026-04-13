@@ -8,6 +8,8 @@ from app.repositories.job_repository import JobRepository
 from app.repositories.screening_decision_repository import ScreeningDecisionRepository
 from app.repositories.screening_run_repository import ScreeningRunRepository
 from app.repositories.collection_synthesis_repository import CollectionSynthesisRepository
+from app.repositories.evidence_extraction_run_repository import EvidenceExtractionRunRepository
+from app.repositories.article_extraction_repository import ArticleExtractionRepository
 __all__ = [
     "UserRepository",
     "PdfRepository",
@@ -18,4 +20,6 @@ __all__ = [
     "ScreeningDecisionRepository",
     "ScreeningRunRepository",
     "CollectionSynthesisRepository",
+    "EvidenceExtractionRunRepository",
+    "ArticleExtractionRepository",
 ]

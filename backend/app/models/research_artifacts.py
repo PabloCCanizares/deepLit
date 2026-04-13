@@ -76,3 +76,93 @@ class CollectionSynthesisData(BaseModel):
     error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
     paper_response: Optional[str] = Field(None, description="Version paper persistida de la sintesis.")
     paper_title: Optional[str] = Field(None, description="Titulo de la version paper.")
+
+
+class EvidenceExtractionRunData(BaseModel):
+    collection_id: str = Field(..., description="Coleccion sobre la que se ejecuta la extraccion.")
+    screening_run_id: Optional[str] = Field(
+        None,
+        description="Screening run opcional usado para acotar articulos.",
+    )
+    selection_mode: Literal["all", "screening_include", "screening_include_review"] = Field(
+        default="all",
+        description="Modo de seleccion de articulos del run.",
+    )
+    status: Literal["queued", "processing", "completed", "failed"] = Field(
+        default="queued",
+        description="Estado actual de la extraccion.",
+    )
+    job_id: Optional[str] = Field(None, description="Job asociado a la extraccion.")
+    total_articles: int = Field(default=0, ge=0, description="Numero total de articulos evaluables.")
+    processed_articles: int = Field(default=0, ge=0, description="Numero de articulos procesados.")
+    prompt_version: Optional[str] = Field(None, description="Version del prompt usada por el workflow.")
+    schema_version: Optional[str] = Field(None, description="Version del schema usado por el workflow.")
+    error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
+
+
+class SupportSnippetReference(BaseModel):
+    text: str = Field(..., min_length=1, description="Fragmento breve de soporte.")
+    facet: Literal["objective", "methods", "findings"] = Field(
+        ...,
+        description="Bloque de extracción al que da soporte.",
+    )
+    page: Optional[int] = Field(None, description="Página origen si se conoce.")
+    start_index: Optional[int] = Field(
+        None,
+        description="Offset aproximado del chunk de origen si se conoce.",
+    )
+
+
+class ArticleExtractionData(BaseModel):
+    run_id: str = Field(..., description="ID del run de extraccion.")
+    article_id: str = Field(..., description="ID del articulo analizado.")
+    article_title: Optional[str] = Field(None, description="Titulo del articulo analizado.")
+    source_type: Literal["full_text", "metadata"] = Field(
+        default="metadata",
+        description="Fuente principal usada para la extraccion.",
+    )
+    objective: Optional[str] = Field(None, description="Objetivo principal del articulo.")
+    objective_support: List[SupportSnippetReference] = Field(
+        default_factory=list,
+        description="Referencias estructuradas de soporte para objetivo y preguntas.",
+    )
+    research_questions: List[str] = Field(
+        default_factory=list,
+        description="Preguntas de investigacion detectadas.",
+    )
+    methodology: Optional[str] = Field(None, description="Metodologia principal.")
+    methods_support: List[SupportSnippetReference] = Field(
+        default_factory=list,
+        description="Referencias estructuradas de soporte metodológico.",
+    )
+    dataset: Optional[str] = Field(None, description="Dataset o fuente de datos principal.")
+    variables: List[str] = Field(
+        default_factory=list,
+        description="Variables mencionadas.",
+    )
+    metrics: List[str] = Field(
+        default_factory=list,
+        description="Metricas detectadas.",
+    )
+    findings: List[str] = Field(
+        default_factory=list,
+        description="Hallazgos principales extraidos.",
+    )
+    limitations: List[str] = Field(
+        default_factory=list,
+        description="Limitaciones identificadas.",
+    )
+    future_work: List[str] = Field(
+        default_factory=list,
+        description="Lineas de trabajo futuro identificadas.",
+    )
+    findings_support: List[SupportSnippetReference] = Field(
+        default_factory=list,
+        description="Referencias estructuradas de soporte para hallazgos.",
+    )
+    confidence: Optional[float] = Field(
+        None,
+        ge=0,
+        le=1,
+        description="Confianza estimada en el rango 0-1.",
+    )

@@ -10,6 +10,7 @@ from app.repositories import JobRepository
 PDF_PROCESSING_JOB = "process_pdf"
 COLLECTION_SCREENING_JOB = "screen_collection"
 COLLECTION_SYNTHESIS_JOB = "synthesize_collection"
+EVIDENCE_EXTRACTION_JOB = "extract_evidence"
 
 
 class JobService:
@@ -103,6 +104,27 @@ class JobService:
                 "run_id": run_id,
                 "collection_id": collection_id,
                 "prompt": prompt,
+            },
+        )
+
+    async def enqueue_evidence_extraction(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        collection_id: str,
+        screening_run_id: str | None = None,
+        selection_mode: str = "all",
+    ) -> str:
+        return await self.enqueue(
+            job_type=EVIDENCE_EXTRACTION_JOB,
+            user_id=user_id,
+            payload={
+                "user_id": user_id,
+                "run_id": run_id,
+                "collection_id": collection_id,
+                "screening_run_id": screening_run_id,
+                "selection_mode": selection_mode,
             },
         )
 

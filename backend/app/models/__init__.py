@@ -30,11 +30,21 @@ from app.models.pdf_processing import (
     PdfMetadata
 )
 from app.models.research_artifacts import (
+    ArticleExtractionData,
     CollectionSynthesisData,
     CollectionSynthesisRunRequest,
+    EvidenceExtractionRunData,
     ScreeningDecisionData,
     ScreeningRunCounts,
     ScreeningRunData,
+    SupportSnippetReference,
+)
+from app.models.evidence_extraction import (
+    EvidenceExtractionRunRequest,
+    EvidenceExtractionLLMResult,
+    EvidenceExtractionObjectiveResult,
+    EvidenceExtractionMethodsResult,
+    EvidenceExtractionFindingsResult,
 )
 
 # Excel models
@@ -83,8 +93,16 @@ __all__ = [
     "PdfUpload",
     "PdfMetadata",
     "ExcelUpload",
+    "ArticleExtractionData",
     "CollectionSynthesisData",
     "CollectionSynthesisRunRequest",
+    "EvidenceExtractionRunData",
+    "SupportSnippetReference",
+    "EvidenceExtractionRunRequest",
+    "EvidenceExtractionLLMResult",
+    "EvidenceExtractionObjectiveResult",
+    "EvidenceExtractionMethodsResult",
+    "EvidenceExtractionFindingsResult",
     "ScreeningDecisionData",
     "ScreeningRunCounts",
     "ScreeningRunData",

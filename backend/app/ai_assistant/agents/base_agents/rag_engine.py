@@ -64,23 +64,18 @@ class RagEngine(BaseAgent):
         )
         return f"[Paper {paper_number} | Pag {page} | Titulo: {article_title} | Fuente: {source}]"
 
-    def retrieve(self, user_message: str, strategy: Dict = None):
-        """
-        Recupera chunks relevantes del vector store con estrategia RAG unificada.
-        """
+    def search_docs(self, user_message: str, strategy: Dict = None) -> List:
         strategy = strategy or {}
         k = int(strategy.get("k", 8))
         use_mmr = bool(strategy.get("use_mmr", True))
         fetch_k_multiplier = max(1, int(strategy.get("fetch_k_multiplier", 3)))
         lambda_mult = float(strategy.get("lambda_mult", 0.7))
-        rerank = strategy.get("rerank", "query_overlap")
-        max_context_chars = max(500, int(strategy.get("max_context_chars", 12000)))
-        include_citations = bool(strategy.get("include_citations", True))
         group_by_article = bool(strategy.get("group_by_article", False))
         max_chunks_per_article = max(1, int(strategy.get("max_chunks_per_article", 1)))
+        rerank = strategy.get("rerank", "query_overlap")
 
         if self.vector_store is None:
-            return "\n--- NO HAY CONTEXTO DISPONIBLE (sin documentos indexados) ---\n\n"
+            return []
 
         if use_mmr:
             retrieved_docs = self.vector_store.max_marginal_relevance_search(
@@ -90,7 +85,7 @@ class RagEngine(BaseAgent):
             retrieved_docs = self.vector_store.similarity_search(user_message, k=k)
 
         if not retrieved_docs:
-            return "\n--- NO SE ENCONTRÓ CONTEXTO RELEVANTE ---\n\n"
+            return []
 
         if rerank == "query_overlap":
             retrieved_docs = self._rerank_by_query_overlap(retrieved_docs, user_message)
@@ -101,12 +96,22 @@ class RagEngine(BaseAgent):
                 max_chunks_per_article=max_chunks_per_article,
             )
 
+        return retrieved_docs
+
+    def format_docs_as_context(self, docs: List, strategy: Dict = None) -> str:
+        strategy = strategy or {}
+        max_context_chars = max(500, int(strategy.get("max_context_chars", 12000)))
+        include_citations = bool(strategy.get("include_citations", True))
+
+        if not docs:
+            return "\n--- NO SE ENCONTRÓ CONTEXTO RELEVANTE ---\n\n"
+
         context_blocks = []
         total_chars = 0
         paper_numbers: Dict[str, int] = {}
         next_paper_number = 1
 
-        for doc in retrieved_docs:
+        for doc in docs:
             group_key = self._get_doc_group_key(doc)
             if group_key not in paper_numbers:
                 paper_numbers[group_key] = next_paper_number
@@ -135,3 +140,13 @@ class RagEngine(BaseAgent):
         )
 
         return rag
+
+    def retrieve(self, user_message: str, strategy: Dict = None):
+        """
+        Recupera chunks relevantes del vector store con estrategia RAG unificada.
+        """
+        if self.vector_store is None:
+            return "\n--- NO HAY CONTEXTO DISPONIBLE (sin documentos indexados) ---\n\n"
+
+        docs = self.search_docs(user_message, strategy)
+        return self.format_docs_as_context(docs, strategy)

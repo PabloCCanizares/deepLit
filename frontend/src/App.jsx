@@ -17,6 +17,7 @@ import OpenAlex from './pages/OpenAlex'
 import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
 import CollectionSynthesis from './pages/CollectionSynthesis'
+import EvidenceExtraction from './pages/EvidenceExtraction'
 import Screening from './pages/Screening'
 import PublicPreview from './pages/PublicPreview'
 
@@ -56,6 +57,7 @@ function App() {
 
                 <Route path="search" element={<CollectionArticles />} />
                 <Route path="screening" element={<Screening />} />
+                <Route path="evidence-extraction" element={<EvidenceExtraction />} />
                 <Route path="collection-synthesis" element={<CollectionSynthesis />} />
 
                 <Route path="openalex" element={<OpenAlex />} />

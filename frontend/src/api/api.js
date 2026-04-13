@@ -253,6 +253,8 @@ export const articlesAPI = {
     onArticleError,
     onScreeningReady,
     onScreeningError,
+    onEvidenceExtractionReady,
+    onEvidenceExtractionError,
     onCollectionSynthesisReady,
     onCollectionSynthesisError,
     onError,
@@ -295,6 +297,24 @@ export const articlesAPI = {
         if (onScreeningError) onScreeningError(data);
       } catch (err) {
         console.error('Error parsing screening_error event:', err);
+      }
+    });
+
+    eventSource.addEventListener('evidence_extraction_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onEvidenceExtractionReady) onEvidenceExtractionReady(data);
+      } catch (err) {
+        console.error('Error parsing evidence_extraction_ready event:', err);
+      }
+    });
+
+    eventSource.addEventListener('evidence_extraction_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onEvidenceExtractionError) onEvidenceExtractionError(data);
+      } catch (err) {
+        console.error('Error parsing evidence_extraction_error event:', err);
       }
     });
 
@@ -356,6 +376,33 @@ export const screeningAPI = {
 
   deleteRun: async (runId) => {
     return apiFetch(`/screening/runs/${runId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const evidenceExtractionAPI = {
+  runCollection: async (collectionId, payload) => {
+    return apiFetch(`/evidence-extraction/collections/${collectionId}/runs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listRuns: async (collectionId) => {
+    return apiFetch(`/evidence-extraction/collections/${collectionId}/runs`, {
+      method: 'GET',
+    });
+  },
+
+  getRunResults: async (runId) => {
+    return apiFetch(`/evidence-extraction/runs/${runId}/results`, {
+      method: 'GET',
+    });
+  },
+
+  deleteRun: async (runId) => {
+    return apiFetch(`/evidence-extraction/runs/${runId}`, {
       method: 'DELETE',
     });
   },
@@ -533,6 +580,7 @@ export default {
   openalex: openalexAPI,
   collections: collectionsAPI,
   aiAssistant: aiAssistantAPI,
+  evidenceExtraction: evidenceExtractionAPI,
   collectionSynthesis: collectionSynthesisAPI,
 
 };
