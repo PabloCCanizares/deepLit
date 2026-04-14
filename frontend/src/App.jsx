@@ -19,6 +19,7 @@ import CollectionArticles from './pages/CollectionArticles'
 import CollectionSynthesis from './pages/CollectionSynthesis'
 import EvidenceExtraction from './pages/EvidenceExtraction'
 import Screening from './pages/Screening'
+import Clustering from './pages/Clustering'
 import PublicPreview from './pages/PublicPreview'
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
                 <Route path="search" element={<CollectionArticles />} />
                 <Route path="screening" element={<Screening />} />
                 <Route path="evidence-extraction" element={<EvidenceExtraction />} />
+                <Route path="clustering" element={<Clustering />} />
                 <Route path="collection-synthesis" element={<CollectionSynthesis />} />
 
                 <Route path="openalex" element={<OpenAlex />} />

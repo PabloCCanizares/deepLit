@@ -106,5 +106,8 @@ def get_collection_synthesis_config(offline=None):
 def get_evidence_extraction_config(offline=None):
     return get_deep_researcher_config(offline)
 
+def get_clustering_config(offline=None):
+    return get_deep_researcher_config(offline)
+
 def get_rag_strategy_config():
     return DEFAULT_RAG_STRATEGY.copy()

@@ -1,6 +1,7 @@
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
+from app.models.clustering import ClusterSummary
 
 
 class ScreeningDecisionData(BaseModel):
@@ -165,4 +166,68 @@ class ArticleExtractionData(BaseModel):
         ge=0,
         le=1,
         description="Confianza estimada en el rango 0-1.",
+    )
+
+
+class ClusteringRunData(BaseModel):
+    collection_id: str = Field(..., description="Coleccion sobre la que se ejecuta el clustering.")
+    evidence_extraction_run_id: str = Field(
+        ...,
+        description="Run de evidence extraction usado como base.",
+    )
+    requested_cluster_count: Optional[int] = Field(
+        None,
+        ge=2,
+        le=8,
+        description="Numero de clusters solicitado por el usuario.",
+    )
+    selected_cluster_count: int = Field(
+        default=0,
+        ge=0,
+        description="Numero final de clusters generado por el sistema.",
+    )
+    status: Literal["queued", "processing", "completed", "failed"] = Field(
+        default="queued",
+        description="Estado actual del clustering.",
+    )
+    job_id: Optional[str] = Field(None, description="Job asociado al clustering.")
+    total_articles: int = Field(default=0, ge=0, description="Numero total de articulos evaluados.")
+    processed_articles: int = Field(default=0, ge=0, description="Numero de articulos agrupados.")
+    algorithm_version: Optional[str] = Field(
+        None,
+        description="Version del pipeline de clustering.",
+    )
+    silhouette_score: Optional[float] = Field(
+        None,
+        ge=-1,
+        le=1,
+        description="Metrica silhouette agregada del clustering cuando aplique.",
+    )
+    clusters: List[ClusterSummary] = Field(
+        default_factory=list,
+        description="Resumen de clusters generados en el run.",
+    )
+    error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
+
+
+class ClusterAssignmentData(BaseModel):
+    run_id: str = Field(..., description="ID del run de clustering.")
+    cluster_id: str = Field(..., description="ID interno del cluster.")
+    cluster_label: str = Field(..., min_length=1, description="Etiqueta legible del cluster.")
+    article_id: str = Field(..., description="ID del articulo asignado.")
+    article_title: Optional[str] = Field(None, description="Titulo del articulo asignado.")
+    source_type: Literal["full_text", "metadata"] = Field(
+        default="metadata",
+        description="Fuente principal usada en la evidencia base.",
+    )
+    objective: Optional[str] = Field(None, description="Objetivo del articulo.")
+    methodology: Optional[str] = Field(None, description="Metodologia del articulo.")
+    dataset: Optional[str] = Field(None, description="Dataset del articulo.")
+    variables: List[str] = Field(default_factory=list, description="Variables del articulo.")
+    metrics: List[str] = Field(default_factory=list, description="Metricas del articulo.")
+    similarity_score: Optional[float] = Field(
+        None,
+        ge=-1,
+        le=1,
+        description="Similitud coseno respecto al centroide del cluster.",
     )

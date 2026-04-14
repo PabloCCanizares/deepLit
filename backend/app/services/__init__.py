@@ -10,6 +10,9 @@ from .collection_synthesis_run_service import CollectionSynthesisRunService
 from .evidence_extraction_service import EvidenceExtractionService
 from .evidence_extraction_run_service import EvidenceExtractionRunService
 from .article_extraction_service import ArticleExtractionService
+from .clustering_service import ClusteringService
+from .clustering_run_service import ClusteringRunService
+from .cluster_assignment_service import ClusterAssignmentService
 from .job_service import JobService
 from .collection_service import CollectionService
 
@@ -25,6 +28,9 @@ __all__ = [
     "EvidenceExtractionService",
     "EvidenceExtractionRunService",
     "ArticleExtractionService",
+    "ClusteringService",
+    "ClusteringRunService",
+    "ClusterAssignmentService",
     "JobService",
     "CollectionService",
 ]

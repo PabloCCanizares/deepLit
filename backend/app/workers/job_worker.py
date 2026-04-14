@@ -6,6 +6,8 @@ import logging
 from typing import Optional
 
 from app.services.article_service import ArticleService
+from app.services.clustering_run_service import ClusteringRunService
+from app.services.clustering_service import ClusteringService
 from app.services.evidence_extraction_run_service import EvidenceExtractionRunService
 from app.services.evidence_extraction_service import EvidenceExtractionService
 from app.services.screening_run_service import ScreeningRunService
@@ -18,6 +20,7 @@ from app.services.job_service import (
     COLLECTION_SCREENING_JOB,
     COLLECTION_SYNTHESIS_JOB,
     EVIDENCE_EXTRACTION_JOB,
+    CLUSTERING_JOB,
 )
 from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.pdf_processing_service import PdfProcessingService
@@ -34,6 +37,8 @@ class JobWorker:
         self.article_service = ArticleService()
         self.evidence_extraction_run_service = EvidenceExtractionRunService()
         self.evidence_extraction_service = EvidenceExtractionService()
+        self.clustering_run_service = ClusteringRunService()
+        self.clustering_service = ClusteringService()
         self.screening_run_service = ScreeningRunService()
         self.collection_screening_service = CollectionScreeningService()
         self.collection_synthesis_service = CollectionSynthesisService()
@@ -46,6 +51,7 @@ class JobWorker:
             COLLECTION_SCREENING_JOB: self._process_screening_job,
             COLLECTION_SYNTHESIS_JOB: self._process_collection_synthesis_job,
             EVIDENCE_EXTRACTION_JOB: self._process_evidence_extraction_job,
+            CLUSTERING_JOB: self._process_clustering_job,
         }
         self._task: Optional[asyncio.Task] = None
         self._running = False
@@ -477,6 +483,98 @@ class JobWorker:
                     "collection_id": collection_id,
                     "screening_run_id": screening_run_id,
                     "selection_mode": selection_mode,
+                    "status": "failed",
+                    "error_message": str(exc),
+                },
+            )
+
+    async def _process_clustering_job(self, job: dict) -> None:
+        payload = job.get("payload", {})
+        job_id = str(job.get("_id"))
+        user_id = payload.get("user_id")
+        run_id = payload.get("run_id")
+        collection_id = payload.get("collection_id")
+        evidence_extraction_run_id = payload.get("evidence_extraction_run_id")
+        requested_cluster_count = payload.get("requested_cluster_count")
+
+        try:
+            logger.info(
+                "Procesando job clustering %s para collection_id=%s",
+                job_id,
+                collection_id,
+            )
+
+            await self.clustering_run_service.mark_processing(
+                run_id=run_id,
+                user_id=user_id,
+            )
+
+            summary = await self.clustering_service.run_clustering(
+                run_id=run_id,
+                user_id=user_id,
+                evidence_extraction_run_id=evidence_extraction_run_id,
+                requested_cluster_count=requested_cluster_count,
+            )
+
+            await self.job_service.mark_completed(job_id)
+            run = await self.clustering_run_service.mark_completed(
+                run_id=run_id,
+                user_id=user_id,
+                total_articles=summary["total_articles"],
+                processed_articles=summary["processed_articles"],
+                selected_cluster_count=summary["selected_cluster_count"],
+                algorithm_version=summary["algorithm_version"],
+                silhouette_score=summary["silhouette_score"],
+                clusters=summary["clusters"],
+            )
+
+            sse_manager.notify(
+                user_id,
+                "clustering_ready",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "evidence_extraction_run_id": evidence_extraction_run_id,
+                    "status": "completed",
+                    "run": run,
+                },
+            )
+            logger.info("Job clustering %s completado", job_id)
+        except Exception as exc:
+            logger.exception("Error procesando job clustering %s", job_id)
+
+            try:
+                await self.job_service.mark_failed(job_id, str(exc))
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el job %s como failed",
+                    job_id,
+                    exc_info=True,
+                )
+
+            try:
+                await self.clustering_run_service.mark_failed(
+                    run_id=run_id,
+                    user_id=user_id,
+                    error_message=str(exc),
+                )
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el run %s como failed",
+                    run_id,
+                    exc_info=True,
+                )
+
+            sse_manager.notify(
+                user_id,
+                "clustering_error",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "evidence_extraction_run_id": evidence_extraction_run_id,
+                    "requested_cluster_count": requested_cluster_count,
                     "status": "failed",
                     "error_message": str(exc),
                 },

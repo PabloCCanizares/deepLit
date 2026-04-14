@@ -44,6 +44,7 @@ function Navbar({ toggleSidebar }) {
     "/search",
     "/screening",
     "/evidence-extraction",
+    "/clustering",
     "/collection-synthesis",
     "/openalex",
     "/dashboard"

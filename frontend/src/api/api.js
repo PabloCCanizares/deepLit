@@ -261,6 +261,8 @@ export const articlesAPI = {
     onEvidenceExtractionError,
     onCollectionSynthesisReady,
     onCollectionSynthesisError,
+    onClusteringReady,
+    onClusteringError,
     onError,
   } = {}) => {
     const token = getAuthToken();
@@ -337,6 +339,24 @@ export const articlesAPI = {
         if (onCollectionSynthesisError) onCollectionSynthesisError(data);
       } catch (err) {
         console.error('Error parsing collection_synthesis_error event:', err);
+      }
+    });
+
+    eventSource.addEventListener('clustering_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onClusteringReady) onClusteringReady(data);
+      } catch (err) {
+        console.error('Error parsing clustering_ready event:', err);
+      }
+    });
+
+    eventSource.addEventListener('clustering_error', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (onClusteringError) onClusteringError(data);
+      } catch (err) {
+        console.error('Error parsing clustering_error event:', err);
       }
     });
 
@@ -574,6 +594,33 @@ export const collectionSynthesisAPI = {
   },
 };
 
+export const clusteringAPI = {
+  runCollection: async (collectionId, payload) => {
+    return apiFetch(`/clustering/collections/${collectionId}/runs`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listRuns: async (collectionId) => {
+    return apiFetch(`/clustering/collections/${collectionId}/runs`, {
+      method: 'GET',
+    });
+  },
+
+  getRunResults: async (runId) => {
+    return apiFetch(`/clustering/runs/${runId}/results`, {
+      method: 'GET',
+    });
+  },
+
+  deleteRun: async (runId) => {
+    return apiFetch(`/clustering/runs/${runId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 
 // Exportar por defecto para import por defecto
 export default {
@@ -586,5 +633,6 @@ export default {
   aiAssistant: aiAssistantAPI,
   evidenceExtraction: evidenceExtractionAPI,
   collectionSynthesis: collectionSynthesisAPI,
+  clustering: clusteringAPI,
 
 };

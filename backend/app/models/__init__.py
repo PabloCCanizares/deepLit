@@ -31,13 +31,19 @@ from app.models.pdf_processing import (
 )
 from app.models.research_artifacts import (
     ArticleExtractionData,
+    ClusterAssignmentData,
     CollectionSynthesisData,
     CollectionSynthesisRunRequest,
+    ClusteringRunData,
     EvidenceExtractionRunData,
     ScreeningDecisionData,
     ScreeningRunCounts,
     ScreeningRunData,
     SupportSnippetReference,
+)
+from app.models.clustering import (
+    ClusteringRunRequest,
+    ClusterSummary,
 )
 from app.models.evidence_extraction import (
     EvidenceExtractionRunRequest,
@@ -94,9 +100,13 @@ __all__ = [
     "PdfMetadata",
     "ExcelUpload",
     "ArticleExtractionData",
+    "ClusterAssignmentData",
     "CollectionSynthesisData",
     "CollectionSynthesisRunRequest",
+    "ClusteringRunData",
     "EvidenceExtractionRunData",
+    "ClusteringRunRequest",
+    "ClusterSummary",
     "SupportSnippetReference",
     "EvidenceExtractionRunRequest",
     "EvidenceExtractionLLMResult",

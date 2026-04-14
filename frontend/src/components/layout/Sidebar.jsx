@@ -80,6 +80,14 @@ function Sidebar({ isOpen, onClose }) {
               <span>Evidence Extraction</span>
             </Link>
             <Link 
+              to="/clustering" 
+              className={`sidebarLink ${location.pathname === '/clustering' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-object-group"></i>
+              <span>Clustering</span>
+            </Link>
+            <Link 
               to="/collection-synthesis" 
               className={`sidebarLink ${location.pathname === '/collection-synthesis' ? 'active' : ''}`}
               onClick={onClose}

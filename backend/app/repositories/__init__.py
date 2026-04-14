@@ -10,6 +10,8 @@ from app.repositories.screening_run_repository import ScreeningRunRepository
 from app.repositories.collection_synthesis_repository import CollectionSynthesisRepository
 from app.repositories.evidence_extraction_run_repository import EvidenceExtractionRunRepository
 from app.repositories.article_extraction_repository import ArticleExtractionRepository
+from app.repositories.clustering_run_repository import ClusteringRunRepository
+from app.repositories.cluster_assignment_repository import ClusterAssignmentRepository
 __all__ = [
     "UserRepository",
     "PdfRepository",
@@ -22,4 +24,6 @@ __all__ = [
     "CollectionSynthesisRepository",
     "EvidenceExtractionRunRepository",
     "ArticleExtractionRepository",
+    "ClusteringRunRepository",
+    "ClusterAssignmentRepository",
 ]

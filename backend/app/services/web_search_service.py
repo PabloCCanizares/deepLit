@@ -1,6 +1,5 @@
 import hashlib
 import json
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from urllib.parse import urlencode, urlparse
@@ -9,8 +8,6 @@ from urllib.request import Request, urlopen
 from pymongo import MongoClient
 
 from app.config import settings
-
-logger = logging.getLogger(__name__)
 
 RUMOR_MARKERS = {
     "rumor",
