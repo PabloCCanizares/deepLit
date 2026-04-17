@@ -18,7 +18,6 @@
 
 /* ======= IMPORTAR ESTILOS DE ARTICLES ======= */
 @import './articles/ArticleCard.css';
-/*@import './articles/ArticleControls.css';*/
 @import './articles/ArticleGrid.css';
 @import './articles/ArticleList.css';
 @import './articles/SearchBar.css';

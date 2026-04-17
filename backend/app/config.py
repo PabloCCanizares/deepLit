@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # Modo de despliegue del backend (fuente de verdad)
     # True -> modelos locales (Ollama)
     # False -> proveedor remoto (Gemini)
-    OFFLINE: bool = True
+    OFFLINE: bool = False
     GOOGLE_API_KEY: Optional[str] = None
 
     # WEB SEARCH (agente web)

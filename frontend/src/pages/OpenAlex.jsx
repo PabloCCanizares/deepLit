@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { collectionsAPI, openalexAPI } from '../api/api'
 import { useCollection } from "../context/CollectionContext";
-import { usePagination } from '../hooks/usePagination';
+import { useArticleFilters } from '../hooks/useArticleFilters';
 import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 
-import SearchBarDebounced from '../components/articles/SearchBarDebounced'
+import UnifiedFilterBar from '../components/common/UnifiedFilterBar'
 import OpenAlexGrid from '../components/openalex/OpenAlexGrid'
 import OpenAlexList from '../components/openalex/OpenAlexList'
-// import OpenAlexControls from '../components/openalex/OpenAlexControls'
-import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
@@ -61,47 +59,45 @@ function OpenAlex() {
   
   // Estados para filtros y paginación (inicializados desde sessionStorage si existe)
   const [selectedArticles, setSelectedArticles] = useState([])
-  const [sortCriteria, setSortCriteria] = useState(saved?.sortCriteria || 'year-desc')
-  const [filterCriteria, setFilterCriteria] = useState(saved?.filterCriteria || { mode: 'all' })
-  const [searchQuery, setSearchQuery] = useState(saved?.searchQuery || '')
-  const [viewMode, setViewMode] = useState(saved?.viewMode || 'list')
 
-  const [pagination, setPagination] = useState(
-    saved?.pagination || { limit: 10, offset: 0, total: 0 }
-  )
+  const filters = useArticleFilters({
+    showRelevanceSort: true,
+    initialState: saved ? {
+      searchQuery: saved.searchQuery || '',
+      sortCriteria: saved.sortCriteria || 'year-desc',
+      viewMode: saved.viewMode || 'list',
+      pagination: saved.pagination || undefined,
+      fieldFilters: saved.fieldFilters || undefined,
+    } : {},
+  })
+  const {
+    searchQuery, sortCriteria, fieldFilters, viewMode, pagination,
+    handleSearch, handleSort, handleFieldFilter,
+    handleViewModeChange, resetFilters, setTotal, setPagination,
+    activeFilterCount, buildApiFilters,
+    currentPage, totalPages, setPage, nextPage, prevPage, setLimit,
+  } = filters
 
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [articleIdsToSave, setArticleIdsToSave] = useState([])
   const [notification, setNotification] = useState('')
-  
-  const {
-    currentPage,
-    totalPages,
-    setPage,
-    nextPage,
-    prevPage,
-    setLimit
-  } = usePagination(pagination, setPagination)
 
 
   /* ----------useEffects ----------- */
 
-  // Nota: El Toast maneja su propio timer de 2 segundos
-
-  
   // Guardar parámetros en sessionStorage cuando cambien
   useEffect(() => {
     sessionStorage.setItem('openalex_params', JSON.stringify({
       pagination: { limit: pagination.limit, offset: pagination.offset, total: pagination.total },
       sortCriteria,
-      filterCriteria,
       searchQuery,
-      viewMode
+      viewMode,
+      fieldFilters,
     }))
     
     // Resetear cache de params para la próxima navegación
     resetCachedParams()
-  }, [pagination, sortCriteria, filterCriteria, searchQuery, viewMode])
+  }, [pagination, sortCriteria, searchQuery, viewMode, fieldFilters])
   
 
   // Limpiar selección cuando cambia la página
@@ -111,7 +107,7 @@ function OpenAlex() {
 
   useEffect(() => {
     if (!searchQuery.trim() && sortCriteria === 'relevance-desc') {
-      setSortCriteria('year-desc')
+      handleSort('year-desc')
     }
   }, [searchQuery, sortCriteria])
 
@@ -121,14 +117,18 @@ function OpenAlex() {
 
   // React Query
   const { data, isLoading, error } = useQuery({
-    queryKey: ['openalex', pagination.offset, pagination.limit, searchQuery, filterCriteria, sortCriteria],
+    queryKey: ['openalex', pagination.offset, pagination.limit, searchQuery, fieldFilters, sortCriteria],
     queryFn: async () => {
       const response = await openalexAPI.getWorks({
         limit: pagination.limit,
         offset: pagination.offset,
         filters: {
           "title.search": searchQuery || undefined,
-          ...filterCriteria,
+          ...(fieldFilters.yearMin ? { year_min: new Date(fieldFilters.yearMin).getFullYear() } : {}),
+          ...(fieldFilters.yearMax ? { year_max: new Date(fieldFilters.yearMax).getFullYear() } : {}),
+          ...(fieldFilters.category ? { category: fieldFilters.category } : {}),
+          ...(fieldFilters.type ? { type: fieldFilters.type } : {}),
+          ...(fieldFilters.author ? { author: fieldFilters.author } : {}),
         },
         sort_by: sortCriteria,
       });
@@ -162,36 +162,22 @@ function OpenAlex() {
   const libraryArticleIds = libraryData?.article_ids || []
   const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
   const selectedCollectionName = selectedCollection?.name || 'la colección activa'
-  const hasSearchQuery = Boolean(searchQuery.trim())
+
+  const suggestions = useMemo(() => ({
+    categories: [...new Set(filteredArticles.map(d => d.category).filter(Boolean))],
+    types: [...new Set(filteredArticles.map(d => d.type).filter(Boolean))],
+    authors: [...new Set(filteredArticles.flatMap(d => Array.isArray(d.authors) ? d.authors : []).filter(Boolean))],
+    keywords: [...new Set(filteredArticles.flatMap(d => Array.isArray(d.keywords) ? d.keywords.map(k => typeof k === 'string' ? k : k.key).filter(Boolean) : []))],
+  }), [filteredArticles])
 
   // Actualizar total cuando cambie
   useEffect(() => {
     if (total !== pagination.total) {
-      setPagination(prev => ({ ...prev, total }))
+      setTotal(total)
     }
   }, [total])
 
- 
-
-
   // Handlers 
-
-  const handleSort = (criteria) => {
-    setSortCriteria(criteria)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleFilter = (filter) => {
-    setFilterCriteria(filter)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-  
-  const handleSearch = (query) => {
-    setSearchQuery(query)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleViewModeChange = (mode) => setViewMode(mode)
 
   const handleSelectArticle = (articleId) => {
     setSelectedArticles(prev => 
@@ -273,8 +259,6 @@ function OpenAlex() {
   return (
     <div className="page-container">
       <div className="container">
-        <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
-        
         {selectedArticles.length > 0 ? (
           <SelectionActions
             selectedCount={selectedArticles.length}
@@ -283,15 +267,10 @@ function OpenAlex() {
             onViewModeChange={handleViewModeChange}
           />
         ) : (
-          <FilterSortControls 
-            onSort={handleSort} 
-            onFilter={handleFilter}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            currentLimit={pagination.limit}
-            onLimitChange={setLimit}
-            showRelevanceSort={true}
-            relevanceSortEnabled={hasSearchQuery}
+          <UnifiedFilterBar 
+            {...filters}
+            suggestions={suggestions}
+            searchPlaceholder="Buscar por título"
             relevanceSortActive={sortCriteria === 'relevance-desc'}
             onToggleRelevance={() =>
               handleSort(sortCriteria === 'relevance-desc' ? 'year-desc' : 'relevance-desc')
@@ -314,6 +293,8 @@ function OpenAlex() {
             collectionName={selectedCollectionName}
             onSave={handleSaveArticle}
             onSaveMultiple={handleOpenSaveModal}
+            sortCriteria={sortCriteria}
+            onSort={handleSort}
           />
         ) : (
           <OpenAlexGrid 

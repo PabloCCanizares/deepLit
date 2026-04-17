@@ -17,6 +17,8 @@ function OpenAlexList({
   collectionName = '',
   onSave,
   onSaveMultiple,
+  sortCriteria,
+  onSort,
 }) {
   if (loading) {
     return (
@@ -59,10 +61,22 @@ function OpenAlexList({
             </div>
           )}
         </div>
-        <div className="list-col-title">Título</div>
+        <div
+          className={`list-col-title sortable-header ${sortCriteria?.startsWith('title') ? 'sort-active' : ''}`}
+          onClick={() => onSort?.(sortCriteria === 'title-asc' ? 'title-desc' : 'title-asc')}
+        >
+          <span>Título</span>
+          <i className={`fas ${sortCriteria === 'title-asc' ? 'fa-arrow-up' : sortCriteria === 'title-desc' ? 'fa-arrow-down' : 'fa-sort'} sort-icon`}></i>
+        </div>
         <div className="list-col-status">Estado</div>
         <div className="list-col-category">Categoría</div>
-        <div className="list-col-year">Año</div>
+        <div
+          className={`list-col-year sortable-header ${sortCriteria?.startsWith('year') ? 'sort-active' : ''}`}
+          onClick={() => onSort?.(sortCriteria === 'year-asc' ? 'year-desc' : 'year-asc')}
+        >
+          <span>Año</span>
+          <i className={`fas ${sortCriteria === 'year-asc' ? 'fa-arrow-up' : sortCriteria === 'year-desc' ? 'fa-arrow-down' : 'fa-sort'} sort-icon`}></i>
+        </div>
         <div className="list-col-actions">Opciones</div>
       </div>
       

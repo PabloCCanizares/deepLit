@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collectionsAPI } from '../api/api'
-import { usePagination } from '../hooks/usePagination'
-import SearchBarDebounced from '../components/articles/SearchBarDebounced'
-import FilterSortControls from '../components/articles/FilterSortControls'
+import { useArticleFilters } from '../hooks/useArticleFilters'
+import UnifiedFilterBar from '../components/common/UnifiedFilterBar'
 import SelectionActions from '../components/articles/SelectionActions'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
@@ -24,29 +23,27 @@ function CollectionDetail() {
   const [filteredArticles, setFilteredArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState('list')
   const [selectedArticles, setSelectedArticles] = useState([])
   const [successMessage, setSuccessMessage] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [pendingRemoveIds, setPendingRemoveIds] = useState([])
-  const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' })
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 10,
-    offset: 0
-  })
 
+  const suggestions = useMemo(() => ({
+    categories: [...new Set(articles.map(d => d.category).filter(Boolean))],
+    types: [...new Set(articles.map(d => d.type).filter(Boolean))],
+    authors: [...new Set(articles.flatMap(d => Array.isArray(d.authors) ? d.authors : []).filter(Boolean))],
+    keywords: [...new Set(articles.flatMap(d => Array.isArray(d.keywords) ? d.keywords.map(k => typeof k === 'string' ? k : k.key).filter(Boolean) : []))],
+  }), [articles])
+
+  const filters = useArticleFilters()
   const {
-    currentPage,
-    totalPages,
-    setPage,
-    nextPage,
-    prevPage,
-    setLimit
-  } = usePagination(pagination, setPagination)
+    searchQuery, sortCriteria, fieldFilters, viewMode, pagination,
+    handleSearch, handleSort, handleFieldFilter,
+    handleViewModeChange, resetFilters, setPagination,
+    activeFilterCount,
+    currentPage, totalPages, setPage, nextPage, prevPage, setLimit,
+  } = filters
 
   useEffect(() => {
     loadCollection()
@@ -54,52 +51,67 @@ function CollectionDetail() {
 
   useEffect(() => {
     applyFiltersAndSort()
-  }, [articles, sortCriteria, filterCriteria, searchQuery])
+  }, [articles, sortCriteria, searchQuery,
+      fieldFilters.yearMin, fieldFilters.yearMax,
+      fieldFilters.category, fieldFilters.type, fieldFilters.author, fieldFilters.keyword])
 
   const applyFiltersAndSort = () => {
     let filtered = [...articles]
     const normalizedSearch = searchQuery.trim().toLowerCase()
-    const mode = filterCriteria?.mode || 'all'
 
-    // 1. Aplicar búsqueda
+    // 1. Búsqueda por título/autor
     if (normalizedSearch) {
       filtered = filtered.filter(article => {
         const titleText = String(article.title || '').toLowerCase()
         const authorsText = Array.isArray(article.authors)
           ? article.authors.join(', ').toLowerCase()
           : String(article.authors || '').toLowerCase()
-
-        return (
-          titleText.includes(normalizedSearch) ||
-          authorsText.includes(normalizedSearch)
-        )
+        return titleText.includes(normalizedSearch) || authorsText.includes(normalizedSearch)
       })
     }
 
-    // 2. Aplicar filtros
-    if (mode === 'complete') {
-      filtered = filtered.filter(article => 
-        article.title && article.category && article.pages && article.year
-      )
-    } else if (mode === 'incomplete') {
-      filtered = filtered.filter(article => 
-        !article.title || !article.category || !article.pages || !article.year
-      )
+    // 2. Filtros avanzados por campo
+    if (fieldFilters.yearMin) {
+      const min = new Date(fieldFilters.yearMin).getFullYear()
+      if (!isNaN(min)) filtered = filtered.filter(a => parseInt(a.year) >= min)
+    }
+    if (fieldFilters.yearMax) {
+      const max = new Date(fieldFilters.yearMax).getFullYear()
+      if (!isNaN(max)) filtered = filtered.filter(a => parseInt(a.year) <= max)
+    }
+    if (fieldFilters.category) {
+      const cat = fieldFilters.category.toLowerCase()
+      filtered = filtered.filter(a => String(a.category || '').toLowerCase().includes(cat))
+    }
+    if (fieldFilters.type) {
+      const t = fieldFilters.type.toLowerCase()
+      filtered = filtered.filter(a => String(a.type || '').toLowerCase().includes(t))
+    }
+    if (fieldFilters.author) {
+      const auth = fieldFilters.author.toLowerCase()
+      filtered = filtered.filter(a => {
+        const authorsText = Array.isArray(a.authors)
+          ? a.authors.join(', ').toLowerCase()
+          : String(a.authors || '').toLowerCase()
+        return authorsText.includes(auth)
+      })
+    }
+    if (fieldFilters.keyword) {
+      const kw = fieldFilters.keyword.toLowerCase()
+      filtered = filtered.filter(a => {
+        const kwArr = Array.isArray(a.keywords) ? a.keywords : []
+        return kwArr.some(k => (typeof k === 'string' ? k : k.key || '').toLowerCase().includes(kw))
+      })
     }
 
-    // 3. Aplicar ordenamiento
+    // 4. Ordenamiento
     filtered.sort((a, b) => {
       switch (sortCriteria) {
-        case 'year-asc':
-          return (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
-        case 'year-desc':
-          return (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
-        case 'title-asc':
-          return (a.title || '').localeCompare(b.title || '')
-        case 'title-desc':
-          return (b.title || '').localeCompare(a.title || '')
-        default:
-          return 0
+        case 'year-asc': return (parseInt(a.year) || 0) - (parseInt(b.year) || 0)
+        case 'year-desc': return (parseInt(b.year) || 0) - (parseInt(a.year) || 0)
+        case 'title-asc': return (a.title || '').localeCompare(b.title || '')
+        case 'title-desc': return (b.title || '').localeCompare(a.title || '')
+        default: return 0
       }
     })
 
@@ -140,25 +152,6 @@ function CollectionDetail() {
   const showMessage = (message) => {
     setSuccessMessage(message)
     setTimeout(() => setSuccessMessage(''), 3000)
-  }
-
-  const handleSort = (criteria) => {
-    setSortCriteria(criteria)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleFilter = (filter) => {
-    setFilterCriteria(filter)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleSearch = (query) => {
-    setSearchQuery(query)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleViewModeChange = (mode) => {
-    setViewMode(mode)
   }
 
   const handleSelectArticle = (articleId) => {
@@ -300,33 +293,20 @@ function CollectionDetail() {
           </div>
         )}
 
-        {/* Barra de búsqueda */}
+        {/* Barra de filtros unificada */}
         <div style={{ marginTop: '2rem' }}>
-          <SearchBarDebounced 
-            onSearch={handleSearch}
-            placeholder="Buscar por título o autor"
-          />
+          {selectedArticles.length > 0 ? (
+            <SelectionActions
+              selectedCount={selectedArticles.length}
+              onDeleteSelected={handleRemoveFromCollection}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              isCollectionView={true}
+            />
+          ) : (
+            <UnifiedFilterBar {...filters} suggestions={suggestions} searchPlaceholder="Buscar por título o autor" />
+          )}
         </div>
-
-        {/* Controles de artículos - Formato igual a Mis Artículos */}
-        {selectedArticles.length > 0 ? (
-          <SelectionActions
-            selectedCount={selectedArticles.length}
-            onDeleteSelected={handleRemoveFromCollection}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            isCollectionView={true}
-          />
-        ) : (
-          <FilterSortControls
-            onSort={handleSort}
-            onFilter={handleFilter}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            currentLimit={pagination.limit}
-            onLimitChange={setLimit}
-          />
-        )}
 
         {/* Vista de artículos */}
         {loading ? (
@@ -359,6 +339,8 @@ function CollectionDetail() {
             onSelectArticle={handleSelectArticle}
             onSelectAll={handleSelectAll}
             onDeleteArticle={handleRemoveSingleArticle}
+            sortCriteria={sortCriteria}
+            onSort={handleSort}
           />
         ) : (
           <ArticleGrid 

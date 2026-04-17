@@ -36,6 +36,34 @@ body[data-theme='dark'] .document-list .list-header {
   color: white;
 }
 
+/* Sortable column headers */
+.document-list .list-header .sortable-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.document-list .list-header .sortable-header:hover {
+  opacity: 0.8;
+}
+
+.document-list .list-header .sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.document-list .list-header .sortable-header:hover .sort-icon {
+  opacity: 0.8;
+}
+
+.document-list .list-header .sort-active .sort-icon {
+  opacity: 1;
+}
+
 body[data-theme='dark'] .document-list .list-header > div {
   color: white;
 }

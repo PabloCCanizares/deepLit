@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { articlesAPI } from '../api/api'
-import { usePagination } from '../hooks/usePagination'
+import { useArticleFilters } from '../hooks/useArticleFilters'
 
-import SearchBarDebounced from '../components/articles/SearchBarDebounced'
+import UnifiedFilterBar from '../components/common/UnifiedFilterBar'
 import UploadOverlay from '../components/articles/UploadOverlay'
 import ProcessingQueue from '../components/articles/ProcessingQueue'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
-import FilterSortControls from '../components/articles/FilterSortControls'
 import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
@@ -24,16 +23,14 @@ function Articles() {
   const [documents, setDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
 
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortCriteria, setSortCriteria] = useState('year-desc')
-  const [filterCriteria, setFilterCriteria] = useState({ mode: 'all' });
-  const [viewMode, setViewMode] = useState('list')
-
-  const [pagination, setPagination] = useState({
-    limit: 10,
-    offset: 0,
-    total: 0,
-  });
+  const filters = useArticleFilters()
+  const {
+    searchQuery, sortCriteria, fieldFilters, viewMode, pagination,
+    handleSearch, handleSort, handleFieldFilter,
+    handleViewModeChange, resetFilters, setTotal, setPagination,
+    activeFilterCount, buildApiFilters,
+    currentPage, totalPages, setPage, nextPage, prevPage, setLimit,
+  } = filters
 
   const [totalArticles, setTotalArticles] = useState(0) // Total sin filtros
 
@@ -52,14 +49,12 @@ function Articles() {
   // Ref para SSE EventSource
   const eventSourceRef = useRef(null)
 
-  const {
-    currentPage,
-    totalPages,
-    setPage,
-    nextPage,
-    prevPage,
-    setLimit
-  } = usePagination(pagination, setPagination)
+  const suggestions = useMemo(() => ({
+    categories: [...new Set(documents.map(d => d.category).filter(Boolean))],
+    types: [...new Set(documents.map(d => d.type).filter(Boolean))],
+    authors: [...new Set(documents.flatMap(d => Array.isArray(d.authors) ? d.authors : []).filter(Boolean))],
+    keywords: [...new Set(documents.flatMap(d => Array.isArray(d.keywords) ? d.keywords.map(k => typeof k === 'string' ? k : k.key).filter(Boolean) : []))],
+  }), [documents])
 
 
   useEffect(() => {
@@ -105,7 +100,11 @@ function Articles() {
     pagination.limit,
     searchQuery,
     sortCriteria,
-    filterCriteria
+    fieldFilters.yearMin,
+    fieldFilters.yearMax,
+    fieldFilters.category,
+    fieldFilters.type,
+    fieldFilters.author,
   ])
 
   useEffect(() => {
@@ -119,26 +118,17 @@ function Articles() {
       setLoading(true)
       setError(null)
 
-      console.log("Loading documents with filters:", filterCriteria, "and searchQuery:", searchQuery);
-
       const response = await articlesAPI.getArticles({
         limit: pagination.limit,
         offset: pagination.offset,
-        filters: {
-          title: searchQuery || undefined,
-          ...filterCriteria,
-        },
-
+        filters: buildApiFilters(),
         sort_by: sortCriteria,
       });
       console.log("Respuesta de artículos:", response);
 
       setDocuments(response.data.articles)
       setTotalArticles(response.data.total)
-      setPagination(prev => ({
-        ...prev,
-        total: response.data.total
-      }))
+      setTotal(response.data.total)
       console.log("Artículos recibidos:", response.data.articles.length, "Total del backend:", response.data.total);
     } catch (err) {
       setError(err.message || 'Error al cargar artículos')
@@ -149,24 +139,6 @@ function Articles() {
 
 
   // Handlers 
-
-  const handleSort = (criteria) => {
-    setSortCriteria(criteria)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleFilter = (filter) => {
-    setFilterCriteria(filter)
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleSearch = (query) => {
-    setSearchQuery(query)
-    // Reiniciar a la primera página al hacer una búsqueda
-    setPagination(prev => ({ ...prev, offset: 0 }))
-  }
-
-  const handleViewModeChange = (mode) => setViewMode(mode)
 
   {/* SELECCIÓN DE ARTÍCULOS*/ }
 
@@ -286,27 +258,18 @@ function Articles() {
 
 
         <div style={{ marginTop: '2rem' }}>
-          <SearchBarDebounced onSearch={handleSearch} placeholder="Buscar por título" />
+          {selectedArticles.length > 0 ? (
+            <SelectionActions
+              selectedCount={selectedArticles.length}
+              onAddToCollections={handleAddToCollections}
+              onDeleteSelected={handleDeleteSelected}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+            />
+          ) : (
+            <UnifiedFilterBar {...filters} suggestions={suggestions} searchPlaceholder="Buscar por título" />
+          )}
         </div>
-
-        {selectedArticles.length > 0 ? (
-          <SelectionActions
-            selectedCount={selectedArticles.length}
-            onAddToCollections={handleAddToCollections}
-            onDeleteSelected={handleDeleteSelected}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-          />
-        ) : (
-          <FilterSortControls
-            onSort={handleSort}
-            onFilter={handleFilter}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            currentLimit={pagination.limit}
-            onLimitChange={setLimit}
-          />
-        )}
 
         {viewMode === 'list' ? (
           <ArticleList
@@ -318,6 +281,8 @@ function Articles() {
             onSelectAll={handleSelectAll}
             onAddToCollectionsSingle={handleAddSingleArticleToCollections}
             onDeleteArticle={handleDeleteArticle}
+            sortCriteria={sortCriteria}
+            onSort={handleSort}
           />
         ) : (
           <ArticleGrid

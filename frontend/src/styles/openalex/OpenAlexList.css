@@ -42,6 +42,35 @@ body[data-theme='dark'] .openalex-list-header {
   color: white;
 }
 
+/* Sortable column headers */
+.openalex-list-header .sortable-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  user-select: none;
+  overflow: visible;
+  transition: opacity 0.2s;
+}
+
+.openalex-list-header .sortable-header:hover {
+  opacity: 0.8;
+}
+
+.openalex-list-header .sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.openalex-list-header .sortable-header:hover .sort-icon {
+  opacity: 0.8;
+}
+
+.openalex-list-header .sort-active .sort-icon {
+  opacity: 1;
+}
+
 body[data-theme='dark'] .openalex-list-header > div {
   color: white;
 }

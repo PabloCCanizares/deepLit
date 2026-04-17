@@ -148,10 +148,14 @@ class ArticleRepository:
 
         filters = query.filters or {}
 
-        # Manejar el filtro 'mode' por separado
+        # Extraer filtros especiales antes de procesar los genéricos
         mode_filter = filters.pop("mode", None)
+        year_min = filters.pop("year_min", None)
+        year_max = filters.pop("year_max", None)
+        author_filter = filters.pop("author", None)
+        keyword_filter = filters.pop("keyword", None)
 
-        # ... (procesamiento de filtros y modo como en la respuesta anterior) ...
+        # Filtros genéricos: strings se convierten a regex case-insensitive
         if filters:
             for key, value in filters.items():
                 if isinstance(value, str) and key not in ["mode"]:
@@ -159,11 +163,36 @@ class ArticleRepository:
                 else:
                     filter_criteria[key] = value
 
+        # Filtro de rango de año
+        if year_min or year_max:
+            year_cond = {}
+            if year_min:
+                try:
+                    year_cond["$gte"] = int(year_min)
+                except (ValueError, TypeError):
+                    pass
+            if year_max:
+                try:
+                    year_cond["$lte"] = int(year_max)
+                except (ValueError, TypeError):
+                    pass
+            if year_cond:
+                filter_criteria["year"] = year_cond
+
+        # Filtro de autor (búsqueda regex en el campo authors)
+        if author_filter and isinstance(author_filter, str):
+            filter_criteria["authors"] = {"$regex": author_filter, "$options": "i"}
+
+        # Filtro de palabra clave (búsqueda en keywords[].key)
+        if keyword_filter and isinstance(keyword_filter, str):
+            filter_criteria["keywords"] = {"$elemMatch": {"key": {"$regex": keyword_filter, "$options": "i"}}}
+
+        # Filtro de completitud
         if mode_filter == "complete":
-            filter_criteria["title"] = {"$ne": None}
-            filter_criteria["year"] = {"$ne": None}
-            filter_criteria["pages"] = {"$ne": None}
-            filter_criteria["category"] = {"$ne": None}
+            filter_criteria.setdefault("title", {"$ne": None})
+            filter_criteria.setdefault("year", {"$ne": None})
+            filter_criteria.setdefault("pages", {"$ne": None})
+            filter_criteria.setdefault("category", {"$ne": None})
         elif mode_filter == "incomplete":
             filter_criteria["$or"] = [
                 {"title": None},
@@ -172,32 +201,32 @@ class ArticleRepository:
                 {"category": None}
             ]
 
-        # Proyección: solo devolver campos necesarios para la lista
+        # Proyección: campos necesarios para la lista
         projection = {
             "_id": 1,
             "title": 1,
             "category": 1,
+            "type": 1,
             "pages": 1,
             "year": 1,
+            "authors": 1,
+            "keywords": 1,
             "status": 1
         }
 
-        # ðŸš€ APLICAR LA Lí“GICA DE ORDENACIí“N
-        # Creamos la cadena base del cursor
+        # Aplicar ordenación
         cursor = self.collection.find(filter_criteria, projection)
 
+        sort_map = {
+            "year-asc": ("year", ASCENDING),
+            "year-desc": ("year", DESCENDING),
+            "title-asc": ("title", ASCENDING),
+            "title-desc": ("title", DESCENDING),
+        }
 
-        #FIXME hacer con mas campos: aí±adir campo sortBy (campo), y sortOrder (asc, desc)
-        if sort_criteria == "year-asc":
-            # Orden ascendente por el campo "year"
-            cursor = cursor.sort("year", ASCENDING)
-        elif sort_criteria == "year-desc":
-            # Orden descendente por el campo "year"
-            cursor = cursor.sort("year", DESCENDING)
-        else:
-            # Si es nulo o no coincide con los valores esperados, 
-            # PyMongo no aí±ade ningíºn sort por defecto (usa el orden natural/inserción)
-            pass
+        if sort_criteria in sort_map:
+            field, direction = sort_map[sort_criteria]
+            cursor = cursor.sort(field, direction)
 
         # Aplicar paginación despuí©s del sort
         cursor = (
