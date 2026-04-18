@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, collectionsAPI, screeningAPI } from '../api/index.js'
+import { collectionsAPI, screeningAPI } from '../api/index.js'
+import { useArticlesEvents } from '../hooks/useArticlesEvents'
+import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
+import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 
 import '../styles/App.css'
@@ -92,8 +95,6 @@ function Screening() {
     exclusionCriteria: '',
   })
 
-  const eventSourceRef = useRef(null)
-
   const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
   const collectionName = selectedCollection ? selectedCollection.name : null
 
@@ -147,53 +148,6 @@ function Screening() {
     loadRunResults(selectedRunId)
     return undefined
   }, [selectedRunId])
-
-  useEffect(() => {
-    if (!selectedCollectionId) return undefined
-
-    const eventSource = articlesAPI.subscribeEvents({
-      onScreeningReady: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification('Screening completado correctamente')
-        await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
-        if (data.run_id) {
-          await loadRunResults(data.run_id)
-        }
-      },
-      onScreeningError: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification(`Error en screening: ${data.error_message || 'Error desconocido'}`)
-        await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
-        if (data.run_id) {
-          await loadRunResults(data.run_id)
-        }
-      },
-    })
-
-    eventSourceRef.current = eventSource
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
-      }
-    }
-  }, [selectedCollectionId, selectedRunId])
-
-  useEffect(() => {
-    if (!selectedCollectionId || !selectedRun || !['queued', 'processing'].includes(selectedRun.status)) {
-      return undefined
-    }
-
-    const interval = setInterval(() => {
-      loadRuns({ preserveSelection: true, preferredRunId: selectedRunId })
-      if (selectedRunId) {
-        loadRunResults(selectedRunId)
-      }
-    }, 4000)
-
-    return () => clearInterval(interval)
-  }, [selectedCollectionId, selectedRun, selectedRunId])
 
   const parseCriteria = (rawValue) =>
     rawValue
@@ -255,6 +209,35 @@ function Screening() {
       setLoadingResults(false)
     }
   }
+
+  useArticlesEvents({
+    onScreeningReady: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification('Screening completado correctamente')
+      await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
+      if (data.run_id) {
+        await loadRunResults(data.run_id)
+      }
+    },
+    onScreeningError: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification(`Error en screening: ${data.error_message || 'Error desconocido'}`)
+      await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
+      if (data.run_id) {
+        await loadRunResults(data.run_id)
+      }
+    },
+  }, Boolean(selectedCollectionId))
+
+  useIntervalPolling(() => {
+    loadRuns({ preserveSelection: true, preferredRunId: selectedRunId })
+    if (selectedRunId) {
+      loadRunResults(selectedRunId)
+    }
+  }, {
+    enabled: Boolean(selectedCollectionId && selectedRun && ['queued', 'processing'].includes(selectedRun.status)),
+    intervalMs: 4000,
+  })
 
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -800,12 +783,7 @@ function Screening() {
           </section>
         </div>
 
-        {notification && (
-          <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
-            <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-            <span>{notification}</span>
-          </div>
-        )}
+        <NotificationToast message={notification} onClose={() => setNotification('')} />
 
         <CreateCollectionModal
           isOpen={showCreateCollectionModal}

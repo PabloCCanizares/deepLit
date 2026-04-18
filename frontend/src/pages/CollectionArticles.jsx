@@ -1,14 +1,16 @@
-﻿import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
-
-import { articlesAPI, collectionsAPI } from '../api/index.js'
+import { collectionsAPI } from '../api/index.js'
 import { useArticleFilters } from '../hooks/useArticleFilters'
-import { useCollection } from "../context/CollectionContext";
+import { useArticlesEvents } from '../hooks/useArticlesEvents'
+import { useArticlesListQuery } from '../hooks/useArticlesListQuery'
+import { useTimedNotification } from '../hooks/useTimedNotification'
+import { useCollection } from '../context/CollectionContext'
 
 import UnifiedFilterBar from '../components/common/UnifiedFilterBar'
+import NotificationToast from '../components/common/NotificationToast'
 import UploadOverlay from '../components/articles/UploadOverlay'
-import ProcessingQueue from '../components/articles/ProcessingQueue'
 import ArticleGrid from '../components/articles/ArticleGrid'
 import ArticleList from '../components/articles/ArticleList'
 import SelectionActions from '../components/articles/SelectionActions'
@@ -21,109 +23,85 @@ import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
 
 function CollectionArticles() {
-  const { selectedCollectionId, collections } = useCollection();
+  const { selectedCollectionId, collections } = useCollection()
   const queryClient = useQueryClient()
-
-  const [documents, setDocuments] = useState([])
   const [selectedArticles, setSelectedArticles] = useState([])
 
   const filters = useArticleFilters()
   const {
-    searchQuery, sortCriteria, fieldFilters, viewMode, pagination,
-    handleSearch, handleSort, handleFieldFilter,
-    handleViewModeChange, resetFilters, setTotal, setPagination,
-    activeFilterCount, buildApiFilters,
-    currentPage, totalPages, setPage, nextPage, prevPage, setLimit,
+    sortCriteria,
+    viewMode,
+    pagination,
+    handleSort,
+    handleViewModeChange,
+    setTotal,
+    setPagination,
+    buildApiFilters,
+    currentPage,
+    totalPages,
+    setPage,
+    nextPage,
+    prevPage,
   } = filters
 
-  const [totalArticles, setTotalArticles] = useState(0) // Total sin filtros
-
-  const selectedCollection = collections.find(c => c._id === selectedCollectionId);
-  const collectionName = selectedCollection ? selectedCollection.name : null;
-
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
+  const collectionName = selectedCollection ? selectedCollection.name : null
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCollectionsModal, setShowCollectionsModal] = useState(false)
   const [pendingDeleteIds, setPendingDeleteIds] = useState([])
   const [modalArticleIds, setModalArticleIds] = useState([])
-
   const [isUploadOverlayOpen, setIsUploadOverlayOpen] = useState(false)
-  const [isProcessingQueueOpen, setIsProcessingQueueOpen] = useState(false)
-  const [notification, setNotification] = useState('')
+  const { notification, setNotification, clearNotification } = useTimedNotification()
 
-  // Ref para SSE EventSource
-  const eventSourceRef = useRef(null)
+  const apiFilters = useMemo(() => buildApiFilters(), [buildApiFilters])
+  const {
+    data: articlesResponse,
+    isLoading,
+    isFetching,
+    error: queryError,
+  } = useArticlesListQuery({
+    collectionId: selectedCollectionId || null,
+    limit: pagination.limit,
+    offset: pagination.offset,
+    filters: apiFilters,
+    sortBy: sortCriteria,
+    enabled: Boolean(selectedCollectionId),
+  })
+
+  const documents = articlesResponse?.data?.articles || []
+  const totalArticles = articlesResponse?.data?.total || 0
+  const loading = isLoading || isFetching
+  const error = queryError?.message || null
 
   const suggestions = useMemo(() => ({
-    categories: [...new Set(documents.map(d => d.category).filter(Boolean))],
-    types: [...new Set(documents.map(d => d.type).filter(Boolean))],
-    authors: [...new Set(documents.flatMap(d => Array.isArray(d.authors) ? d.authors : []).filter(Boolean))],
-    keywords: [...new Set(documents.flatMap(d => Array.isArray(d.keywords) ? d.keywords.map(k => typeof k === 'string' ? k : k.key).filter(Boolean) : []))],
+    categories: [...new Set(documents.map((document) => document.category).filter(Boolean))],
+    types: [...new Set(documents.map((document) => document.type).filter(Boolean))],
+    authors: [...new Set(documents.flatMap((document) => Array.isArray(document.authors) ? document.authors : []).filter(Boolean))],
+    keywords: [...new Set(documents.flatMap((document) => Array.isArray(document.keywords) ? document.keywords.map((keyword) => typeof keyword === 'string' ? keyword : keyword.key).filter(Boolean) : []))],
   }), [documents])
 
   useEffect(() => {
-    if (!notification) return
-    const timer = setTimeout(() => setNotification(''), 4000)
-    return () => clearTimeout(timer)
-  }, [notification])
-
-
-  // SSE: suscripción a eventos en tiempo real
-  useEffect(() => {
-    const es = articlesAPI.subscribeEvents({
-      onArticleReady: (data) => {
-        console.log('SSE: artículo procesado', data)
-        if (shouldDisplayProcessingEvent({ eventName: 'article_ready', data })) {
-          setNotification(`"${data.title}" procesado correctamente`)
-        }
-        // Recargar lista para mostrar el nuevo artículo
-        loadDocuments()
-      },
-      onArticleError: (data) => {
-        console.log('SSE: error en artículo', data)
-        if (shouldDisplayProcessingEvent({ eventName: 'article_error', data })) {
-          setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
-        }
-      },
-      onError: () => {
-        console.warn('SSE: conexión perdida, reconectando...')
-      }
-    })
-
-    eventSourceRef.current = es
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
-      }
-    }
-  }, [])
-
-
-  useEffect(() => {
-    if (!selectedCollectionId) return;
-    loadDocuments()
-  }, [
-    selectedCollectionId,
-    pagination.offset,
-    pagination.limit,
-    searchQuery,
-    sortCriteria,
-    fieldFilters.yearMin,
-    fieldFilters.yearMax,
-    fieldFilters.category,
-    fieldFilters.type,
-    fieldFilters.author,
-    fieldFilters.keyword,
-  ])
+    setTotal(totalArticles)
+  }, [setTotal, totalArticles])
 
   useEffect(() => {
     setSelectedArticles([])
   }, [pagination.offset])
 
+  useArticlesEvents({
+    onArticleReady: async (data) => {
+      if (shouldDisplayProcessingEvent({ eventName: 'article_ready', data })) {
+        setNotification(`"${data.title}" procesado correctamente`)
+      }
+      await queryClient.invalidateQueries({ queryKey: ['articles', 'list'] })
+    },
+    onArticleError: (data) => {
+      if (shouldDisplayProcessingEvent({ eventName: 'article_error', data })) {
+        setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
+      }
+    },
+  }, Boolean(selectedCollectionId))
 
   if (!selectedCollectionId) {
     return (
@@ -136,65 +114,32 @@ function CollectionArticles() {
           <p>Zona de trabajo opera sobre una colección concreta. Si quieres ver todo, usa Biblioteca.</p>
         </div>
       </div>
-    );
+    )
   }
-
-  const loadDocuments = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await articlesAPI.getArticles({
-        collection_id: selectedCollectionId || undefined,
-        limit: pagination.limit,
-        offset: pagination.offset,
-        filters: buildApiFilters(),
-        sort_by: sortCriteria,
-      });
-
-      setDocuments(response.data.articles)
-      setTotalArticles(response.data.total)
-      setTotal(response.data.total)
-    } catch (err) {
-      setError(err.message || 'Error al cargar artículos')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
-  // Handlers 
-
-  {/* SELECCIÓN DE ARTÍCULOS */}
 
   const handleSelectArticle = (articleId) => {
-    setSelectedArticles(prev => 
-      prev.includes(articleId) 
-        ? prev.filter(id => id !== articleId)
-        : [...prev, articleId]
+    setSelectedArticles((previous) =>
+      previous.includes(articleId)
+        ? previous.filter((id) => id !== articleId)
+        : [...previous, articleId]
     )
   }
 
   const handleSelectAll = () => {
     if (selectedArticles.length === documents.length) {
       setSelectedArticles([])
-    } else {
-      setSelectedArticles(documents.map(doc => doc._id || doc.id))
+      return
     }
-  }
 
-  {/* SUBIR ARTÍCULOS */}
+    setSelectedArticles(documents.map((document) => document._id || document.id))
+  }
 
   const handleUploadSuccess = async (message) => {
-    // Cerrar el overlay inmediatamente
     setIsUploadOverlayOpen(false)
-    // Mostrar mensaje de éxito
     setNotification(message || 'Archivo(s) subido(s) correctamente')
-    setPagination(prev => ({ ...prev, offset: 0 }))
-    await loadDocuments();
+    setPagination((previous) => ({ ...previous, offset: 0 }))
+    await queryClient.invalidateQueries({ queryKey: ['articles', 'list'] })
   }
-
-  {/* AÑADIR ARTÍCULOS A LAS COLECCIONES */}
 
   const handleAddToCollections = () => {
     if (selectedArticles.length === 0) return
@@ -212,9 +157,6 @@ function CollectionArticles() {
     setSelectedArticles([])
     setNotification(message || 'Artículos añadidos a colecciones correctamente')
   }
-
-
-  {/* BORRADO DE ARTÍCULOS */}
 
   const handleDeleteArticle = (articleId) => {
     setPendingDeleteIds([articleId])
@@ -245,72 +187,23 @@ function CollectionArticles() {
           ? pagination.offset - pagination.limit
           : pagination.offset
 
-      setPagination(prev => ({ ...prev, offset: Math.max(0, newOffset) }))
-    } catch (e) {
+      setPagination((previous) => ({ ...previous, offset: Math.max(0, newOffset) }))
+    } catch {
       setNotification('Error al quitar artículos de la colección')
     } finally {
-      await invalidateOpenAlexMembershipQueries(queryClient)
+      await Promise.all([
+        invalidateOpenAlexMembershipQueries(queryClient),
+        queryClient.invalidateQueries({ queryKey: ['articles', 'list'] }),
+      ])
       setShowDeleteModal(false)
       setPendingDeleteIds([])
       setSelectedArticles([])
-      await loadDocuments()
     }
   }
-
-  // const confirmRemoveFromCollection = async () => {
-  //   const removedCount = selectedArticles.length
-
-  //   try {
-  //     // Eliminar los artículos de la colección (no los elimina de la base de datos)
-  //     await Promise.all(
-  //       selectedArticles.map(id =>
-  //         collectionsAPI.removeArticle(selectedCollectionId, id)
-  //       )
-  //     )
-  //     setSelectedArticles([])
-  //     setShowRemoveModal(false)
-
-  //     // Recargar documentos para obtener el estado actualizado
-  //     const response = await articlesAPI.getArticles({
-  //       collection_id: selectedCollectionId,
-  //       limit: pagination.limit,
-  //       offset: pagination.offset,
-  //       filters: { "title": searchQuery },
-  //       sort_by: sortCriteria
-  //     })
-
-  //     // Si la página actual está vacía y no es la primera página, ir a la anterior
-  //     if (response.data.articles.length === 0 && pagination.offset > 0) {
-  //       const newOffset = Math.max(0, pagination.offset - pagination.limit)
-  //       setPagination(prev => ({
-  //         ...prev,
-  //         offset: newOffset,
-  //         total: response.data.total
-  //       }))
-  //     } else {
-  //       // Actualizar con los datos nuevos
-  //       setFilteredDocuments(response.data.articles)
-  //       setPagination(prev => ({
-  //         ...prev,
-  //         total: response.data.total
-  //       }))
-  //     }
-
-  //     setUploadSuccessMessage(`${removedCount} artículo(s) eliminado(s) de la colección`)
-  //     setTimeout(() => setUploadSuccessMessage(''), 4000)
-  //   } catch (err) {
-  //     console.error('Error removing articles from collection:', err)
-  //     setUploadSuccessMessage('Error al eliminar artículos de la colección')
-  //     setTimeout(() => setUploadSuccessMessage(''), 4000)
-  //     setShowRemoveModal(false)
-  //   }
-  // }
 
   return (
     <div className="page-container">
       <div className="container">
-
-        {/* Header Panel - Formato común */}
         <div className="header-panel">
           <div className="header-content">
             <div className="header-info">
@@ -332,7 +225,6 @@ function CollectionArticles() {
             </div>
           </div>
         </div>
-
 
         <div style={{ marginTop: '2rem' }}>
           {selectedArticles.length > 0 ? (
@@ -375,7 +267,6 @@ function CollectionArticles() {
           />
         )}
 
-        {/* Paginación debajo de los artículos */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -384,7 +275,6 @@ function CollectionArticles() {
           onPageChange={setPage}
         />
 
-        {/* Botón flotante para subir artículos */}
         <button
           className="floating-upload-button"
           onClick={() => setIsUploadOverlayOpen(true)}
@@ -392,7 +282,6 @@ function CollectionArticles() {
           <i className="fas fa-cloud-upload-alt"></i>
         </button>
 
-        {/* Overlay de subida */}
         <UploadOverlay
           isOpen={isUploadOverlayOpen}
           onClose={() => setIsUploadOverlayOpen(false)}
@@ -400,18 +289,11 @@ function CollectionArticles() {
           collection_id={selectedCollectionId}
         />
 
-        {/* Mensaje de éxito de carga */}
-        {notification && (
-          <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
-            <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-            <span>{notification}</span>
-          </div>
-        )}
+        <NotificationToast message={notification} onClose={clearNotification} />
 
-        {/* Modal de confirmación de eliminación */}
         {showDeleteModal && (
           <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content" onClick={(event) => event.stopPropagation()}>
               <div className="modal-header">
                 <h2>
                   <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
@@ -443,7 +325,6 @@ function CollectionArticles() {
           </div>
         )}
 
-        {/* Modal de añadir a colecciones */}
         <SaveToCollectionsModal
           isOpen={showCollectionsModal}
           onClose={() => setShowCollectionsModal(false)}

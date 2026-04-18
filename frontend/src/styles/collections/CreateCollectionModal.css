@@ -56,6 +56,17 @@
   overflow-y: auto;
 }
 
+.create-collection-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
 /* Image Selector */
 .image-selector-section {
   display: flex;

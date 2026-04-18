@@ -9,8 +9,6 @@ export const articlesAPI = {
       sort_by,
     }
 
-    console.log('articlesAPI.getArticles body:', body)
-
     return apiFetch('/articles/search', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -148,9 +146,8 @@ export const articlesAPI = {
       }
     })
 
-    eventSource.onerror = (e) => {
-      console.warn('SSE connection error, will auto-reconnect:', e)
-      if (onError) onError(e)
+    eventSource.onerror = (event) => {
+      if (onError) onError(event)
     }
 
     return eventSource

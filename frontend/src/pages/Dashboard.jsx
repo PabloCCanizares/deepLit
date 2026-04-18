@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+
 import { statsAPI, openalexAPI } from '../api/index.js'
 import StatCard from '../components/dashboard/StatCard'
 import YearChart from '../components/dashboard/YearChart'
@@ -22,51 +23,33 @@ function Dashboard() {
   const navigate = useNavigate()
   const { selectedCollectionId } = useCollection()
 
-  const [stats, setStats] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const [activityMode, setActivityMode] = useState('recent')
-  const [activityItems, setActivityItems] = useState([])
-  const [activityLoading, setActivityLoading] = useState(false)
-
-  useEffect(() => {
-    loadDashboard()
-  }, [selectedCollectionId])
-
-  const loadDashboard = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
+  const {
+    data: stats,
+    isLoading: loading,
+    error,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ['dashboard-stats', selectedCollectionId || null],
+    queryFn: async () => {
       const response = await statsAPI.getStats({
         collection_id: selectedCollectionId || undefined,
       })
+
       if (!response?.success) {
-        setStats({
-          document_count: 0,
-          article_count: 0,
-          labels_by_year: [],
-          values_by_year: [],
-          sorted_keywords: [],
-        })
-        setError(response?.message || 'No se pudieron cargar las estadisticas')
-        return
+        throw new Error(response?.message || 'No se pudieron cargar las estadisticas')
       }
 
-      setStats(response.data || {})
-      loadActivityPanel()
-    } catch (err) {
-      setError(err.status ? err.message : 'Error de conexion con el servidor')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return response.data || {}
+    },
+  })
 
-  const loadActivityPanel = async () => {
-    setActivityLoading(true)
-
-    try {
+  const {
+    data: activityData,
+    isLoading: activityLoading,
+  } = useQuery({
+    queryKey: ['dashboard-activity'],
+    staleTime: 0,
+    queryFn: async () => {
       const recentHistory = getViewedHistory('private').slice(0, 5)
       const recentArticles = recentHistory.map((item) => ({
         id: item.id,
@@ -77,12 +60,11 @@ function Dashboard() {
       }))
 
       if (recentArticles.length > 0) {
-        setActivityMode('recent')
-        setActivityItems(recentArticles)
-        return
+        return {
+          mode: 'recent',
+          items: recentArticles,
+        }
       }
-
-      let recommendedWorks = []
 
       for (const query of OPENALEX_RECOMMENDATION_QUERIES) {
         try {
@@ -93,7 +75,7 @@ function Dashboard() {
             sort_by: query.sort_by,
           })
 
-          recommendedWorks = (recommendedResponse?.data?.articles || []).map((work) => ({
+          const recommendedWorks = (recommendedResponse?.data?.articles || []).map((work) => ({
             id: work._id || work.id,
             source: 'openalex',
             title: work.title || 'Sin titulo',
@@ -102,29 +84,25 @@ function Dashboard() {
           }))
 
           if (recommendedWorks.length > 0) {
-            break
+            return {
+              mode: 'recommended',
+              items: recommendedWorks,
+            }
           }
         } catch (queryError) {
           console.warn('Consulta OpenAlex sin resultados, probando fallback:', queryError)
         }
       }
 
-      if (recommendedWorks.length > 0) {
-        setActivityMode('recommended')
-        setActivityItems(recommendedWorks)
-        return
+      return {
+        mode: 'empty',
+        items: [],
       }
+    },
+  })
 
-      setActivityMode('empty')
-      setActivityItems([])
-    } catch (err) {
-      console.error('Error cargando panel de actividad/recomendados:', err)
-      setActivityMode('empty')
-      setActivityItems([])
-    } finally {
-      setActivityLoading(false)
-    }
-  }
+  const activityMode = activityData?.mode || 'empty'
+  const activityItems = activityData?.items || []
 
   const handleFilterClick = () => {
     // Placeholder: filtro por implementar
@@ -164,8 +142,8 @@ function Dashboard() {
       <div className="dashboardContainer">
         <div className="error-container">
           <i className="fas fa-exclamation-circle fa-3x"></i>
-          <p>Error: {error}</p>
-          <button onClick={loadDashboard} className="btn-primary">
+          <p>Error: {error.message || 'Error de conexion con el servidor'}</p>
+          <button onClick={() => refetchStats()} className="btn-primary">
             Reintentar
           </button>
         </div>

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, clusteringAPI, evidenceExtractionAPI } from '../api/index.js'
+import { clusteringAPI, evidenceExtractionAPI } from '../api/index.js'
+import { useArticlesEvents } from '../hooks/useArticlesEvents'
+import { useIntervalPolling } from '../hooks/useIntervalPolling'
+import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 
 import '../styles/App.css'
@@ -125,7 +128,6 @@ function Clustering() {
     clusterCount: 3,
   })
 
-  const eventSourceRef = useRef(null)
   const activeCollectionIdRef = useRef(selectedCollectionId)
   const loadRunsRequestIdRef = useRef(0)
   const loadResultsRequestIdRef = useRef(0)
@@ -207,65 +209,6 @@ function Clustering() {
     loadRunResults(selectedRunId, selectedCollectionId)
     return undefined
   }, [selectedRunId, selectedCollectionId])
-
-  useEffect(() => {
-    if (!selectedCollectionId) return undefined
-
-    const eventSource = articlesAPI.subscribeEvents({
-      onClusteringReady: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification('Clustering completado correctamente')
-        await loadRuns({
-          collectionId: selectedCollectionId,
-          preserveSelection: true,
-          preferredRunId: data.run_id,
-        })
-        if (data.run_id) {
-          await loadRunResults(data.run_id, selectedCollectionId)
-        }
-      },
-      onClusteringError: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification(`Error en clustering: ${data.error_message || 'Error desconocido'}`)
-        await loadRuns({
-          collectionId: selectedCollectionId,
-          preserveSelection: true,
-          preferredRunId: data.run_id,
-        })
-        if (data.run_id) {
-          await loadRunResults(data.run_id, selectedCollectionId)
-        }
-      },
-    })
-
-    eventSourceRef.current = eventSource
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
-      }
-    }
-  }, [selectedCollectionId])
-
-  useEffect(() => {
-    if (!selectedCollectionId || !selectedRun || !isActiveRunStatus(selectedRun.status)) {
-      return undefined
-    }
-
-    const interval = setInterval(() => {
-      loadRuns({
-        collectionId: selectedCollectionId,
-        preserveSelection: true,
-        preferredRunId: selectedRunId,
-      })
-      if (selectedRunId) {
-        loadRunResults(selectedRunId, selectedCollectionId)
-      }
-    }, 4000)
-
-    return () => clearInterval(interval)
-  }, [selectedCollectionId, selectedRun, selectedRunId])
 
   const loadRuns = async ({ collectionId, preserveSelection = true, preferredRunId = null } = {}) => {
     if (!collectionId) return
@@ -384,6 +327,47 @@ function Clustering() {
       }
     }
   }
+
+  useArticlesEvents({
+    onClusteringReady: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification('Clustering completado correctamente')
+      await loadRuns({
+        collectionId: selectedCollectionId,
+        preserveSelection: true,
+        preferredRunId: data.run_id,
+      })
+      if (data.run_id) {
+        await loadRunResults(data.run_id, selectedCollectionId)
+      }
+    },
+    onClusteringError: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification(`Error en clustering: ${data.error_message || 'Error desconocido'}`)
+      await loadRuns({
+        collectionId: selectedCollectionId,
+        preserveSelection: true,
+        preferredRunId: data.run_id,
+      })
+      if (data.run_id) {
+        await loadRunResults(data.run_id, selectedCollectionId)
+      }
+    },
+  }, Boolean(selectedCollectionId))
+
+  useIntervalPolling(() => {
+    loadRuns({
+      collectionId: selectedCollectionId,
+      preserveSelection: true,
+      preferredRunId: selectedRunId,
+    })
+    if (selectedRunId) {
+      loadRunResults(selectedRunId, selectedCollectionId)
+    }
+  }, {
+    enabled: Boolean(selectedCollectionId && selectedRun && isActiveRunStatus(selectedRun.status)),
+    intervalMs: 4000,
+  })
 
   const handleCreateRun = async () => {
     if (!selectedCollectionId || submitting || !formData.evidenceRunId) return
@@ -876,12 +860,7 @@ function Clustering() {
           </section>
         </div>
 
-        {notification && (
-          <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
-            <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-            <span>{notification}</span>
-          </div>
-        )}
+        <NotificationToast message={notification} onClose={() => setNotification('')} />
 
         {showDeleteRunModal && (
           <div

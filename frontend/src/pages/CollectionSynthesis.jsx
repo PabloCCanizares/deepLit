@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { articlesAPI, collectionSynthesisAPI } from '../api/index.js'
+import { collectionSynthesisAPI } from '../api/index.js'
+import { useArticlesEvents } from '../hooks/useArticlesEvents'
+import { useIntervalPolling } from '../hooks/useIntervalPolling'
+import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfExport'
 
@@ -244,39 +247,6 @@ function CollectionSynthesis() {
     return undefined
   }, [selectedCollectionId])
 
-  useEffect(() => {
-    if (!selectedCollectionId) return undefined
-
-    const eventSource = articlesAPI.subscribeEvents({
-      onCollectionSynthesisReady: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification('Sintesis completada correctamente')
-        await loadRuns(selectedCollectionId, data.run_id)
-      },
-      onCollectionSynthesisError: async (data) => {
-        if (data.collection_id !== selectedCollectionId) return
-        setNotification(data.error_message || 'Error al generar la sintesis')
-        await loadRuns(selectedCollectionId, data.run_id)
-      },
-    })
-
-    return () => {
-      eventSource.close()
-    }
-  }, [selectedCollectionId])
-
-  useEffect(() => {
-    if (!selectedCollectionId || !selectedRun || !['queued', 'processing'].includes(selectedRun.status)) {
-      return undefined
-    }
-
-    const interval = setInterval(() => {
-      loadRuns(selectedCollectionId, selectedRun._id)
-    }, 4000)
-
-    return () => clearInterval(interval)
-  }, [selectedCollectionId, selectedRun])
-
   const loadRuns = async (collectionId, preferredRunId = null, options = {}) => {
     const { preserveSelection = true } = options
     const requestId = loadRunsRequestIdRef.current + 1
@@ -326,6 +296,26 @@ function CollectionSynthesis() {
       }
     }
   }
+
+  useArticlesEvents({
+    onCollectionSynthesisReady: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification('Sintesis completada correctamente')
+      await loadRuns(selectedCollectionId, data.run_id)
+    },
+    onCollectionSynthesisError: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification(data.error_message || 'Error al generar la sintesis')
+      await loadRuns(selectedCollectionId, data.run_id)
+    },
+  }, Boolean(selectedCollectionId))
+
+  useIntervalPolling(() => {
+    loadRuns(selectedCollectionId, selectedRun?._id)
+  }, {
+    enabled: Boolean(selectedCollectionId && selectedRun && ['queued', 'processing'].includes(selectedRun.status)),
+    intervalMs: 4000,
+  })
 
   const handleSubmit = async () => {
     const trimmedPrompt = prompt.trim()
@@ -745,12 +735,7 @@ function CollectionSynthesis() {
           </section>
         </div>
 
-        {notification && (
-          <div className={`upload-success-notification ${notification.toLowerCase().includes('error') ? 'error' : ''}`}>
-            <i className={`fas ${notification.toLowerCase().includes('error') ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
-            <span>{notification}</span>
-          </div>
-        )}
+        <NotificationToast message={notification} onClose={() => setNotification('')} />
 
         {showDeleteRunModal && (
           <div className="modal-overlay" onClick={() => {

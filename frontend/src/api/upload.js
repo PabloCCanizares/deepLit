@@ -4,7 +4,6 @@ export const uploadAPI = {
   uploadPDF: (file, collection_id) => (
     new Promise((resolve, reject) => {
       const reader = new FileReader()
-      console.log('uploadAPI.uploadPDF called with collection_id:', collection_id)
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1]
         apiFetch('/pdfs', {
@@ -21,7 +20,6 @@ export const uploadAPI = {
   uploadExcel: (file, collection_id) => (
     new Promise((resolve, reject) => {
       const reader = new FileReader()
-      console.log('uploadAPI.uploadExcel called with collection_id:', collection_id)
       reader.onload = async (e) => {
         const base64String = e.target.result.split(',')[1]
         apiFetch('/excels', {

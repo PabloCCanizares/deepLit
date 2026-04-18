@@ -133,11 +133,6 @@ function Collections() {
     let affectedCollectionId = null
 
     try {
-      console.log('\n=== SAVING COLLECTION ====')
-      console.log('Collection data:', collectionData)
-      console.log('Image type:', typeof collectionData.image)
-      console.log('Image:', collectionData.image ? collectionData.image.substring(0, 100) + '...' : 'None')
-      
       if (editingCollection) {
         affectedCollectionId = editingCollection._id
         // Modo edición

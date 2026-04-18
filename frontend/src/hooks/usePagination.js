@@ -3,7 +3,6 @@ import { useCallback } from 'react'
 export function usePagination(pagination, setPagination) {
   const { total, limit, offset } = pagination
 
-  console.log("PAGINATION", total, limit, offset)
   const currentPage = Math.floor(offset / limit) + 1
   const totalPages = Math.ceil(total / limit)
 

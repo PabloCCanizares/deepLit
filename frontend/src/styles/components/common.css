@@ -311,6 +311,18 @@
   line-height: 1.4;
 }
 
+.notification-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @keyframes slideInRight {
   0% {
     opacity: 0;

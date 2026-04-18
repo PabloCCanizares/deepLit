@@ -1,8 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+
 import { collectionsAPI, openalexAPI } from '../../api/index.js'
+import { getErrorMessage } from '../../utils/errorUtils'
 import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries'
 import '../../styles/openalex/SaveToCollectionsModal.css'
+
+function buildSaveMessage(articleCount, newCollectionsCount, removedCollectionsCount) {
+  if (articleCount === 1) {
+    if (newCollectionsCount > 0 && removedCollectionsCount > 0) {
+      return `Artículo guardado en ${newCollectionsCount} y eliminado de ${removedCollectionsCount} colección(es)`
+    }
+    if (newCollectionsCount > 0) {
+      return `Artículo guardado en ${newCollectionsCount} colección(es)`
+    }
+    if (removedCollectionsCount > 0) {
+      return `Artículo eliminado de ${removedCollectionsCount} colección(es)`
+    }
+    return 'Sin cambios realizados'
+  }
+
+  if (newCollectionsCount > 0 && removedCollectionsCount > 0) {
+    return `${articleCount} artículos guardados en ${newCollectionsCount} y eliminados de ${removedCollectionsCount} colección(es)`
+  }
+  if (newCollectionsCount > 0) {
+    return `${articleCount} artículos guardados en ${newCollectionsCount} colección(es)`
+  }
+  if (removedCollectionsCount > 0) {
+    return `${articleCount} artículos eliminados de ${removedCollectionsCount} colección(es)`
+  }
+  return 'Sin cambios realizados'
+}
 
 function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess }) {
   const queryClient = useQueryClient()
@@ -26,16 +54,13 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
       setError(null)
 
       const collectionsRes = await collectionsAPI.getAll()
-
       if (collectionsRes.status === 200 || collectionsRes.data) {
         const allCollections = collectionsRes.data.collections || []
         setCollections(allCollections)
-        
-        // Preseleccionar colecciones que ya contienen alguno de los artículos
         await preselectCollections(allCollections)
       }
     } catch (err) {
-      setError(err.message || 'Error al cargar datos')
+      setError(getErrorMessage(err, 'Error al cargar datos'))
     } finally {
       setLoading(false)
     }
@@ -44,44 +69,37 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
   const preselectCollections = async (allCollections) => {
     try {
       const preselected = []
-      
-      // Para cada colección, verificar si contiene TODOS los artículos
+
       for (const collection of allCollections) {
         try {
           const idsRes = await collectionsAPI.getIdsbyCollection(collection._id)
-          
+
           if (idsRes.status === 200 || idsRes.data) {
             const collectionArticleIds = idsRes.data.article_ids || []
-            
-            // Solo preseleccionar si TODOS los artículos están en esta colección
-            const allArticlesInCollection = articleIds.every(id => 
+            const allArticlesInCollection = articleIds.every((id) =>
               collectionArticleIds.includes(id)
             )
-            
+
             if (allArticlesInCollection) {
               preselected.push(collection._id)
             }
           }
-        } catch (err) {
-          // Continuar con la siguiente colección si hay error
-          console.warn(`Error checking collection ${collection._id}:`, err)
-        }
+        } catch {}
       }
-      
+
       setSelectedCollections(preselected)
       setPreselectedCollections(preselected)
     } catch (err) {
-      console.warn('Error preselecting collections:', err)
+      setError(getErrorMessage(err, 'No se pudo preparar la selección inicial'))
     }
   }
 
   const handleToggleCollection = (collectionId) => {
-    setSelectedCollections(prev => {
+    setSelectedCollections((prev) => {
       if (prev.includes(collectionId)) {
-        return prev.filter(id => id !== collectionId)
-      } else {
-        return [...prev, collectionId]
+        return prev.filter((id) => id !== collectionId)
       }
+      return [...prev, collectionId]
     })
   }
 
@@ -90,16 +108,9 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
       setSaving(true)
       setError(null)
 
-      // Separar las colecciones en 3 grupos:
-      // 1. Nuevas: están en selectedCollections pero NO en preselectedCollections (añadir)
-      // 2. Eliminadas: están en preselectedCollections pero NO en selectedCollections (quitar)
-      // 3. Mantenidas: están en ambas (no hacer nada)
-      
-      const newCollections = selectedCollections.filter(id => !preselectedCollections.includes(id))
-      const removedCollections = preselectedCollections.filter(id => !selectedCollections.includes(id))
+      const newCollections = selectedCollections.filter((id) => !preselectedCollections.includes(id))
+      const removedCollections = preselectedCollections.filter((id) => !selectedCollections.includes(id))
 
-      // Procesar secuencialmente evita condiciones de carrera al guardar
-      // un mismo artículo de OpenAlex en varias colecciones a la vez.
       for (const collectionId of newCollections) {
         for (const articleId of articleIds) {
           try {
@@ -117,44 +128,17 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
 
       for (const collectionId of removedCollections) {
         for (const articleId of articleIds) {
-          try {
-            await collectionsAPI.removeArticle(collectionId, articleId)
-          } catch (err) {
-            console.warn(`Error removing article ${articleId} from collection ${collectionId}:`, err)
-          }
+          await collectionsAPI.removeArticle(collectionId, articleId)
         }
       }
 
       await invalidateOpenAlexMembershipQueries(queryClient)
 
-      // Construir mensaje basado en las operaciones realizadas
-      let message = ''
-      if (articleIds.length === 1) {
-        if (newCollections.length > 0 && removedCollections.length > 0) {
-          message = `Artículo guardado en ${newCollections.length} y eliminado de ${removedCollections.length} colección(es)`
-        } else if (newCollections.length > 0) {
-          message = `Artículo guardado en ${newCollections.length} colección(es)`
-        } else if (removedCollections.length > 0) {
-          message = `Artículo eliminado de ${removedCollections.length} colección(es)`
-        } else {
-          message = 'Sin cambios realizados'
-        }
-      } else {
-        if (newCollections.length > 0 && removedCollections.length > 0) {
-          message = `${articleIds.length} artículos guardados en ${newCollections.length} y eliminados de ${removedCollections.length} colección(es)`
-        } else if (newCollections.length > 0) {
-          message = `${articleIds.length} artículos guardados en ${newCollections.length} colección(es)`
-        } else if (removedCollections.length > 0) {
-          message = `${articleIds.length} artículos eliminados de ${removedCollections.length} colección(es)`
-        } else {
-          message = 'Sin cambios realizados'
-        }
-      }
-
-      onSuccess && onSuccess(message)
+      const message = buildSaveMessage(articleIds.length, newCollections.length, removedCollections.length)
+      onSuccess?.(message)
       onClose()
     } catch (err) {
-      setError(err.message || 'Error al guardar los artículos')
+      setError(getErrorMessage(err, 'Error al guardar los artículos'))
     } finally {
       setSaving(false)
     }
@@ -163,16 +147,15 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
   if (!isOpen) return null
 
   const newSelectionsCount = selectedCollections.filter(
-    id => !preselectedCollections.includes(id)
+    (id) => !preselectedCollections.includes(id)
   ).length
   const hasChanges =
     newSelectionsCount > 0 ||
-    preselectedCollections.some(id => !selectedCollections.includes(id))
+    preselectedCollections.some((id) => !selectedCollections.includes(id))
 
   return (
     <div className="save-modal-overlay" onClick={onClose}>
-      <div className="save-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+      <div className="save-modal" onClick={(event) => event.stopPropagation()}>
         <div className="save-modal-header">
           <h2>
             <i className="fas fa-bookmark"></i>
@@ -183,7 +166,6 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
           </button>
         </div>
 
-        {/* Body */}
         <div className="save-modal-body">
           {error && (
             <div className="save-modal-error">
@@ -207,9 +189,10 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
             </div>
           ) : (
             <div className="save-modal-collections">
-              {collections.map(collection => {
+              {collections.map((collection) => {
                 const isSelected = selectedCollections.includes(collection._id)
                 const isPreselected = preselectedCollections.includes(collection._id)
+
                 return (
                   <div
                     key={collection._id}
@@ -238,7 +221,6 @@ function SaveToCollectionsModal({ isOpen, onClose, articleIds = [], onSuccess })
           )}
         </div>
 
-        {/* Footer */}
         <div className="save-modal-footer">
           <button
             className="save-modal-btn save-modal-btn-cancel"

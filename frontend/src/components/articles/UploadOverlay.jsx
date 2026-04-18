@@ -1,135 +1,115 @@
-import React, { useRef, useEffect } from 'react';
-import { uploadAPI } from '../../api/index.js';
-import '../../styles/articles/UploadOverlay.css';
+import React, { useRef, useEffect } from 'react'
+import { uploadAPI } from '../../api/index.js'
+import '../../styles/articles/UploadOverlay.css'
 
-const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}) => {
-  // Referencias para los inputs de archivo
-  const fileInputRef = useRef(null);
-  const folderInputRef = useRef(null);
-  const excelInputRef = useRef(null);
+const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null }) => {
+  const fileInputRef = useRef(null)
+  const folderInputRef = useRef(null)
+  const excelInputRef = useRef(null)
 
-  // Cerrar con ESC
   useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+    const handleEsc = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose()
       }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose]);
+    }
 
-  if (!isOpen) return null;
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
 
   const handleUploadOption = (option) => {
-    switch(option) {
+    switch (option) {
       case 'file':
-        fileInputRef.current?.click();
-        break;
+        fileInputRef.current?.click()
+        break
       case 'folder':
-        folderInputRef.current?.click();
-        break;
+        folderInputRef.current?.click()
+        break
       case 'excel':
-        excelInputRef.current?.click();
-        break;
+        excelInputRef.current?.click()
+        break
       default:
-        console.log('Opción no reconocida');
+        break
     }
-  };
+  }
 
   const handleSingleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]
+    if (!file) return
 
     if (file.type !== 'application/pdf') {
-      alert('Error: Solo se permiten archivos PDF');
-      event.target.value = '';
-      return;
+      onUploadSuccess?.('Error: Solo se permiten archivos PDF')
+      event.target.value = ''
+      return
     }
 
-    // Cerrar overlay inmediatamente
-    onClose();
+    onClose()
 
-    // Iniciar la carga en background
     try {
-      console.log('Uploading to collection:', collection_id);
-      await uploadAPI.uploadPDF(file, collection_id);
-      if (onUploadSuccess) {
-        onUploadSuccess('Archivo subido correctamente');
-      }
+      await uploadAPI.uploadPDF(file, collection_id)
+      onUploadSuccess?.('Archivo subido correctamente')
     } catch (error) {
-      onUploadSuccess(`Error al subir archivo: ${error.message}`);
+      onUploadSuccess?.(`Error al subir archivo: ${error.message}`)
     } finally {
-      event.target.value = '';
+      event.target.value = ''
     }
-  };
+  }
 
   const handleFolderUpload = async (event) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
-    const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+    const pdfFiles = Array.from(files).filter((file) => file.type === 'application/pdf')
 
     if (pdfFiles.length === 0) {
-      alert('Error: No se encontraron archivos PDF en la carpeta');
-      event.target.value = '';
-      return;
+      onUploadSuccess?.('Error: No se encontraron archivos PDF en la carpeta')
+      event.target.value = ''
+      return
     }
 
-    // Cerrar overlay inmediatamente
-    onClose();
+    onClose()
 
-    // Iniciar la carga en background
     try {
-      for (let i = 0; i < pdfFiles.length; i++) {
-        const file = pdfFiles[i];
-        await uploadAPI.uploadPDF(file, collection_id);
+      for (const file of pdfFiles) {
+        await uploadAPI.uploadPDF(file, collection_id)
       }
 
-      if (onUploadSuccess) {
-        onUploadSuccess(`${pdfFiles.length} archivo(s) subido(s) correctamente`);
-      }
+      onUploadSuccess?.(`${pdfFiles.length} archivo(s) subido(s) correctamente`)
     } catch (error) {
-      if (onUploadSuccess) {
-        onUploadSuccess(`Error al subir archivos: ${error.message}`);
-      }
+      onUploadSuccess?.(`Error al subir archivos: ${error.message}`)
     } finally {
-      event.target.value = '';
+      event.target.value = ''
     }
-  };
+  }
 
   const handleExcelUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]
+    if (!file) return
 
     if (file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-      alert('Error: Solo se permiten archivos Excel');
-      event.target.value = '';
-      return;
+      onUploadSuccess?.('Error: Solo se permiten archivos Excel')
+      event.target.value = ''
+      return
     }
 
-    // Cerrar overlay inmediatamente
-    onClose();
+    onClose()
 
-    // Iniciar la carga en background
     try {
-      await uploadAPI.uploadExcel(file, collection_id);
-      if (onUploadSuccess) {
-        onUploadSuccess('Archivo subido correctamente');
-      }
+      await uploadAPI.uploadExcel(file, collection_id)
+      onUploadSuccess?.('Archivo subido correctamente')
     } catch (error) {
-      if (onUploadSuccess) {
-        onUploadSuccess(`Error al subir archivo: ${error.message}`);
-      }
+      onUploadSuccess?.(`Error al subir archivo: ${error.message}`)
     } finally {
-      event.target.value = '';
+      event.target.value = ''
     }
-  };
+  }
 
   return (
     <div className="upload-overlay" onClick={onClose}>
-      <div className="upload-overlay-content" onClick={(e) => e.stopPropagation()}>
-        {/* Inputs ocultos */}
+      <div className="upload-overlay-content" onClick={(event) => event.stopPropagation()}>
         <input
           type="file"
           ref={fileInputRef}
@@ -154,16 +134,13 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
           onChange={handleExcelUpload}
         />
 
-        {/* Botón de cerrar */}
         <button className="upload-overlay-close" onClick={onClose}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
-        {/* Las 3 tarjetas con animación de burbujas */}
         <div className="upload-options-grid">
-          {/* Subir Archivo */}
           <div
             className="upload-card"
             onClick={() => handleUploadOption('file')}
@@ -180,7 +157,6 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
             <div className="upload-card-badge">PDF</div>
           </div>
 
-          {/* Subir Carpeta */}
           <div
             className="upload-card"
             onClick={() => handleUploadOption('folder')}
@@ -196,7 +172,6 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
             <div className="upload-card-badge">Múltiples PDF</div>
           </div>
 
-          {/* Subir Excel */}
           <div
             className="upload-card"
             onClick={() => handleUploadOption('excel')}
@@ -216,7 +191,7 @@ const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default UploadOverlay;
+export default UploadOverlay

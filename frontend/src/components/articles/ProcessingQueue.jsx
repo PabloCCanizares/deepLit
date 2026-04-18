@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { articlesAPI } from '../../api/index.js';
+import { useArticlesEvents } from '../../hooks/useArticlesEvents';
 import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries';
 import '../../styles/articles/ProcessingQueue.css';
 
@@ -23,7 +24,6 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [removingIds, setRemovingIds] = useState(new Set());
-  const eventSourceRef = useRef(null);
   const reloadTimeoutRef = useRef(null);
   const loadingRef = useRef(false);
 
@@ -58,27 +58,21 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
 
     loadQueue();
 
-    const es = articlesAPI.subscribeEvents({
-      onArticleReady: scheduleQueueReload,
-      onArticleError: scheduleQueueReload,
-      onError: () => {
-        console.warn('ProcessingQueue: error en SSE');
-      }
-    });
-
-    eventSourceRef.current = es;
-
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
       if (reloadTimeoutRef.current) {
         clearTimeout(reloadTimeoutRef.current);
         reloadTimeoutRef.current = null;
       }
     };
-  }, [isOpen, loadQueue, scheduleQueueReload]);
+  }, [isOpen, loadQueue]);
+
+  useArticlesEvents({
+    onArticleReady: scheduleQueueReload,
+    onArticleError: scheduleQueueReload,
+    onError: () => {
+      console.warn('ProcessingQueue: error en SSE');
+    }
+  }, isOpen);
 
   useEffect(() => {
     if (!isOpen) return undefined;

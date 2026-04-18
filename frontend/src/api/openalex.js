@@ -1,17 +1,15 @@
 import { apiFetch } from './client.js'
 
 export const openalexAPI = {
-  getWorks: async ({ limit = 10, offset = 0, filters = {}, sort_by } = {}) => {
-    console.log('API OPENALEX - getWorks called')
-    return apiFetch('/openalex/search', {
+  getWorks: async ({ limit = 10, offset = 0, filters = {}, sort_by } = {}) =>
+    apiFetch('/openalex/search', {
       method: 'POST',
       body: JSON.stringify({
         pagination: { limit, offset },
         filters: Object.keys(filters).length > 0 ? filters : null,
         sort_by,
       }),
-    })
-  },
+    }),
 
   getById: async (id) => apiFetch(`/openalex/${id}`, {
     method: 'GET',
