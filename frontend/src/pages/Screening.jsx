@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, collectionsAPI, screeningAPI } from '../api/api'
+import { articlesAPI, collectionsAPI, screeningAPI } from '../api/index.js'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
 import { useCollection } from '../context/CollectionContext'
 

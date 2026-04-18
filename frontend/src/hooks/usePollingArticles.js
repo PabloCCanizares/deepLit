@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { articlesAPI } from '../api/api';
+import { articlesAPI } from '../api/index.js';
 
 /**
  * Hook que hace polling periódico de artículos con status "processing"

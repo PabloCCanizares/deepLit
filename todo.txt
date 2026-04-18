@@ -12,6 +12,8 @@ Crear un componente de filtros en vez de tener 20 paginas distintas (Además añ
 
 Crear tabla de Paper y guardar los pdfs referenciando a la colección.
 
+Clustering después del evidence Extraction (decidir su uso - si informativo o si se integra con otras cosas)
+
 POR HACER:
 
 Arreglar dashboard.
@@ -20,8 +22,5 @@ Arreglar dashboard.
 Los Papers se deben crear donde Evidence Extraction, pudiendo añadir conocimiento propio en un prompt (texto, pdf). Meter en la ui una ventana grande para esto.
 
 Añadir Forward y Backward SnowBalling
-
-Clustering después del evidence Extraction (decidir su uso - si informativo o si se integra con otras cosas)
-
 
 Enlazar Screening y Evidence Extraction (Collection Synthesis) en un flujo completo.

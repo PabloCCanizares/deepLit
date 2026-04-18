@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { articlesAPI, collectionsAPI } from '../../api/api'
+import { articlesAPI, collectionsAPI } from '../../api/index.js'
 import SearchBarDebounced from '../articles/SearchBarDebounced'
 import '../../styles/collections/CreateCollectionModal.css'
 

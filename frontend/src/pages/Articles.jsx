@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { articlesAPI } from '../api/api'
+import { articlesAPI } from '../api/index.js'
 import { useArticleFilters } from '../hooks/useArticleFilters'
 
 import UnifiedFilterBar from '../components/common/UnifiedFilterBar'

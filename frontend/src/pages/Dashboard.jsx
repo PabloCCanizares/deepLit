@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { statsAPI, openalexAPI } from '../api/api'
+import { statsAPI, openalexAPI } from '../api/index.js'
 import StatCard from '../components/dashboard/StatCard'
 import YearChart from '../components/dashboard/YearChart'
 import KeywordRanking from '../components/dashboard/KeywordRanking'

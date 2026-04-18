@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { collectionsAPI } from '../api/api'
+import { collectionsAPI } from '../api/index.js'
 import { useArticleFilters } from '../hooks/useArticleFilters'
 import UnifiedFilterBar from '../components/common/UnifiedFilterBar'
 import SelectionActions from '../components/articles/SelectionActions'

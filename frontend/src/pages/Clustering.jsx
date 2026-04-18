@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, clusteringAPI, evidenceExtractionAPI } from '../api/api'
+import { articlesAPI, clusteringAPI, evidenceExtractionAPI } from '../api/index.js'
 import { useCollection } from '../context/CollectionContext'
 
 import '../styles/App.css'

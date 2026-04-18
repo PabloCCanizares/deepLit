@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { collectionsAPI, openalexAPI } from '../../api/api'
+import { collectionsAPI, openalexAPI } from '../../api/index.js'
 import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries'
 import '../../styles/openalex/SaveToCollectionsModal.css'
 

@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { articlesAPI } from '../api/api'
+import { articlesAPI } from '../api/index.js'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
 import { recordViewedItem } from '../utils/viewHistory'
 import '../styles/articles/ArticleViewEdit.css'

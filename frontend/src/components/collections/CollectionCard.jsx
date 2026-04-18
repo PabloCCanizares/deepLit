@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
-import { collectionsAPI } from '../../api/api'
+import { collectionsAPI } from '../../api/index.js'
 import '../../styles/collections/CollectionCard.css'
 
 function CollectionCard({ collection, onEdit, onDelete }) {

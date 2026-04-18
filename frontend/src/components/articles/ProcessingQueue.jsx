@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { articlesAPI } from '../../api/api';
+import { articlesAPI } from '../../api/index.js';
 import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries';
 import '../../styles/articles/ProcessingQueue.css';
 

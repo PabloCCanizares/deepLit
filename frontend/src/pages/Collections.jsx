@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { collectionsAPI } from '../api/api'
+import { collectionsAPI } from '../api/index.js'
 import SearchBarDebounced from '../components/articles/SearchBarDebounced'
 import CollectionCard from '../components/collections/CollectionCard'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'

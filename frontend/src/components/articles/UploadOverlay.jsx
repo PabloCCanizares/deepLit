@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { uploadAPI } from '../../api/api';
+import { uploadAPI } from '../../api/index.js';
 import '../../styles/articles/UploadOverlay.css';
 
 const UploadOverlay = ({ isOpen, onClose, onUploadSuccess, collection_id = null}) => {

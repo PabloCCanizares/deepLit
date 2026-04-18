@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { articlesAPI, collectionsAPI } from '../api/api'
+import { articlesAPI, collectionsAPI } from '../api/index.js'
 import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
 import '../styles/articles/ArticleViewEdit.css'
 

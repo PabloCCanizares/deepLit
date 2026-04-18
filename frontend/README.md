@@ -182,7 +182,7 @@ proxy: {
 ### **API Base:**
 
 ```javascript
-// src/api/api.js
+// src/api/index.js
 const API_BASE = '/api';  // En desarrollo usa el proxy de Vite
 
 // Endpoints
@@ -446,7 +446,7 @@ Al agregar nuevas funcionalidades:
 
 1. ✅ Mantén la estructura de carpetas
 2. ✅ Usa `AuthContext` para acceder al usuario
-3. ✅ Todas las llamadas API van en `src/api/api.js`
+3. ✅ Todas las llamadas API van en `src/api/` y se reexportan desde `src/api/index.js`
 4. ✅ Los errores del backend siempre tienen formato `StandardResponse`
 5. ✅ Usa componentes reutilizables cuando sea posible
 6. ✅ Mantén los estilos en `App.css` (global) o archivos específicos

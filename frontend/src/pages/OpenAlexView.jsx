@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { collectionsAPI, openalexAPI } from '../api/api'
+import { collectionsAPI, openalexAPI } from '../api/index.js'
 import { useCollection } from '../context/CollectionContext'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
 import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'

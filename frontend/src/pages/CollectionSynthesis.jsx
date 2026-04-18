@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { articlesAPI, collectionSynthesisAPI } from '../api/api'
+import { articlesAPI, collectionSynthesisAPI } from '../api/index.js'
 import { useCollection } from '../context/CollectionContext'
 import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfExport'
 

@@ -2,7 +2,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 
-import { articlesAPI, collectionsAPI } from '../api/api'
+import { articlesAPI, collectionsAPI } from '../api/index.js'
 import { useArticleFilters } from '../hooks/useArticleFilters'
 import { useCollection } from "../context/CollectionContext";
 

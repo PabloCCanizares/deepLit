@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { articlesAPI, evidenceExtractionAPI, screeningAPI } from '../api/api'
+import { articlesAPI, evidenceExtractionAPI, screeningAPI } from '../api/index.js'
 import { useCollection } from '../context/CollectionContext'
 
 import '../styles/App.css'

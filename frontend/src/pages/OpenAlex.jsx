@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { collectionsAPI, openalexAPI } from '../api/api'
+import { collectionsAPI, openalexAPI } from '../api/index.js'
 import { useCollection } from "../context/CollectionContext";
 import { useArticleFilters } from '../hooks/useArticleFilters';
 import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'

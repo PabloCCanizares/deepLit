@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { aiAssistantAPI } from '../../api/api'
+import { aiAssistantAPI } from '../../api/index.js'
 import { useCollection } from '../../context/CollectionContext'
 import { AI_ASSISTANT_TOOLS, getAiToolById, getInputPlaceholder } from './toolConfig'
 import '../../styles/App.css'
