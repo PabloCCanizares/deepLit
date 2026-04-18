@@ -13,6 +13,7 @@ from .screening_controller import ScreeningController
 from .collection_synthesis_controller import CollectionSynthesisController
 from .evidence_extraction_controller import EvidenceExtractionController
 from .clustering_controller import ClusteringController
+from .papers_controller import PapersController
 
 __all__ = [
     "AuthController",
@@ -28,4 +29,5 @@ __all__ = [
     "CollectionSynthesisController",
     "EvidenceExtractionController",
     "ClusteringController",
+    "PapersController",
 ]

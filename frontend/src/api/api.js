@@ -622,6 +622,58 @@ export const clusteringAPI = {
 };
 
 
+// Papers API - Gestión de papers (PDFs vinculados a colecciones)
+export const papersAPI = {
+  create: (file, collection_id, title = null, notes = null) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64String = e.target.result.split(',')[1];
+        apiFetch('/papers', {
+          method: 'POST',
+          body: JSON.stringify({
+            filename: file.name,
+            content: base64String,
+            collection_id,
+            title,
+            notes,
+          }),
+        }).then(resolve).catch(reject);
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+  },
+
+  getAll: async () => {
+    return apiFetch('/papers', { method: 'GET' });
+  },
+
+  getByCollection: async (collectionId) => {
+    return apiFetch(`/papers/collection/${collectionId}`, { method: 'GET' });
+  },
+
+  getById: async (paperId) => {
+    return apiFetch(`/papers/${paperId}`, { method: 'GET' });
+  },
+
+  getPdf: async (paperId) => {
+    return fetchFile(`/papers/${paperId}/pdf`);
+  },
+
+  update: async (paperId, data) => {
+    return apiFetch(`/papers/${paperId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (paperId) => {
+    return apiFetch(`/papers/${paperId}`, { method: 'DELETE' });
+  },
+};
+
+
 // Exportar por defecto para import por defecto
 export default {
   auth: authAPI,
@@ -634,5 +686,5 @@ export default {
   evidenceExtraction: evidenceExtractionAPI,
   collectionSynthesis: collectionSynthesisAPI,
   clustering: clusteringAPI,
-
+  papers: papersAPI,
 };

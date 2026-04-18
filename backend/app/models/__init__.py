@@ -70,6 +70,12 @@ from app.models.collection import (
     CollectionCreate,
     AddArticleToCollection
 )
+
+# Paper models
+from app.models.paper import (
+    PaperCreate,
+    PaperUpdate
+)
 from app.models.screening import (
     ScreeningRunRequest,
     ScreeningDecisionLLMResult,
@@ -125,6 +131,10 @@ __all__ = [
     # Collection
     "CollectionCreate",
     "AddArticleToCollection",
+
+    # Paper
+    "PaperCreate",
+    "PaperUpdate",
     "ScreeningRunRequest",
     "ScreeningDecisionLLMResult",
     "ScreeningDecisionUpdateRequest",

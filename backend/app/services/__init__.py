@@ -15,6 +15,7 @@ from .clustering_run_service import ClusteringRunService
 from .cluster_assignment_service import ClusterAssignmentService
 from .job_service import JobService
 from .collection_service import CollectionService
+from .paper_service import PaperService
 
 __all__ = [
     "StorageService",
@@ -33,4 +34,5 @@ __all__ = [
     "ClusterAssignmentService",
     "JobService",
     "CollectionService",
+    "PaperService",
 ]

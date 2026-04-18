@@ -8,10 +8,11 @@ Arreglar citas en la extracción de pdf.
 
 Arreglar OpenAlex para mostrar solo artículos del presente o pasado.
 
+Crear un componente de filtros en vez de tener 20 paginas distintas (Además añadir más filtros (por campos)).
+
+Crear tabla de Paper y guardar los pdfs referenciando a la colección.
 
 POR HACER:
-
-Crear un componente de filtros en vez de tener 20 paginas distintas (Además añadir más filtros (por campos)).
 
 Arreglar dashboard.
     Tener cuidado porque es posible que se consideren autores iguales escritos diferente como autores distintos.
@@ -22,6 +23,5 @@ Añadir Forward y Backward SnowBalling
 
 Clustering después del evidence Extraction (decidir su uso - si informativo o si se integra con otras cosas)
 
-Crear tabla de Paper y guardar los pdfs referenciando a la colección.
 
 Enlazar Screening y Evidence Extraction (Collection Synthesis) en un flujo completo.
