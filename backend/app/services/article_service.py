@@ -8,7 +8,8 @@ from typing import List, Dict, Optional, Any
 
 from app.core import NotFoundError, AuthorizationError
 from app.models import QueryBody
-from app.repositories import ArticleRepository, PdfRepository
+from app.repositories import ArticleRepository, PdfRepository, JobRepository
+from app.services.job_service import PDF_PROCESSING_JOB
 
 
 # Campos alineados con OpenAlexService.select_fields
@@ -205,6 +206,7 @@ class ArticleService:
     def __init__(self):
         self.article_repo = ArticleRepository()
         self.pdf_repo = PdfRepository()
+        self.job_repo = JobRepository()
         # Importar aquí para evitar circular import
         from app.services.pdf_service import PdfService
         from app.services.storage_service import StorageService
@@ -625,7 +627,46 @@ class ArticleService:
         Retorna lista ordenada por fecha de creación (mí¡s reciente primero).
         """
         queue_items = await self.article_repo.get_processing_articles(user_id)
-        return queue_items if queue_items else []
+        if not queue_items:
+            return []
+
+        reconciled_queue: List[Dict] = []
+        for item in queue_items:
+            if item.get("status") != "processing":
+                reconciled_queue.append(item)
+                continue
+
+            article_id = str(item.get("_id") or "")
+            latest_job = await self.job_repo.find_latest_job_by_payload_field(
+                payload_field="article_id",
+                payload_value=article_id,
+                job_type=PDF_PROCESSING_JOB,
+                user_id=user_id,
+            )
+            latest_job_status = latest_job.get("status") if latest_job else None
+
+            if latest_job_status in {"queued", "processing"}:
+                reconciled_queue.append(item)
+                continue
+
+            if latest_job_status == "failed":
+                error_message = latest_job.get("error_message") or "El procesamiento del PDF falló."
+            elif latest_job_status == "completed":
+                error_message = "El job terminó, pero el artículo quedó sin actualizar."
+            else:
+                error_message = "No existe un job activo para este artículo; se marcó como interrumpido."
+
+            updated_item = await self.article_repo.update(
+                article_id,
+                {
+                    "status": "error",
+                    "error_message": error_message,
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
+            reconciled_queue.append(updated_item or {**item, "status": "error", "error_message": error_message})
+
+        return reconciled_queue
     
     async def delete(self, article_id: str, user_id: str) -> bool:
         """

@@ -85,3 +85,25 @@ class JobRepository:
             },
         )
         return result.modified_count
+
+    async def find_latest_job_by_payload_field(
+        self,
+        *,
+        payload_field: str,
+        payload_value: str,
+        job_type: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[dict]:
+        filter_query = {
+            f"payload.{payload_field}": payload_value,
+        }
+
+        if job_type:
+            filter_query["type"] = job_type
+        if user_id:
+            filter_query["id_user"] = user_id
+
+        return await self.collection.find_one(
+            filter_query,
+            sort=[("created_at", -1)],
+        )

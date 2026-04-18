@@ -15,6 +15,7 @@ import SelectionActions from '../components/articles/SelectionActions'
 import Pagination from '../components/articles/Pagination'
 import SaveToCollectionsModal from '../components/openalex/SaveToCollectionsModal'
 import { invalidateOpenAlexMembershipQueries } from '../utils/openalexMembershipQueries'
+import { shouldDisplayProcessingEvent } from '../utils/processingEventDedup'
 
 import '../styles/App.css'
 import '../styles/articles/ArticleViewEdit.css'
@@ -74,13 +75,17 @@ function CollectionArticles() {
     const es = articlesAPI.subscribeEvents({
       onArticleReady: (data) => {
         console.log('SSE: artículo procesado', data)
-        setNotification(`"${data.title}" procesado correctamente`)
+        if (shouldDisplayProcessingEvent({ eventName: 'article_ready', data })) {
+          setNotification(`"${data.title}" procesado correctamente`)
+        }
         // Recargar lista para mostrar el nuevo artículo
         loadDocuments()
       },
       onArticleError: (data) => {
         console.log('SSE: error en artículo', data)
-        setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
+        if (shouldDisplayProcessingEvent({ eventName: 'article_error', data })) {
+          setNotification(`Error procesando "${data.title}": ${data.error_message || 'Error desconocido'}`)
+        }
       },
       onError: () => {
         console.warn('SSE: conexión perdida, reconectando...')

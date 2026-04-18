@@ -4,6 +4,19 @@ import { articlesAPI } from '../../api/index.js';
 import { invalidateOpenAlexMembershipQueries } from '../../utils/openalexMembershipQueries';
 import '../../styles/articles/ProcessingQueue.css';
 
+function formatQueueTimestamp(value) {
+  if (!value) return 'Sin fecha';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Sin fecha';
+
+  return date.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
 const ProcessingQueue = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient();
   const [queue, setQueue] = useState([]);
@@ -103,6 +116,8 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
 
   const processingCount = queue.filter(q => q.status === 'processing').length;
   const errorCount = queue.filter(q => q.status === 'error').length;
+  const hasActiveQueue = processingCount > 0;
+  const hasErrorsOnly = processingCount === 0 && errorCount > 0;
 
   return (
     <div className="processing-queue-overlay" onClick={onClose}>
@@ -172,11 +187,7 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
                   </div>
 
                   <div className="pq-item-timestamp">
-                    {new Date(item.created_at).toLocaleTimeString('es-ES', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })}
+                    {formatQueueTimestamp(item.created_at)}
                   </div>
 
                   {item.status === 'error' && (
@@ -206,7 +217,12 @@ const ProcessingQueue = ({ isOpen, onClose }) => {
         </div>
 
         <div className="pq-footer">
-          <span className="pq-total">Total en cola: {queue.length}</span>
+          <span className="pq-total">
+            {hasActiveQueue && `En procesamiento: ${processingCount}`}
+            {hasActiveQueue && errorCount > 0 && ` · Errores pendientes: ${errorCount}`}
+            {hasErrorsOnly && `Sin cola activa · Errores pendientes: ${errorCount}`}
+            {!hasActiveQueue && errorCount === 0 && 'Sin cola activa'}
+          </span>
         </div>
       </div>
     </div>
