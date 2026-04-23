@@ -35,7 +35,7 @@ def get_model_name(offline=None):
     if offline:
         return "gemma3:4b"
     else:
-        return "gemini-2.0-flash"
+        return "gemini-2.5-flash"
 
 def get_chatbot_config():
     offline = settings.OFFLINE
