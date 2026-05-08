@@ -3,6 +3,14 @@ import '../../styles/App.css'
 
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
+  const reviewWorkflowPaths = [
+    '/review-workflow',
+    '/screening',
+    '/evidence-extraction',
+    '/clustering',
+    '/collection-synthesis',
+  ];
+  const isReviewWorkflowActive = reviewWorkflowPaths.includes(location.pathname);
 
   return (
     <>
@@ -63,37 +71,13 @@ function Sidebar({ isOpen, onClose }) {
               <i className="fas fa-briefcase"></i>
               <span>Zona de Trabajo</span>
             </Link>
-            <Link 
-              to="/screening" 
-              className={`sidebarLink ${location.pathname === '/screening' ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <i className="fas fa-filter"></i>
-              <span>Screening</span>
-            </Link>
-            <Link 
-              to="/evidence-extraction" 
-              className={`sidebarLink ${location.pathname === '/evidence-extraction' ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <i className="fas fa-microscope"></i>
-              <span>Evidence Extraction</span>
-            </Link>
-            <Link 
-              to="/clustering" 
-              className={`sidebarLink ${location.pathname === '/clustering' ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <i className="fas fa-object-group"></i>
-              <span>Clustering</span>
-            </Link>
-            <Link 
-              to="/collection-synthesis" 
-              className={`sidebarLink ${location.pathname === '/collection-synthesis' ? 'active' : ''}`}
+            <Link
+              to="/review-workflow"
+              className={`sidebarLink ${isReviewWorkflowActive ? 'active' : ''}`}
               onClick={onClose}
             >
               <i className="fas fa-diagram-project"></i>
-              <span>Collection Synthesis</span>
+              <span>Revision asistida</span>
             </Link>
             <Link 
               to="/openalex" 

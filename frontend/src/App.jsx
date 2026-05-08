@@ -16,10 +16,7 @@ import Profile from './pages/Profile'
 import OpenAlex from './pages/OpenAlex'
 import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
-import CollectionSynthesis from './pages/CollectionSynthesis'
-import EvidenceExtraction from './pages/EvidenceExtraction'
-import Screening from './pages/Screening'
-import Clustering from './pages/Clustering'
+import ReviewWorkflow from './pages/ReviewWorkflow'
 import PublicPreview from './pages/PublicPreview'
 
 function App() {
@@ -57,10 +54,11 @@ function App() {
                 <Route path="settings" element={<Navigate to="/profile" replace />} />
 
                 <Route path="search" element={<CollectionArticles />} />
-                <Route path="screening" element={<Screening />} />
-                <Route path="evidence-extraction" element={<EvidenceExtraction />} />
-                <Route path="clustering" element={<Clustering />} />
-                <Route path="collection-synthesis" element={<CollectionSynthesis />} />
+                <Route path="review-workflow" element={<ReviewWorkflow />} />
+                <Route path="screening" element={<Navigate to="/review-workflow?step=screening" replace />} />
+                <Route path="evidence-extraction" element={<Navigate to="/review-workflow?step=evidence" replace />} />
+                <Route path="clustering" element={<Navigate to="/review-workflow?step=clustering" replace />} />
+                <Route path="collection-synthesis" element={<Navigate to="/review-workflow?step=synthesis" replace />} />
 
                 <Route path="openalex" element={<OpenAlex />} />
                 <Route path="openalex/:id" element={<OpenAlexView />} />

@@ -46,6 +46,7 @@ function Navbar({ toggleSidebar }) {
     "/evidence-extraction",
     "/clustering",
     "/collection-synthesis",
+    "/review-workflow",
     "/openalex",
     "/dashboard"
   ].includes(location.pathname);
