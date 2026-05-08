@@ -18,6 +18,7 @@ import AiAssistant from '../components/ai_assistant/AiAssistant'
 import ArticleView from './ArticleView'
 import ArticleEdit from './ArticleEdit'
 import OpenAlexView from './OpenAlexView'
+import PublicLanding from './PublicLanding'
 import { getViewedHistory } from '../utils/viewHistory'
 
 const DASHBOARD_DATA = {
@@ -172,7 +173,7 @@ function getPreviewRecommendedItems() {
   }))
 }
 
-function PublicPreview() {
+function PublicPreviewShell() {
   const { isAuthenticated } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
@@ -839,6 +840,17 @@ function PublicPreview() {
       )}
     </div>
   )
+}
+
+function PublicPreview() {
+  const location = useLocation()
+  const normalizedPath = location.pathname.replace(/\/+$/, '')
+
+  if (normalizedPath === '/preview') {
+    return <PublicLanding />
+  }
+
+  return <PublicPreviewShell />
 }
 
 export default PublicPreview
