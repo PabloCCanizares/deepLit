@@ -12,6 +12,9 @@
 - ✅ **Validación con Pydantic** - Validación automática de datos
 - ✅ **Configuración con Pydantic Settings** - Variables de entorno tipadas
 - ✅ **Documentación Automática** - Swagger UI en `/docs`
+- ✅ **Grafo de Artículos en Neo4j** - Cada artículo crea automáticamente nodos
+  (`Article`, `Author`, `Keyword`, `Category`, `Type`) y relaciones (`WROTE`,
+  `HAS_KEYWORD`, `IN_CATEGORY`, `OF_TYPE`) reutilizables por los agentes RAG
 
 ---
 
@@ -194,7 +197,16 @@ MONGODB_URL=mongodb://localhost:27017   # URL de MongoDB
 DATABASE_NAME=deeplit                   # Nombre de la BD (default: deeplit)
 ALLOWED_ORIGINS=http://localhost:3000   # CORS (default: localhost:3000)
 ACCESS_TOKEN_EXPIRE_MINUTES=480         # Expiración del token en minutos (default: 8 horas)
+
+# Neo4j (opcional, habilita el grafo de artículos del dashboard)
+NEO4J_URL=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=tu_password
 ```
+
+> Si las variables de Neo4j no se definen, el grafo del dashboard se renderiza
+> vacío con un mensaje informativo y la ingesta queda desactivada de forma
+> automática (no se rompe el flujo principal de subida de artículos).
 
 ---
 

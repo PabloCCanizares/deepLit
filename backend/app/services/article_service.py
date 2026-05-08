@@ -1,6 +1,8 @@
 ﻿"""
 Servicio de Artículos.
 """
+import asyncio
+import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,7 +11,10 @@ from typing import List, Dict, Optional, Any
 from app.core import NotFoundError, AuthorizationError
 from app.models import QueryBody
 from app.repositories import ArticleRepository, PdfRepository, JobRepository
+from app.services.article_graph_service import ArticleGraphService
 from app.services.job_service import PDF_PROCESSING_JOB
+
+logger = logging.getLogger(__name__)
 
 
 # Campos alineados con OpenAlexService.select_fields
@@ -207,11 +212,52 @@ class ArticleService:
         self.article_repo = ArticleRepository()
         self.pdf_repo = PdfRepository()
         self.job_repo = JobRepository()
+        self.article_graph_service = ArticleGraphService()
         # Importar aquí para evitar circular import
         from app.services.pdf_service import PdfService
         from app.services.storage_service import StorageService
         self.pdf_service = PdfService()
         self.storage_service = StorageService()
+
+    async def _sync_article_graph(self, article: Dict, user_id: str) -> None:
+        """
+        Sincroniza un artículo con el grafo de Neo4j.
+
+        Se ejecuta en un hilo aparte para no bloquear el loop async y
+        nunca propaga errores: si Neo4j no está disponible o la
+        ingesta falla, sólo se registra un warning.
+        """
+        if not article or not user_id:
+            return
+        try:
+            await asyncio.to_thread(
+                self.article_graph_service.ingest_article,
+                article,
+                user_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "No se pudo sincronizar el articulo %s con el grafo: %s",
+                article.get("_id") or article.get("id"),
+                exc,
+            )
+
+    async def _remove_from_article_graph(self, article_id: str, user_id: str) -> None:
+        """Elimina un artículo del grafo de Neo4j (best-effort)."""
+        if not article_id or not user_id:
+            return
+        try:
+            await asyncio.to_thread(
+                self.article_graph_service.remove_article,
+                article_id,
+                user_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "No se pudo eliminar el articulo %s del grafo: %s",
+                article_id,
+                exc,
+            )
     
     async def create_from_excel_row(
         self,
@@ -241,6 +287,7 @@ class ArticleService:
             article_dict["collection_ids"] = [collection_id]
 
         result_id = await self.article_repo.create(article_dict)
+        await self._sync_article_graph(article_dict, user_id)
         return result_id
     
     async def create_processing_article(
@@ -299,6 +346,8 @@ class ArticleService:
         normalized["updated_at"] = datetime.now(timezone.utc)
         
         updated = await self.article_repo.update(article_id, normalized)
+        if updated:
+            await self._sync_article_graph(updated, user_id)
         return updated
 
     async def mark_processing_error(
@@ -709,4 +758,6 @@ class ArticleService:
         
         # Eliminar registro del artí­culo en BD
         deleted = await self.article_repo.delete(article_id)
+        if deleted:
+            await self._remove_from_article_graph(article_id, user_id)
         return deleted

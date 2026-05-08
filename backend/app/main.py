@@ -8,6 +8,7 @@ from app.database import connect_to_mongo, close_mongo_connection
 from app.core import register_exception_handlers
 from app.routers import include_routers
 from app.services import StorageService
+from app.services.article_graph_service import ArticleGraphService
 from app.workers.job_worker import JobWorker
 
 
@@ -52,11 +53,21 @@ async def startup():
     """Ejecutado al iniciar el servidor"""
     # Conectar a MongoDB
     await connect_to_mongo()
-    
+
+    # Sincronizar artículos de MongoDB → Neo4j (MERGE; recupera datos previos a la integración)
+    article_graph_service = ArticleGraphService()
+    sync_report = await article_graph_service.sync_all_from_mongo()
+    if sync_report.get("ran"):
+        print(
+            f"📊 Grafo Neo4j sincronizado: "
+            f"{sync_report.get('ingested_ok', 0)}/{sync_report.get('total', 0)} artículos "
+            f"(fallidos: {sync_report.get('failed', 0)})"
+        )
+
     StorageService()
     app.state.job_worker = JobWorker()
     await app.state.job_worker.start()
-    
+
     print(f"✅ {settings.APP_NAME} iniciado correctamente")
 
 

@@ -92,6 +92,14 @@ from app.models.knowledge_graph import (
     KnowledgeGraphBackfillRequest
 )
 
+# Article Graph models (visualizacion en dashboard)
+from app.models.article_graph import (
+    ArticleGraphNode,
+    ArticleGraphEdge,
+    ArticleGraphStats,
+    ArticleGraphResponse,
+)
+
 __all__ = [
     # Auth (autenticación)
     "UserRegister",
@@ -144,4 +152,10 @@ __all__ = [
 
     # Knowledge Graph
     "KnowledgeGraphBackfillRequest",
+
+    # Article Graph
+    "ArticleGraphNode",
+    "ArticleGraphEdge",
+    "ArticleGraphStats",
+    "ArticleGraphResponse",
 ]

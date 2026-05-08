@@ -10,6 +10,7 @@ export { aiAssistantAPI } from './aiAssistant.js'
 export { collectionSynthesisAPI } from './collectionSynthesis.js'
 export { clusteringAPI } from './clustering.js'
 export { papersAPI } from './papers.js'
+export { articleGraphAPI } from './articleGraph.js'
 
 import { authAPI } from './auth.js'
 import { statsAPI } from './stats.js'
@@ -22,6 +23,7 @@ import { aiAssistantAPI } from './aiAssistant.js'
 import { collectionSynthesisAPI } from './collectionSynthesis.js'
 import { clusteringAPI } from './clustering.js'
 import { papersAPI } from './papers.js'
+import { articleGraphAPI } from './articleGraph.js'
 
 export default {
   auth: authAPI,
@@ -35,4 +37,5 @@ export default {
   collectionSynthesis: collectionSynthesisAPI,
   clustering: clusteringAPI,
   papers: papersAPI,
+  articleGraph: articleGraphAPI,
 }

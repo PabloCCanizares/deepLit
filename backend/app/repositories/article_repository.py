@@ -313,3 +313,17 @@ class ArticleRepository:
 
         cursor = self.collection.find(filter_query, projection)
         return await cursor.to_list(length=None)
+
+    async def find_all_for_article_graph_sync(self) -> List[dict]:
+        """
+        Devuelve todos los artículos que deben existir en Neo4j:
+        tienen ``id_user`` y no están en processing/error (misma regla que el dashboard).
+
+        Se usa al arrancar el servidor para sincronizar Mongo → Neo4j.
+        """
+        filter_query = {
+            "id_user": {"$exists": True, "$nin": [None, ""]},
+            "status": {"$nin": ["processing", "error"]},
+        }
+        cursor = self.collection.find(filter_query).sort("_id", ASCENDING)
+        return await cursor.to_list(length=None)

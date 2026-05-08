@@ -1,6 +1,8 @@
 """
 Servicio de OpenAlex.
 """
+import asyncio
+import logging
 from datetime import datetime
 from app.models import QueryBody
 from typing import List, Dict, Any, Optional
@@ -10,8 +12,11 @@ from app.core import NotFoundError
 from app.repositories import ArticleRepository
 from app.repositories import CollectionRepository
 from app.core import NotFoundError, AuthorizationError
+from app.services.article_graph_service import ArticleGraphService
 from app.services.article_service import normalize_article
 import json
+
+logger = logging.getLogger(__name__)
 
  
 class OpenAlexService:
@@ -22,7 +27,25 @@ class OpenAlexService:
         config.retry_backoff_factor = 0.1
         config.retry_http_codes = [429, 500, 503]
         self.article_repo = ArticleRepository()
-        self.collection_repo = CollectionRepository() 
+        self.collection_repo = CollectionRepository()
+        self.article_graph_service = ArticleGraphService()
+
+    async def _sync_article_graph(self, article: Dict, user_id: str) -> None:
+        """Sincroniza un artículo con el grafo de Neo4j (best-effort)."""
+        if not article or not user_id:
+            return
+        try:
+            await asyncio.to_thread(
+                self.article_graph_service.ingest_article,
+                article,
+                user_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "No se pudo sincronizar el articulo OpenAlex %s con el grafo: %s",
+                article.get("_id") or article.get("id"),
+                exc,
+            )
 
     def _normalize_year_value(self, value):
         """
@@ -150,6 +173,7 @@ class OpenAlexService:
                 article["collection_ids"] = [id_user]
             # Se guarda el artículo en la base de datos
             article_id = await self.article_repo.create(article)
+            await self._sync_article_graph(article, id_user)
 
         return article_id
 
@@ -188,6 +212,19 @@ class OpenAlexService:
         # Si el artículo ya no pertenece a ninguna colección, eliminarlo completamente
         if len(article_collection_ids) == 0:
             result = await self.article_repo.delete(article_id)
+            if result:
+                try:
+                    await asyncio.to_thread(
+                        self.article_graph_service.remove_article,
+                        article_id,
+                        id_user,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "No se pudo eliminar el articulo %s del grafo: %s",
+                        article_id,
+                        exc,
+                    )
         else:
             result = True
 

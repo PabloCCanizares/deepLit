@@ -16,6 +16,7 @@ from .cluster_assignment_service import ClusterAssignmentService
 from .job_service import JobService
 from .collection_service import CollectionService
 from .paper_service import PaperService
+from .article_graph_service import ArticleGraphService
 
 __all__ = [
     "StorageService",
@@ -35,4 +36,5 @@ __all__ = [
     "JobService",
     "CollectionService",
     "PaperService",
+    "ArticleGraphService",
 ]

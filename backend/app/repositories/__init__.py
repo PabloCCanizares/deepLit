@@ -13,6 +13,7 @@ from app.repositories.article_extraction_repository import ArticleExtractionRepo
 from app.repositories.clustering_run_repository import ClusteringRunRepository
 from app.repositories.cluster_assignment_repository import ClusterAssignmentRepository
 from app.repositories.paper_repository import PaperRepository
+from app.repositories.article_graph_repository import ArticleGraphRepository
 __all__ = [
     "UserRepository",
     "PdfRepository",
@@ -28,4 +29,5 @@ __all__ = [
     "ClusteringRunRepository",
     "ClusterAssignmentRepository",
     "PaperRepository",
+    "ArticleGraphRepository",
 ]
