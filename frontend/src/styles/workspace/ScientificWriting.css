@@ -1,0 +1,488 @@
+.scientific-writing-page {
+  padding-bottom: 3rem;
+}
+
+.scientific-writing-embedded {
+  padding-bottom: 0;
+}
+
+.scientific-writing-hero,
+.scientific-writing-panel,
+.scientific-writing-empty {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+}
+
+.scientific-writing-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 1.35rem;
+  border-radius: 22px;
+}
+
+.scientific-writing-hero h1,
+.scientific-writing-panel h2,
+.scientific-writing-empty h2,
+.scientific-writing-empty-result h3,
+.scientific-writing-section h3 {
+  color: var(--text-primary);
+}
+
+.scientific-writing-hero h1 {
+  margin: 0.25rem 0 0.45rem;
+}
+
+.scientific-writing-hero p,
+.scientific-writing-panel p,
+.scientific-writing-context-preview p,
+.scientific-writing-submit-row p,
+.scientific-writing-draft-item small,
+.scientific-writing-empty p,
+.scientific-writing-empty-result p,
+.scientific-writing-mini-empty p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.scientific-writing-kicker,
+.scientific-writing-field-label {
+  color: var(--main_color);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scientific-writing-collection-card {
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.scientific-writing-collection-card span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.scientific-writing-collection-card strong {
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.scientific-writing-layout {
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.scientific-writing-embedded .scientific-writing-layout {
+  grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1fr);
+}
+
+.scientific-writing-panel {
+  border-radius: 22px;
+  padding: 1.25rem;
+}
+
+.scientific-writing-config {
+  position: sticky;
+  top: 88px;
+}
+
+.scientific-writing-embedded .scientific-writing-config {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.scientific-writing-history {
+  max-height: 310px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scientific-writing-history .scientific-writing-panel-heading {
+  flex: 0 0 auto;
+}
+
+.scientific-writing-history .scientific-writing-draft-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 0.25rem;
+}
+
+.scientific-writing-embedded .scientific-writing-config,
+.scientific-writing-history .scientific-writing-draft-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.55) transparent;
+}
+
+.scientific-writing-embedded .scientific-writing-config::-webkit-scrollbar,
+.scientific-writing-history .scientific-writing-draft-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scientific-writing-embedded .scientific-writing-config::-webkit-scrollbar-thumb,
+.scientific-writing-history .scientific-writing-draft-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.45);
+}
+
+.scientific-writing-panel-heading,
+.scientific-writing-result-heading,
+.scientific-writing-result-actions,
+.scientific-writing-submit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.scientific-writing-panel-heading,
+.scientific-writing-result-heading {
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.scientific-writing-panel-heading h2,
+.scientific-writing-result-heading h2 {
+  margin-top: 0.25rem;
+}
+
+.scientific-writing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.scientific-writing-field span {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.scientific-writing-field select,
+.scientific-writing-field input,
+.scientific-writing-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.85rem 0.95rem;
+}
+
+.scientific-writing-field textarea {
+  min-height: 220px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.scientific-writing-context-preview {
+  margin: -0.25rem 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-primary);
+}
+
+.scientific-writing-context-preview strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.scientific-writing-divider {
+  height: 1px;
+  margin: 1rem 0;
+  background: var(--border-color);
+}
+
+.scientific-writing-type-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.scientific-writing-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.scientific-writing-type-button {
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.scientific-writing-type-button i {
+  color: var(--main_color);
+}
+
+.scientific-writing-type-button:hover,
+.scientific-writing-type-button:focus-visible,
+.scientific-writing-type-button.active {
+  border-color: rgba(99, 102, 241, 0.48);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.scientific-writing-type-button.active {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.09), rgba(99, 102, 241, 0.02));
+}
+
+.scientific-writing-submit-row {
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 1rem;
+}
+
+.scientific-writing-submit-row p {
+  max-width: 250px;
+  margin: 0;
+}
+
+.scientific-writing-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scientific-writing-count {
+  min-width: 2.2rem;
+  height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--main_color);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.scientific-writing-draft-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.scientific-writing-draft-item {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-primary);
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.scientific-writing-draft-item:hover,
+.scientific-writing-draft-item:focus-visible,
+.scientific-writing-draft-item.active {
+  border-color: rgba(99, 102, 241, 0.48);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.scientific-writing-draft-item strong {
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.scientific-writing-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--main_color);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.scientific-writing-status.completed {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.scientific-writing-status.failed {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
+.scientific-writing-status.queued,
+.scientific-writing-status.processing {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--main_color);
+}
+
+.scientific-writing-result {
+  min-height: 440px;
+}
+
+.scientific-writing-result-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.scientific-writing-empty,
+.scientific-writing-empty-result,
+.scientific-writing-mini-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.scientific-writing-empty {
+  min-height: 420px;
+  border-radius: 22px;
+  padding: 2rem;
+}
+
+.scientific-writing-empty i,
+.scientific-writing-empty-result i,
+.scientific-writing-mini-empty i {
+  color: var(--main_color);
+  font-size: 2rem;
+}
+
+.scientific-writing-empty-result {
+  min-height: 280px;
+  padding: 2rem 1rem;
+}
+
+.scientific-writing-mini-empty {
+  min-height: 120px;
+  padding: 1rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-primary);
+}
+
+.scientific-writing-draft-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scientific-writing-section {
+  padding: 1.05rem 1.1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+body[data-theme='dark'] .scientific-writing-section {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.scientific-writing-section h3 {
+  margin-bottom: 0.7rem;
+  color: #111111;
+  font-size: 0.86rem;
+  letter-spacing: 0.05em;
+}
+
+.scientific-writing-draft-content p,
+.scientific-writing-section p {
+  margin: 0;
+  color: #111111;
+  line-height: 1.78;
+  white-space: pre-wrap;
+}
+
+.scientific-writing-section p + p {
+  margin-top: 0.75rem;
+}
+
+.scientific-writing-error {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.spinner.small {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+@media (max-width: 1180px) {
+  .scientific-writing-layout,
+  .scientific-writing-embedded .scientific-writing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .scientific-writing-config {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .scientific-writing-hero,
+  .scientific-writing-panel-heading,
+  .scientific-writing-result-heading,
+  .scientific-writing-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scientific-writing-collection-card {
+    min-width: 0;
+  }
+
+  .scientific-writing-type-grid,
+  .scientific-writing-draft-list {
+    grid-template-columns: 1fr;
+  }
+
+  .scientific-writing-submit-row .btn-primary,
+  .scientific-writing-result-actions .btn-secondary,
+  .scientific-writing-panel-heading .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -55,6 +55,7 @@ function App() {
 
                 <Route path="search" element={<CollectionArticles />} />
                 <Route path="review-workflow" element={<ReviewWorkflow />} />
+                <Route path="scientific-writing" element={<Navigate to="/review-workflow?step=writing" replace />} />
                 <Route path="screening" element={<Navigate to="/review-workflow?step=screening" replace />} />
                 <Route path="evidence-extraction" element={<Navigate to="/review-workflow?step=evidence" replace />} />
                 <Route path="clustering" element={<Navigate to="/review-workflow?step=clustering" replace />} />

@@ -4,6 +4,7 @@ function WorkflowProgressSummary({
   loading,
   completedSteps,
   activeRuns,
+  totalSteps = 4,
 }) {
   const totalArticles = summary?.totalArticles || 0
   const pdfArticles = summary?.pdfArticles || 0
@@ -38,7 +39,7 @@ function WorkflowProgressSummary({
 
       <article className="workflow-summary-card">
         <span className="workflow-summary-label">Progreso</span>
-        <strong>{completedSteps}/4</strong>
+        <strong>{completedSteps}/{totalSteps}</strong>
         <p>Etapas con resultados</p>
       </article>
     </section>

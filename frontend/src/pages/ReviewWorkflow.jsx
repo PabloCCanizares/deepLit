@@ -17,6 +17,7 @@ import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
 import { useIntervalPolling } from '../hooks/useIntervalPolling'
+import ScientificWriting from './ScientificWriting'
 
 import '../styles/App.css'
 import '../styles/workspace/EvidenceExtraction.css'
@@ -24,7 +25,9 @@ import '../styles/workspace/Clustering.css'
 import '../styles/workspace/CollectionSynthesis.css'
 import '../styles/workspace/ReviewWorkflow.css'
 
-const STEP_IDS = ['preparation', 'screening', 'evidence', 'clustering', 'synthesis']
+const SCIENTIFIC_DRAFT_MARKER = 'MODO: REDACCION CIENTIFICA ASISTIDA'
+
+const STEP_IDS = ['preparation', 'screening', 'evidence', 'clustering', 'synthesis', 'writing']
 
 const STEP_DEFINITIONS = {
   preparation: {
@@ -52,6 +55,11 @@ const STEP_DEFINITIONS = {
     title: 'Sintesis',
     subtitle: 'Respuesta integrada de coleccion',
     icon: 'fa-diagram-project',
+  },
+  writing: {
+    title: 'Redaccion cientifica',
+    subtitle: 'Formalizacion de ideas y conclusiones',
+    icon: 'fa-pen-nib',
   },
 }
 
@@ -130,6 +138,10 @@ const CONTEXT_SOURCE_LABELS = {
 
 function isActiveRunStatus(status) {
   return ['queued', 'processing'].includes(status)
+}
+
+function isScientificDraftRun(run) {
+  return String(run?.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
 }
 
 function formatTimestamp(value) {
@@ -507,10 +519,11 @@ function ReviewWorkflow() {
       setSynthesisRunsError(null)
       const response = await collectionSynthesisAPI.listRuns(selectedCollectionId)
       const nextRuns = response?.data?.runs || []
+      const nextCollectionSynthesisRuns = nextRuns.filter((run) => !isScientificDraftRun(run))
 
       setSynthesisRuns(nextRuns)
       setSelectedSynthesisRunId((previousRunId) =>
-        resolveRunSelection(nextRuns, preferredRunId, preserveSelection ? previousRunId : null)
+        resolveRunSelection(nextCollectionSynthesisRuns, preferredRunId, preserveSelection ? previousRunId : null)
       )
     } catch (error) {
       setSynthesisRunsError(error.message || 'Error al cargar sintesis guardadas')
@@ -600,9 +613,19 @@ function ReviewWorkflow() {
     [evidenceRuns]
   )
 
+  const collectionSynthesisRuns = useMemo(
+    () => synthesisRuns.filter((run) => !isScientificDraftRun(run)),
+    [synthesisRuns]
+  )
+
+  const scientificDraftRuns = useMemo(
+    () => synthesisRuns.filter(isScientificDraftRun),
+    [synthesisRuns]
+  )
+
   const selectedSynthesisRun = useMemo(
-    () => synthesisRuns.find((run) => run._id === selectedSynthesisRunId) || null,
-    [selectedSynthesisRunId, synthesisRuns]
+    () => collectionSynthesisRuns.find((run) => run._id === selectedSynthesisRunId) || null,
+    [collectionSynthesisRuns, selectedSynthesisRunId]
   )
 
   const screeningRunMap = useMemo(
@@ -651,9 +674,10 @@ function ReviewWorkflow() {
       screeningRuns,
       evidenceRuns,
       clusteringRuns,
-      synthesisRuns,
+      collectionSynthesisRuns,
+      scientificDraftRuns,
     ].filter((runs) => runs.some((run) => run.status === 'completed')).length
-  }, [clusteringRuns, evidenceRuns, screeningRuns, synthesisRuns])
+  }, [clusteringRuns, collectionSynthesisRuns, evidenceRuns, scientificDraftRuns, screeningRuns])
 
   const steps = useMemo(() => {
     const hasCompletedEvidence = completedEvidenceRuns.length > 0
@@ -668,7 +692,8 @@ function ReviewWorkflow() {
           blocked: !hasCompletedEvidence && clusteringRuns.length === 0,
           optional: true,
         }),
-        synthesis: getStepState(synthesisRuns),
+        synthesis: getStepState(collectionSynthesisRuns),
+        writing: getStepState(scientificDraftRuns),
       }
 
       return {
@@ -679,11 +704,12 @@ function ReviewWorkflow() {
     })
   }, [
     clusteringRuns,
+    collectionSynthesisRuns,
     collectionSummary.totalArticles,
     completedEvidenceRuns.length,
     evidenceRuns,
+    scientificDraftRuns,
     screeningRuns,
-    synthesisRuns,
   ])
 
   const filteredScreeningResults = useMemo(() => {
@@ -754,12 +780,21 @@ function ReviewWorkflow() {
     },
     onCollectionSynthesisReady: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification('Sintesis completada correctamente')
+      setNotification(
+        String(data.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
+          ? 'Borrador cientifico completado'
+          : 'Sintesis completada correctamente'
+      )
       await loadSynthesisRuns({ preserveSelection: true, preferredRunId: data.run_id })
     },
     onCollectionSynthesisError: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification(data.error_message || 'Error al generar la sintesis')
+      setNotification(
+        data.error_message ||
+          (String(data.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
+            ? 'Error al generar el borrador'
+            : 'Error al generar la sintesis')
+      )
       await loadSynthesisRuns({ preserveSelection: true, preferredRunId: data.run_id })
     },
   }, Boolean(selectedCollectionId))
@@ -1766,7 +1801,7 @@ function ReviewWorkflow() {
     <section className="workflow-step-panel">
       <div className="workflow-step-header">
         <div>
-          <span className="workflow-kicker">Etapa final</span>
+          <span className="workflow-kicker">Etapa 4</span>
           <h2>Sintesis de coleccion</h2>
           <p>Genera una respuesta integrada usando el contexto disponible para la coleccion activa.</p>
         </div>
@@ -1804,8 +1839,8 @@ function ReviewWorkflow() {
             <i className={`fas ${creatingSynthesis ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
             <span>{creatingSynthesis ? 'Generando...' : 'Ejecutar sintesis'}</span>
           </button>
-          <button type="button" className="btn-secondary" onClick={() => changeStep('screening')}>
-            Volver al inicio del flujo
+          <button type="button" className="btn-secondary" onClick={() => changeStep('writing')}>
+            Ir a redaccion cientifica
           </button>
         </div>
       </div>
@@ -1814,12 +1849,12 @@ function ReviewWorkflow() {
         <aside className="workflow-runs-panel">
           <div className="workflow-panel-heading">
             <h3>Sintesis guardadas</h3>
-            <span>{synthesisRuns.length}</span>
+            <span>{collectionSynthesisRuns.length}</span>
           </div>
 
           {synthesisRunsError ? <div className="workflow-error">{synthesisRunsError}</div> : null}
 
-          {!synthesisRunsError && !loadingSynthesisRuns && synthesisRuns.length === 0 ? (
+          {!synthesisRunsError && !loadingSynthesisRuns && collectionSynthesisRuns.length === 0 ? (
             <EmptyStepState
               icon="fa-diagram-project"
               title="Sin sintesis"
@@ -1828,7 +1863,7 @@ function ReviewWorkflow() {
           ) : null}
 
           <div className="workflow-run-list">
-            {synthesisRuns.map((run) => (
+            {collectionSynthesisRuns.map((run) => (
               <button
                 key={run._id}
                 type="button"
@@ -1895,11 +1930,14 @@ function ReviewWorkflow() {
     </section>
   )
 
+  const renderWritingStep = () => <ScientificWriting embedded />
+
   const renderActiveStep = () => {
     if (activeStep === 'preparation') return renderPreparationStep()
     if (activeStep === 'screening') return renderScreeningStep()
     if (activeStep === 'evidence') return renderEvidenceStep()
     if (activeStep === 'clustering') return renderClusteringStep()
+    if (activeStep === 'writing') return renderWritingStep()
     return renderSynthesisStep()
   }
 
@@ -1950,6 +1988,7 @@ function ReviewWorkflow() {
           summary={collectionSummary}
           loading={loadingSummary}
           completedSteps={completedSteps}
+          totalSteps={STEP_IDS.length - 1}
           activeRuns={activeRuns}
         />
 
