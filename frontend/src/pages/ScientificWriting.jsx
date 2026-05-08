@@ -11,6 +11,7 @@ import '../styles/App.css'
 import '../styles/workspace/ScientificWriting.css'
 
 const DRAFT_MARKER = 'MODO: REDACCION CIENTIFICA ASISTIDA'
+const DRAFT_EDITS_STORAGE_KEY = 'deeplit:scientific-writing:draft-edits'
 
 const TEXT_TYPE_OPTIONS = [
   { value: 'summary', label: 'Resumen', icon: 'fa-align-left' },
@@ -260,6 +261,33 @@ function buildDraftPrompt({
   ].join('\n')
 }
 
+function buildDraftRevisionPrompt({
+  collectionName,
+  draftTitle,
+  draftText,
+  instruction,
+}) {
+  return [
+    `Borrador cientifico: Revision de ${draftTitle || 'borrador'}`,
+    '',
+    DRAFT_MARKER,
+    `Coleccion activa: ${collectionName || 'Coleccion seleccionada'}`,
+    '',
+    'BORRADOR ACTUAL EDITABLE:',
+    draftText,
+    '',
+    'CAMBIOS SOLICITADOS POR EL USUARIO:',
+    instruction,
+    '',
+    'INSTRUCCIONES OBLIGATORIAS:',
+    '- Reescribe el borrador aplicando solo los cambios solicitados.',
+    '- Mantiene tono academico, coherencia argumental y estructura revisable.',
+    '- No inventes citas, referencias, autores, anos, resultados ni detalles metodologicos.',
+    '- Si una parte no puede reforzarse con el contexto disponible, indicarlo como punto a revisar.',
+    '- Conserva o mejora estas secciones cuando existan: APORTACION DEL USUARIO, EVIDENCIA UTILIZADA, BORRADOR, PUNTOS A REVISAR.',
+  ].join('\n')
+}
+
 function buildTxtFilename(collectionName, run) {
   const base = `${collectionName || 'coleccion'}-${getDraftTitle(run)}`
     .toLowerCase()
@@ -278,12 +306,34 @@ function buildPdfFilename(collectionName, run) {
   return `${base || 'borrador-cientifico'}.pdf`
 }
 
-function getDraftPdfSections(run) {
-  const parsedSections = parseDraftSections(run?.response || '')
+function getDraftPdfSections(text) {
+  const parsedSections = parseDraftSections(text || '')
   if (parsedSections.length > 0) return parsedSections
 
-  const text = cleanAssistantText(run?.response)
-  return text ? [{ heading: 'BORRADOR', content: text }] : []
+  const cleanedText = cleanAssistantText(text)
+  return cleanedText ? [{ heading: 'BORRADOR', content: cleanedText }] : []
+}
+
+function loadStoredDraftEdits() {
+  if (typeof window === 'undefined') return {}
+
+  try {
+    const storedValue = window.localStorage.getItem(DRAFT_EDITS_STORAGE_KEY)
+    const parsedValue = storedValue ? JSON.parse(storedValue) : {}
+    return parsedValue && typeof parsedValue === 'object' ? parsedValue : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveStoredDraftEdits(edits) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(DRAFT_EDITS_STORAGE_KEY, JSON.stringify(edits))
+  } catch {
+    // Local persistence is a convenience; exports still work without it.
+  }
 }
 
 function ScientificWriting({ embedded = false }) {
@@ -305,7 +355,12 @@ function ScientificWriting({ embedded = false }) {
   const [loadingEvidenceRuns, setLoadingEvidenceRuns] = useState(false)
   const [loadingEvidenceResults, setLoadingEvidenceResults] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRequestingRevision, setIsRequestingRevision] = useState(false)
   const [notification, setNotification] = useState('')
+  const [localDraftEdits, setLocalDraftEdits] = useState(loadStoredDraftEdits)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
+  const [editorText, setEditorText] = useState('')
+  const [editorInstruction, setEditorInstruction] = useState('')
 
   const activeCollectionIdRef = useRef(selectedCollectionId)
   const selectedDraftRunIdRef = useRef(selectedDraftRunId)
@@ -326,7 +381,7 @@ function ScientificWriting({ embedded = false }) {
     [synthesisRuns]
   )
   const completedSynthesisRuns = useMemo(
-    () => sortRunsByDate(synthesisRuns.filter((run) => run.status === 'completed')),
+    () => sortRunsByDate(synthesisRuns.filter((run) => run.status === 'completed' && !isScientificDraftRun(run))),
     [synthesisRuns]
   )
   const completedEvidenceRuns = useMemo(
@@ -337,6 +392,10 @@ function ScientificWriting({ embedded = false }) {
     () => draftRuns.find((run) => run._id === selectedDraftRunId) || null,
     [draftRuns, selectedDraftRunId]
   )
+  const selectedDraftText = useMemo(() => {
+    if (!selectedDraftRun) return ''
+    return localDraftEdits[selectedDraftRun._id] || selectedDraftRun.response || ''
+  }, [localDraftEdits, selectedDraftRun])
   const selectedSynthesisRun = useMemo(
     () => synthesisRuns.find((run) => run._id === selectedSynthesisRunId) || null,
     [synthesisRuns, selectedSynthesisRunId]
@@ -345,10 +404,7 @@ function ScientificWriting({ embedded = false }) {
   const sectionLabel = textType === 'custom'
     ? customSection.trim() || 'Seccion personalizada'
     : selectedTextTypeOption.label
-  const selectedDraftSections = useMemo(
-    () => parseDraftSections(selectedDraftRun?.response || ''),
-    [selectedDraftRun]
-  )
+  const hasLocalDraftEdit = Boolean(selectedDraftRun && localDraftEdits[selectedDraftRun._id])
   const activeDraftRuns = useMemo(
     () => draftRuns.filter((run) => isActiveRunStatus(run.status)).length,
     [draftRuns]
@@ -371,6 +427,23 @@ function ScientificWriting({ embedded = false }) {
     const timer = setTimeout(() => setNotification(''), 4500)
     return () => clearTimeout(timer)
   }, [notification])
+
+  useEffect(() => {
+    if (!isEditorOpen) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isEditorOpen])
+
+  useEffect(() => {
+    if (!isEditorOpen) return
+    setEditorText(selectedDraftText)
+    setEditorInstruction('')
+  }, [isEditorOpen, selectedDraftRunId])
 
   const loadSynthesisRuns = useCallback(async (collectionId, preferredDraftRunId = null, options = {}) => {
     const { preserveSelection = true } = options
@@ -559,7 +632,7 @@ function ScientificWriting({ embedded = false }) {
   }
 
   const handleCopyDraft = async () => {
-    const text = cleanAssistantText(selectedDraftRun?.response)
+    const text = cleanAssistantText(selectedDraftText)
     if (!text) return
 
     try {
@@ -580,7 +653,7 @@ function ScientificWriting({ embedded = false }) {
   }
 
   const handleDownloadDraft = () => {
-    const text = cleanAssistantText(selectedDraftRun?.response)
+    const text = cleanAssistantText(selectedDraftText)
     if (!text) return
 
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
@@ -595,7 +668,7 @@ function ScientificWriting({ embedded = false }) {
   }
 
   const handleOpenDraftPdf = () => {
-    const sections = getDraftPdfSections(selectedDraftRun)
+    const sections = getDraftPdfSections(selectedDraftText)
     if (sections.length === 0) {
       setNotification('El borrador no tiene contenido suficiente para generar PDF')
       return
@@ -610,7 +683,7 @@ function ScientificWriting({ embedded = false }) {
   }
 
   const handleDownloadDraftPdf = () => {
-    const sections = getDraftPdfSections(selectedDraftRun)
+    const sections = getDraftPdfSections(selectedDraftText)
     if (sections.length === 0) {
       setNotification('El borrador no tiene contenido suficiente para generar PDF')
       return
@@ -622,6 +695,85 @@ function ScientificWriting({ embedded = false }) {
       sections,
     })
     downloadPdfBlob(blob, buildPdfFilename(collectionName, selectedDraftRun))
+  }
+
+  const handleOpenEditor = () => {
+    setEditorText(selectedDraftText)
+    setEditorInstruction('')
+    setIsEditorOpen(true)
+  }
+
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false)
+    setEditorInstruction('')
+  }
+
+  const handleSaveLocalDraft = () => {
+    if (!selectedDraftRun) return
+
+    const originalText = cleanAssistantText(selectedDraftRun.response || '')
+    const nextText = cleanAssistantText(editorText)
+
+    setLocalDraftEdits((previousEdits) => {
+      const nextEdits = { ...previousEdits }
+      if (!nextText || nextText === originalText) {
+        delete nextEdits[selectedDraftRun._id]
+      } else {
+        nextEdits[selectedDraftRun._id] = nextText
+      }
+      saveStoredDraftEdits(nextEdits)
+      return nextEdits
+    })
+
+    setNotification('Cambios guardados en este navegador')
+  }
+
+  const handleRestoreOriginalDraft = () => {
+    if (!selectedDraftRun) return
+
+    setEditorText(cleanAssistantText(selectedDraftRun.response || ''))
+    setLocalDraftEdits((previousEdits) => {
+      const nextEdits = { ...previousEdits }
+      delete nextEdits[selectedDraftRun._id]
+      saveStoredDraftEdits(nextEdits)
+      return nextEdits
+    })
+    setNotification('Borrador restaurado a la version generada')
+  }
+
+  const handleRequestDraftRevision = async () => {
+    const instruction = editorInstruction.trim()
+    const draftText = cleanAssistantText(editorText)
+
+    if (!selectedCollectionId || !selectedDraftRun || isRequestingRevision) return
+    if (!instruction) {
+      setNotification('Escribe que quieres cambiar antes de pedir una revision')
+      return
+    }
+    if (!draftText) {
+      setNotification('El documento no tiene contenido para revisar')
+      return
+    }
+
+    try {
+      setIsRequestingRevision(true)
+      handleSaveLocalDraft()
+      const prompt = buildDraftRevisionPrompt({
+        collectionName,
+        draftTitle: getDraftTitle(selectedDraftRun),
+        draftText,
+        instruction,
+      })
+      const response = await collectionSynthesisAPI.runSynthesis(selectedCollectionId, prompt)
+      const createdRun = response?.data?.run || null
+      setEditorInstruction('')
+      setNotification('Revision con agente encolada correctamente')
+      await loadSynthesisRuns(selectedCollectionId, createdRun?._id || null)
+    } catch (error) {
+      setNotification(error.message || 'Error al pedir cambios al agente')
+    } finally {
+      setIsRequestingRevision(false)
+    }
   }
 
   const pageClassName = embedded
@@ -835,26 +987,7 @@ function ScientificWriting({ embedded = false }) {
                 <span className="scientific-writing-kicker">Resultado</span>
                 <h2>{selectedDraftRun ? getDraftTitle(selectedDraftRun) : 'Borrador cientifico'}</h2>
               </div>
-              {selectedDraftRun?.response ? (
-                <div className="scientific-writing-result-actions">
-                  <button type="button" className="btn-secondary" onClick={handleCopyDraft}>
-                    <i className="fas fa-copy"></i>
-                    <span>Copiar</span>
-                  </button>
-                  <button type="button" className="btn-secondary" onClick={handleDownloadDraft}>
-                    <i className="fas fa-download"></i>
-                    <span>TXT</span>
-                  </button>
-                  <button type="button" className="btn-secondary" onClick={handleOpenDraftPdf}>
-                    <i className="fas fa-eye"></i>
-                    <span>Ver PDF</span>
-                  </button>
-                  <button type="button" className="btn-primary" onClick={handleDownloadDraftPdf}>
-                    <i className="fas fa-file-pdf"></i>
-                    <span>Descargar PDF</span>
-                  </button>
-                </div>
-              ) : null}
+              {hasLocalDraftEdit ? <span className="scientific-writing-edited-pill">Editado local</span> : null}
             </div>
 
             {!selectedDraftRun ? (
@@ -887,25 +1020,111 @@ function ScientificWriting({ embedded = false }) {
               </div>
             ) : null}
 
-            {selectedDraftRun?.response ? (
-              <div className="scientific-writing-draft-content">
-                {selectedDraftSections.length > 0
-                  ? selectedDraftSections.map((section) => (
-                      <article key={`${selectedDraftRun._id}-${section.heading}`} className="scientific-writing-section">
-                        <h3>{section.heading}</h3>
-                        {getTextBlocks(section.content).map((block, index) => (
-                          <p key={`${selectedDraftRun._id}-${section.heading}-${index}`}>{block}</p>
-                        ))}
-                      </article>
-                    ))
-                  : getTextBlocks(selectedDraftRun.response).map((block, index) => (
-                      <p key={`${selectedDraftRun._id}-block-${index}`}>{block}</p>
-                    ))}
+            {selectedDraftText ? (
+              <div className="scientific-writing-document-gate">
+                <i className="fas fa-file-lines"></i>
+                <h3>Documento preparado</h3>
+                <p>
+                  El borrador no se muestra directamente en el flujo. Abre el documento
+                  para leerlo, editarlo o pedir cambios al agente.
+                </p>
+                <button type="button" className="btn-primary" onClick={handleOpenEditor}>
+                  <i className="fas fa-file-pen"></i>
+                  <span>Ver doc</span>
+                </button>
+              </div>
+            ) : null}
+
+            {selectedDraftText ? (
+              <div className="scientific-writing-result-footer">
+                <button type="button" className="btn-secondary" onClick={handleOpenDraftPdf}>
+                  <i className="fas fa-eye"></i>
+                  <span>Ver PDF</span>
+                </button>
+                <button type="button" className="btn-primary" onClick={handleDownloadDraftPdf}>
+                  <i className="fas fa-file-pdf"></i>
+                  <span>Descargar PDF</span>
+                </button>
               </div>
             ) : null}
           </section>
         </main>
       </div>
+
+      {isEditorOpen && selectedDraftRun ? (
+        <div className="scientific-writing-editor-overlay" role="dialog" aria-modal="true">
+          <div className="scientific-writing-editor-shell">
+            <section className="scientific-writing-editor-document">
+              <header className="scientific-writing-editor-header">
+                <div>
+                  <span className="scientific-writing-kicker">Documento editable</span>
+                  <h2>{getDraftTitle(selectedDraftRun)}</h2>
+                </div>
+                <button
+                  type="button"
+                  className="scientific-writing-editor-close"
+                  onClick={handleCloseEditor}
+                  aria-label="Cerrar documento"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </header>
+
+              <textarea
+                className="scientific-writing-editor-textarea"
+                value={editorText}
+                onChange={(event) => setEditorText(event.target.value)}
+                spellCheck="true"
+              />
+
+              <footer className="scientific-writing-editor-actions">
+                <button type="button" className="btn-primary" onClick={handleSaveLocalDraft}>
+                  <i className="fas fa-floppy-disk"></i>
+                  <span>Guardar cambios</span>
+                </button>
+                <button type="button" className="btn-secondary" onClick={handleRestoreOriginalDraft}>
+                  <i className="fas fa-rotate-left"></i>
+                  <span>Restaurar original</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    handleSaveLocalDraft()
+                    handleCloseEditor()
+                  }}
+                >
+                  <i className="fas fa-check"></i>
+                  <span>Aplicar y cerrar</span>
+                </button>
+              </footer>
+            </section>
+
+            <aside className="scientific-writing-editor-agent">
+              <span className="scientific-writing-kicker">Agente de revision</span>
+              <h3>Pedir cambios sobre el documento</h3>
+              <textarea
+                value={editorInstruction}
+                onChange={(event) => setEditorInstruction(event.target.value)}
+                placeholder="Ejemplo: refuerza la discusion teorica, reduce repeticiones y deja mas claro que las citas deben revisarse."
+                rows={12}
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleRequestDraftRevision}
+                disabled={isRequestingRevision || !editorInstruction.trim()}
+              >
+                <i className={`fas ${isRequestingRevision ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
+                <span>{isRequestingRevision ? 'Pidiendo cambios...' : 'Aplicar con IA'}</span>
+              </button>
+              <p>
+                Se generara un nuevo borrador en el historial usando el texto editable como base.
+              </p>
+            </aside>
+          </div>
+        </div>
+      ) : null}
 
       <NotificationToast message={notification} onClose={() => setNotification('')} />
     </div>
