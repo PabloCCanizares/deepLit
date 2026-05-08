@@ -1,5 +1,8 @@
+import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+
+from app.services.article_graph_service import ArticleGraphService
 
 from ..agents.base_agents.rag_engine import RagEngine
 from ..config import (
@@ -12,6 +15,30 @@ from ..retrieval.faiss_loader import load_faiss_indexes
 
 logger = logging.getLogger(__name__)
 LLM_TIMEOUT_SECONDS = 45
+
+# Servicio del grafo de artículos. Si Neo4j no está configurado se queda
+# en modo no-op y `build_user_graph_text` devolverá cadena vacía.
+_article_graph_service = ArticleGraphService()
+
+
+async def _build_graph_block(user_id):
+    """Devuelve el bloque de texto con el grafo del usuario (best-effort)."""
+    if not user_id:
+        return ""
+    try:
+        text = await asyncio.to_thread(
+            _article_graph_service.build_user_graph_text, user_id
+        )
+    except Exception as exc:
+        logger.warning("No se pudo recuperar grafo para deep_researcher: %s", exc)
+        return ""
+    if not text:
+        return ""
+    return (
+        "\n--- GRAFO DE CONOCIMIENTO (Neo4j) ---\n"
+        f"{text}\n"
+        "--- FIN DEL GRAFO ---\n"
+    )
 
 
 async def deep_research(state):
@@ -31,6 +58,8 @@ async def deep_research(state):
         strategy=get_rag_strategy_config(),
     )
 
+    graph_block = await _build_graph_block(user_id)
+
     if "NO HAY CONTEXTO DISPONIBLE" in rag or "NO SE ENCONTR" in rag:
         output = "No hay contexto suficiente para responder con profundidad. Sube o indexa articulos primero."
         new_history = agent.create_history_entry(user_message, output)
@@ -43,7 +72,7 @@ async def deep_research(state):
             "prompt_version": prompt_spec.version,
         }
 
-    prompt_final = agent.create_prompt(message=input_processed + rag)
+    prompt_final = agent.create_prompt(message=input_processed + rag + graph_block)
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(agent.invoke, prompt_final)
