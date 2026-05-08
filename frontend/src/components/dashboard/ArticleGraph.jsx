@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { articleGraphAPI } from '../../api/index.js'
+import { useArticlesEvents } from '../../hooks/useArticlesEvents.js'
 import '../../styles/dashboard/ArticleGraph.css'
 
 // ─── constantes visuales ───────────────────────────────────────────────────────
@@ -280,6 +281,7 @@ function ArticleGraph() {
   const [activeTypes, setActiveTypes] = useState(() => new Set(NODE_TYPES))
   const [hoveredNode, setHoveredNode] = useState(null)
   const containerRef = useRef(null)
+  const queryClient  = useQueryClient()
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['article-graph'],
@@ -288,7 +290,16 @@ function ArticleGraph() {
       if (!response?.success) throw new Error(response?.message || 'No se pudo cargar el grafo')
       return response.data || {}
     },
-    refetchOnWindowFocus: false,
+    staleTime:           0,
+    refetchOnMount:      true,
+    refetchOnWindowFocus: true,
+  })
+
+  // Recarga automática al terminar de procesar cualquier artículo (PDF o importado)
+  useArticlesEvents({
+    onArticleReady: () => {
+      queryClient.invalidateQueries({ queryKey: ['article-graph'] })
+    },
   })
 
   const enabled  = data?.enabled !== false
