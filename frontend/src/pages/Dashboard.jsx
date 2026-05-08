@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 
 import { statsAPI, openalexAPI } from '../api/index.js'
+import { useArticlesEvents } from '../hooks/useArticlesEvents.js'
 import StatCard from '../components/dashboard/StatCard'
 import YearChart from '../components/dashboard/YearChart'
 import KeywordRanking from '../components/dashboard/KeywordRanking'
@@ -23,6 +24,7 @@ const OPENALEX_RECOMMENDATION_QUERIES = [
 function Dashboard() {
   const navigate = useNavigate()
   const { selectedCollectionId } = useCollection()
+  const queryClient = useQueryClient()
 
   const {
     data: stats,
@@ -41,6 +43,18 @@ function Dashboard() {
       }
 
       return response.data || {}
+    },
+    staleTime:            0,
+    refetchOnMount:       true,
+    refetchOnWindowFocus: true,
+  })
+
+  // Actualización en tiempo real: cuando un artículo termina de procesarse (SSE),
+  // invalida todas las queries del dashboard para reflejar los cambios al instante.
+  useArticlesEvents({
+    onArticleReady: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['article-graph'] })
     },
   })
 
