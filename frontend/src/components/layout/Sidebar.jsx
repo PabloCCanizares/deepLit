@@ -30,14 +30,24 @@ function Sidebar({ isOpen, onClose }) {
 
         <nav className="sidebarNav">
           {/* Principal */}
-          <Link 
-            to="/dashboard" 
-            className={`sidebarLink ${location.pathname === '/dashboard' ? 'active' : ''}`}
-            onClick={onClose}
-          >
-            <i className="fas fa-chart-line"></i>
-            <span>Dashboard</span>
-          </Link>
+          <div className="sidebarPrincipalGroup">
+            <Link 
+              to="/dashboard" 
+              className={`sidebarLink ${location.pathname === '/dashboard' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-chart-line"></i>
+              <span>Dashboard</span>
+            </Link>
+            <Link 
+              to="/knowledge-graph" 
+              className={`sidebarLink sidebarLink--small ${location.pathname === '/knowledge-graph' ? 'active' : ''}`}
+              onClick={onClose}
+            >
+              <i className="fas fa-project-diagram"></i>
+              <span>Grafo de Conocimiento</span>
+            </Link>
+          </div>
 
           {/* Artículos */}
           <div className="sidebarGroup">

@@ -165,3 +165,14 @@
 .sidebarLink span {
   color: white;
 }
+
+.sidebarLink--small span {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.sidebarPrincipalGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

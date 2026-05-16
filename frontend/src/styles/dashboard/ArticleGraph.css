@@ -4,26 +4,6 @@
   gap: 1rem;
 }
 
-.article-graph__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.article-graph__subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.article-graph__refresh {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .article-graph__notice {
   display: flex;
   align-items: center;
@@ -36,53 +16,157 @@
   border: 1px solid rgba(99, 102, 241, 0.25);
 }
 
-.article-graph__stats {
+.article-graph__kpis {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
-.article-graph__stat {
-  padding: 0.4rem 0.75rem;
-  background: rgba(99, 102, 241, 0.08);
-  color: #312e81;
-  border-radius: 9999px;
-  font-size: 0.85rem;
+.article-graph__kpi {
+  flex: 1;
+  background: white;
+  border: 2px solid var(--kpi-color, #6366f1);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  min-width: 80px;
 }
 
-.article-graph__stat strong {
-  margin-right: 0.25rem;
-  color: var(--main_color, #6366f1);
+.article-graph__kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.article-graph__kpi-label {
+  font-size: 0.68rem;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  text-align: center;
 }
 
 .article-graph__legend {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.article-graph__legend-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  background-color: rgba(248, 250, 252, 0.93);
+  backdrop-filter: blur(6px);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.25rem 0.4rem;
+  white-space: nowrap;
+}
+
+.article-graph__legend-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.article-graph__legend-trigger:hover {
+  background-color: rgba(99, 102, 241, 0.08);
+  color: #1e293b;
+}
+
+.article-graph__legend-trigger.is-active {
+  background-color: rgba(99, 102, 241, 0.12);
+  color: #1e293b;
+}
+
+.article-graph__legend-chevron {
+  font-size: 0.65rem;
+}
+
+.article-graph__legend-dropdown {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  background-color: rgba(248, 250, 252, 0.93);
+  backdrop-filter: blur(6px);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.25rem 0.4rem;
+  white-space: nowrap;
 }
 
 .article-graph__legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
   color: #475569;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .article-graph__legend-item:hover {
   border-color: rgba(99, 102, 241, 0.4);
+  background-color: rgba(99, 102, 241, 0.08);
 }
 
 .article-graph__legend-item.is-active {
-  background-color: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.45);
   color: #1e293b;
+}
+
+.article-graph__legend-item:not(.is-active) {
+  opacity: 0.45;
+}
+
+.article-graph__legend-eye {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+/* Nombre del nodo en el dropdown del Enrutador (mismo rol que el ojo en Mostrar) */
+.article-graph__guide-node-name {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e293b;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-graph__legend-separator {
+  width: 1px;
+  height: 16px;
+  background-color: #e2e8f0;
+  flex-shrink: 0;
 }
 
 .article-graph__legend-dot {
@@ -143,10 +227,147 @@
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
+/* ── Borde de nodo iluminado al paso del viajero ─────────────────────────── */
+
+@keyframes ag-node-border-flash {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  35%  { opacity: 0.85; }
+  62%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.article-graph__node-border-flow {
+  opacity: 0;                              /* oculto por defecto */
+  animation: ag-node-border-flash linear infinite;
+  animation-fill-mode: backwards;          /* aplica opacity:0 durante el delay */
+  pointer-events: none;
+}
+
+/* ── Estela viajera sobre el camino ─────────────────────────────────────── */
+
+.article-graph__traveler {
+  filter: drop-shadow(0 0 6px #fbbf24) drop-shadow(0 0 3px #f59e0b);
+  pointer-events: none;
+}
+
 .article-graph__node {
-  cursor: pointer;
+  cursor: grab;
   outline: none;
   transition: transform 0.2s ease;
+}
+
+.article-graph__node.guide-mode {
+  cursor: pointer;
+}
+
+.article-graph__canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.article-graph__canvas.is-panning {
+  cursor: move;
+}
+
+.article-graph__canvas.is-dragging .article-graph__node {
+  cursor: grabbing;
+}
+
+/* ── Panel de guía (camino más corto) ─────────────────────────────────────── */
+
+.article-graph__guide-panel {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.7rem 1rem;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 420px;
+  max-width: calc(100% - 24px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.article-graph__guide-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.article-graph__guide-hint i {
+  color: #6366f1;
+}
+
+.article-graph__guide-fields {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.article-graph__guide-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.article-graph__guide-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.article-graph__guide-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.article-graph__guide-origin { color: #22c55e; }
+.article-graph__guide-dest   { color: #f97316; }
+
+.article-graph__guide-arrow {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.article-graph__guide-divider {
+  display: inline-block;
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.article-graph__guide-reset {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 7px;
+  border: 1px solid #e2e8f0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.article-graph__guide-reset:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
 }
 
 .article-graph__node:focus-visible circle {

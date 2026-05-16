@@ -24,8 +24,9 @@ const EDGE_LABELS = {
   OF_TYPE:     'tipo',
 }
 
-const WIDTH  = 1400
-const HEIGHT = 820
+const WIDTH     = 1400
+const HEIGHT    = 820
+const FLOW_DUR  = 2.5  // segundos por recorrido completo del camino
 
 // ─── parámetros de simulación ─────────────────────────────────────────────────
 
@@ -275,12 +276,48 @@ function runForceLayout(nodes, edges) {
   return positioned
 }
 
-// ─── componente ───────────────────────────────────────────────────────────────
+// ── BFS camino más corto (dirigido) ─────────────────────────────────────────────
+
+function findShortestPath(edges, sourceId, targetId) {
+  if (sourceId === targetId) return [sourceId]
+  const queue   = [[sourceId]]
+  const visited = new Set([sourceId])
+  while (queue.length > 0) {
+    const path    = queue.shift()
+    const current = path[path.length - 1]
+    for (const edge of edges) {
+      if (edge.source !== current) continue
+      const next = edge.target
+      if (next === targetId) return [...path, next]
+      if (!visited.has(next)) {
+        visited.add(next)
+        queue.push([...path, next])
+      }
+    }
+  }
+  return null
+}
+
+// ── componente ─────────────────────────────────────────────────────────────────
 
 function ArticleGraph() {
-  const [activeTypes, setActiveTypes] = useState(() => new Set(NODE_TYPES))
-  const [hoveredNode, setHoveredNode] = useState(null)
+  const [activeTypes,   setActiveTypes]   = useState(() => new Set(NODE_TYPES))
+  const [hoveredNode,   setHoveredNode]   = useState(null)
+  const [isDragging,    setIsDragging]    = useState(false)
+  const [nodePositions, setNodePositions] = useState({})
+  const [showLegend,    setShowLegend]    = useState(false)
+  const [guideMode,     setGuideMode]     = useState(false)
+  const [pathOrigin,    setPathOrigin]    = useState(null)
+  const [pathDest,      setPathDest]      = useState(null)
+  const [shortestPath,  setShortestPath]  = useState(null)
+  const [viewport,      setViewport]      = useState({ x: 0, y: 0, scale: 1 })
+  const [isPanning,     setIsPanning]     = useState(false)
   const containerRef = useRef(null)
+  const svgRef       = useRef(null)
+  const draggingRef  = useRef(null)
+  const legendRef    = useRef(null)
+  const viewportRef  = useRef({ x: 0, y: 0, scale: 1 })
+  const isPanningRef = useRef(null)
   const queryClient  = useQueryClient()
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
@@ -307,26 +344,85 @@ function ArticleGraph() {
   const allEdges = useMemo(() => data?.edges || [], [data])
   const stats    = data?.stats
 
-  const filteredNodes = useMemo(
-    () => allNodes.filter((n) => activeTypes.has(n.type)),
-    [allNodes, activeTypes],
+  // Layout calculado UNA SOLA VEZ sobre todos los nodos — no se recalcula al ocultar tipos
+  const positionedNodes = useMemo(
+    () => runForceLayout(allNodes, allEdges),
+    [allNodes, allEdges],
   )
 
-  const filteredEdges = useMemo(() => {
-    const ids = new Set(filteredNodes.map((n) => n.id))
-    return allEdges.filter((e) => ids.has(e.source) && ids.has(e.target))
-  }, [allEdges, filteredNodes])
+  // Inicializar/resetear posiciones cuando llegan nuevos datos del servidor
+  useEffect(() => {
+    if (positionedNodes.length === 0) return
+    const map = {}
+    for (const n of positionedNodes) map[n.id] = { x: n.x, y: n.y }
+    setNodePositions(map)
+  }, [positionedNodes])
 
-  const positionedNodes = useMemo(
-    () => runForceLayout(filteredNodes, filteredEdges),
-    [filteredNodes, filteredEdges],
+  // Nodos con posiciones actualizadas por drag
+  const displayNodes = useMemo(
+    () => positionedNodes.map((n) => ({
+      ...n,
+      x: nodePositions[n.id]?.x ?? n.x,
+      y: nodePositions[n.id]?.y ?? n.y,
+    })),
+    [positionedNodes, nodePositions],
   )
 
   const positionsById = useMemo(() => {
     const m = new Map()
-    for (const n of positionedNodes) m.set(n.id, n)
+    for (const n of displayNodes) m.set(n.id, n)
     return m
-  }, [positionedNodes])
+  }, [displayNodes])
+
+  // Solo para renderizado: nodos y aristas visibles según tipos activos
+  const visibleNodes = useMemo(
+    () => displayNodes.filter((n) => activeTypes.has(n.type)),
+    [displayNodes, activeTypes],
+  )
+
+  const visibleEdges = useMemo(() => {
+    const ids = new Set(visibleNodes.map((n) => n.id))
+    return allEdges.filter((e) => ids.has(e.source) && ids.has(e.target))
+  }, [allEdges, visibleNodes])
+
+  // Conjuntos para el camino más corto (guía)
+  const shortestPathSet = useMemo(() => new Set(shortestPath || []), [shortestPath])
+
+  // Datos del flujo animado — path por bordes de nodos (no por centros)
+  const flowPathD = useMemo(() => {
+    if (!shortestPath || shortestPath.length < 2) return null
+    let d = ''
+    for (let i = 0; i < shortestPath.length - 1; i++) {
+      const src = positionsById.get(shortestPath[i])
+      const tgt = positionsById.get(shortestPath[i + 1])
+      if (!src || !tgt) return null
+      const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
+      d += `M ${x1} ${y1} L ${x2} ${y2} `
+    }
+    return d.trim()
+  }, [shortestPath, positionsById])
+
+  const nodeArrivalFractions = useMemo(() => {
+    if (!shortestPath || shortestPath.length < 2) return {}
+    let total = 0
+    const segs = []
+    for (let i = 0; i < shortestPath.length - 1; i++) {
+      const src = positionsById.get(shortestPath[i])
+      const tgt = positionsById.get(shortestPath[i + 1])
+      if (!src || !tgt) return {}
+      const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
+      const d = Math.hypot(x2 - x1, y2 - y1)
+      segs.push(d)
+      total += d
+    }
+    const fracs = { [shortestPath[0]]: 0 }
+    let cumul = 0
+    for (let i = 1; i < shortestPath.length; i++) {
+      cumul += segs[i - 1]
+      fracs[shortestPath[i]] = total > 0 ? cumul / total : 0
+    }
+    return fracs
+  }, [shortestPath, positionsById])
 
   const toggleType = (type) => {
     setActiveTypes((prev) => {
@@ -338,26 +434,133 @@ function ArticleGraph() {
 
   useEffect(() => { setHoveredNode(null) }, [activeTypes])
 
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    if (!showLegend) return
+    const handleOutside = (e) => {
+      if (!legendRef.current?.contains(e.target)) setShowLegend(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [showLegend])
+
+  // Mantener ref del viewport sincronizada (para usarla en handlers nativos sin closure stale)
+  useEffect(() => { viewportRef.current = viewport }, [viewport])
+
+  // Zoom con rueda del ratón — listener nativo para poder llamar preventDefault
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    const onWheel = (e) => {
+      e.preventDefault()
+      const factor = e.deltaY < 0 ? 1.12 : 0.88
+      const pt = svg.createSVGPoint()
+      pt.x = e.clientX
+      pt.y = e.clientY
+      const sp = pt.matrixTransform(svg.getScreenCTM().inverse())
+      setViewport((prev) => {
+        const newScale = Math.min(6, Math.max(0.2, prev.scale * factor))
+        const newX = sp.x - (sp.x - prev.x) * (prev.scale / newScale)
+        const newY = sp.y - (sp.y - prev.y) * (prev.scale / newScale)
+        return { x: newX, y: newY, scale: newScale }
+      })
+    }
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    return () => svg.removeEventListener('wheel', onWheel)
+  }, [])
+
+  // ── helpers de drag ─────────────────────────────────────────────────────────────────
+
+  const getSVGCoords = (clientX, clientY) => {
+    const svg = svgRef.current
+    if (!svg) return { x: 0, y: 0 }
+    const pt = svg.createSVGPoint()
+    pt.x = clientX
+    pt.y = clientY
+    return pt.matrixTransform(svg.getScreenCTM().inverse())
+  }
+
+  // Selección de nodo para guía (sólo si no se arrastro)
+  const handleNodeClick = (node) => {
+    if (!guideMode) return
+    if (!pathOrigin) {
+      setPathOrigin(node); setPathDest(null); setShortestPath(null)
+    } else if (!pathDest) {
+      if (node.id === pathOrigin.id) return
+      setPathDest(node)
+      setShortestPath(findShortestPath(allEdges, pathOrigin.id, node.id))
+    } else {
+      setPathOrigin(node); setPathDest(null); setShortestPath(null)
+    }
+  }
+
+  const handleNodeMouseDown = (e, node) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const { x, y } = getSVGCoords(e.clientX, e.clientY)
+    const pos = nodePositions[node.id] || node
+    draggingRef.current = { id: node.id, type: node.type, ox: x - pos.x, oy: y - pos.y, hasMoved: false, clickNode: node }
+    setIsDragging(true)
+    setHoveredNode(null)
+  }
+
+  const handleNodeTouchStart = (e, node) => {
+    if (e.touches.length !== 1) return
+    e.preventDefault()
+    const t = e.touches[0]
+    const { x, y } = getSVGCoords(t.clientX, t.clientY)
+    const pos = nodePositions[node.id] || node
+    draggingRef.current = { id: node.id, type: node.type, ox: x - pos.x, oy: y - pos.y, hasMoved: false, clickNode: node }
+    setIsDragging(true)
+  }
+
+  const applyDrag = (clientX, clientY) => {
+    if (!draggingRef.current) return
+    const { id, type, ox, oy } = draggingRef.current
+    const { x, y } = getSVGCoords(clientX, clientY)
+    const r = getNodeStyle(type).radius
+    draggingRef.current.hasMoved = true
+    setNodePositions((prev) => ({
+      ...prev,
+      [id]: {
+        x: Math.max(r + 2, Math.min(WIDTH  - r - 2, x - ox)),
+        y: Math.max(r + 2, Math.min(HEIGHT - r - 2, y - oy)),
+      },
+    }))
+  }
+
+  const handleSVGMouseDown = (e) => {
+    if (e.button !== 0 || draggingRef.current) return
+    const vp = viewportRef.current
+    isPanningRef.current = { clientX: e.clientX, clientY: e.clientY, vx: vp.x, vy: vp.y, scale: vp.scale }
+    setIsPanning(true)
+  }
+
+  const handleSVGMouseMove = (e) => {
+    if (draggingRef.current) {
+      applyDrag(e.clientX, e.clientY)
+    } else if (isPanningRef.current) {
+      const { clientX, clientY, vx, vy, scale } = isPanningRef.current
+      const svg = svgRef.current
+      if (!svg) return
+      const rect = svg.getBoundingClientRect()
+      const dx = (e.clientX - clientX) / rect.width  * (WIDTH  / scale)
+      const dy = (e.clientY - clientY) / rect.height * (HEIGHT / scale)
+      setViewport((prev) => ({ ...prev, x: vx - dx, y: vy - dy }))
+    }
+  }
+
+  const handleSVGTouchMove  = (e) => { if (e.touches.length === 1) applyDrag(e.touches[0].clientX, e.touches[0].clientY) }
+  const handleDragEnd       = ()  => {
+    if (draggingRef.current && !draggingRef.current.hasMoved) handleNodeClick(draggingRef.current.clickNode)
+    draggingRef.current = null
+    isPanningRef.current = null
+    setIsDragging(false)
+    setIsPanning(false)
+  }
+
   return (
     <div className="article-graph" ref={containerRef}>
-
-      <div className="article-graph__header">
-        <div>
-          <h3 className="sectionTitle">Grafo de Conocimiento</h3>
-          <p className="article-graph__subtitle">
-            Vista interactiva del grafo Neo4j construido a partir de tus artículos.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary article-graph__refresh"
-          onClick={() => refetch()}
-          disabled={isLoading || isRefetching}
-        >
-          <i className={`fas fa-sync-alt ${isRefetching ? 'fa-spin' : ''}`}></i>
-          {isRefetching ? 'Actualizando' : 'Actualizar'}
-        </button>
-      </div>
 
       {!enabled && (
         <div className="article-graph__notice">
@@ -370,35 +573,117 @@ function ArticleGraph() {
       )}
 
       {stats && (
-        <div className="article-graph__stats">
-          <span className="article-graph__stat"><strong>{stats.articles}</strong> artículos</span>
-          <span className="article-graph__stat"><strong>{stats.authors}</strong> autores</span>
-          <span className="article-graph__stat"><strong>{stats.keywords}</strong> keywords</span>
-          <span className="article-graph__stat"><strong>{stats.categories}</strong> categorías</span>
-          <span className="article-graph__stat"><strong>{stats.types}</strong> tipos</span>
-          <span className="article-graph__stat"><strong>{stats.relationships}</strong> relaciones</span>
+        <div className="article-graph__kpis">
+          {[
+            { key: 'articles',      label: 'Artículos',  color: '#6366f1' },
+            { key: 'authors',       label: 'Autores',    color: '#10b981' },
+            { key: 'categories',    label: 'Categorías', color: '#ef4444' },
+            { key: 'types',         label: 'Tipos',      color: '#8b5cf6' },
+            { key: 'keywords',      label: 'Keywords',   color: '#f59e0b' },
+            { key: 'relationships', label: 'Relaciones', color: '#64748b' },
+          ].map(({ key, label, color }) => (
+            <div key={key} className="article-graph__kpi" style={{ '--kpi-color': color }}>
+              <span className="article-graph__kpi-value">{stats[key] ?? 0}</span>
+              <span className="article-graph__kpi-label">{label}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="article-graph__legend">
-        {NODE_TYPES.map((type) => {
-          const style    = getNodeStyle(type)
-          const isActive = activeTypes.has(type)
-          return (
+      <div className="article-graph__canvas-wrapper">
+        <div className="article-graph__legend" ref={legendRef}>
+          <div className="article-graph__legend-controls">
             <button
               type="button"
-              key={type}
-              onClick={() => toggleType(type)}
-              className={`article-graph__legend-item${isActive ? ' is-active' : ''}`}
+              className="article-graph__legend-trigger"
+              onClick={() => setShowLegend((v) => !v)}
             >
-              <span className="article-graph__legend-dot" style={{ backgroundColor: style.color }} />
-              {style.label}
+              <i className="fas fa-eye" />
+              Mostrar
+              <i className={`fas fa-chevron-${showLegend ? 'up' : 'down'} article-graph__legend-chevron`} />
             </button>
-          )
-        })}
-      </div>
+            <span className="article-graph__legend-separator" />
+            <button
+              type="button"
+              className={`article-graph__legend-trigger${guideMode ? ' is-active' : ''}`}
+              onClick={() => {
+                const next = !guideMode
+                setGuideMode(next)
+                if (next) setShowLegend(false)
+                setPathOrigin(null); setPathDest(null); setShortestPath(null)
+              }}
+            >
+              <i className="fas fa-route" />
+              Enrutador
+            </button>
+          </div>
 
-      <div className="article-graph__canvas-wrapper">
+          {showLegend && (
+            <div className="article-graph__legend-dropdown">
+              {NODE_TYPES.map((type, idx) => {
+                const style    = getNodeStyle(type)
+                const isActive = activeTypes.has(type)
+                return (
+                  <div key={type} style={{ display: 'contents' }}>
+                    {idx > 0 && <span className="article-graph__legend-separator" />}
+                    <button
+                      type="button"
+                      onClick={() => toggleType(type)}
+                      className={`article-graph__legend-item${isActive ? ' is-active' : ''}`}
+                    >
+                      <span className="article-graph__legend-dot" style={{ backgroundColor: style.color }} />
+                      {style.label}
+                      <i className={`fas ${isActive ? 'fa-eye' : 'fa-eye-slash'} article-graph__legend-eye`} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {guideMode && (
+            <div className="article-graph__legend-dropdown">
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
+                Origen
+                <span
+                  className="article-graph__guide-node-name"
+                  style={{ color: pathOrigin ? getNodeStyle(pathOrigin.type).color : undefined }}
+                >
+                  {pathOrigin?.label || '—'}
+                </span>
+              </div>
+              <span className="article-graph__legend-separator" />
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
+                Destino
+                <span
+                  className="article-graph__guide-node-name"
+                  style={{ color: pathDest ? getNodeStyle(pathDest.type).color : undefined }}
+                >
+                  {pathDest?.label || '—'}
+                </span>
+              </div>
+              <span className="article-graph__legend-separator" />
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
+                Longitud
+                <span className="article-graph__guide-node-name">
+                  {shortestPath ? shortestPath.length - 1 : '—'}
+                </span>
+              </div>
+              {(pathOrigin || pathDest) && (
+                <>
+                  <span className="article-graph__legend-separator" />
+                  <button
+                    type="button"
+                    className="article-graph__legend-item is-active"
+                    onClick={() => { setPathOrigin(null); setPathDest(null); setShortestPath(null) }}
+                  >
+                    <i className="fas fa-eraser" style={{ fontSize: '0.72rem' }} />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
         {isLoading ? (
           <div className="article-graph__placeholder">
             <i className="fas fa-spinner fa-spin"></i>
@@ -420,31 +705,36 @@ function ArticleGraph() {
           </div>
         ) : (
           <svg
-            className="article-graph__canvas"
-            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            ref={svgRef}
+            className={`article-graph__canvas${isDragging ? ' is-dragging' : ''}${isPanning ? ' is-panning' : ''}`}
+            viewBox={`${viewport.x} ${viewport.y} ${WIDTH / viewport.scale} ${HEIGHT / viewport.scale}`}
             preserveAspectRatio="xMidYMid meet"
             role="img"
             aria-label="Grafo de conocimiento de artículos"
+            onMouseDown={handleSVGMouseDown}
+            onMouseMove={handleSVGMouseMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+            onTouchMove={handleSVGTouchMove}
+            onTouchEnd={handleDragEnd}
           >
             <defs>
-              <marker
-                id="ag-arrow"
-                viewBox="0 0 10 10"
-                refX="9" refY="5"
-                markerWidth="7" markerHeight="7"
-                orient="auto-start-reverse"
-              >
+              <marker id="ag-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+              </marker>
+              <marker id="ag-arrow-path" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
               </marker>
             </defs>
 
             {/* ── Aristas (detrás de los nodos) ── */}
             <g>
-              {filteredEdges.map((edge, idx) => {
+              {visibleEdges.map((edge, idx) => {
                 const src = positionsById.get(edge.source)
                 const tgt = positionsById.get(edge.target)
                 if (!src || !tgt) return null
 
+                const isPathEdge = false  // flujo ahora lo lleva el viajero animado
                 const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
                 const mx  = (x1 + x2) / 2
                 const my  = (y1 + y2) / 2
@@ -487,24 +777,43 @@ function ArticleGraph() {
 
             {/* ── Nodos (encima de las aristas) ── */}
             <g>
-              {positionedNodes.map((node) => {
-                const style     = getNodeStyle(node.type)
-                const isHovered = hoveredNode?.id === node.id
-                const lines     = wrapLabel(node.label, style.radius)
-                const lineH     = 13
-                const startY    = lines.length === 1 ? 0 : -(lineH / 2)
+              {visibleNodes.map((node) => {
+                const style       = getNodeStyle(node.type)
+                const isHovered   = hoveredNode?.id === node.id
+                const isOrigin    = pathOrigin?.id === node.id
+                const isDest      = pathDest?.id   === node.id
+                const isOnPath    = !isOrigin && !isDest && shortestPathSet.has(node.id)
+                const lines       = wrapLabel(node.label, style.radius)
+                const lineH       = 13
+                const startY      = lines.length === 1 ? 0 : -(lineH / 2)
 
                 return (
                   <g
                     key={node.id}
                     transform={`translate(${node.x},${node.y})`}
-                    onMouseEnter={() => setHoveredNode(node)}
+                    onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                    onMouseEnter={() => !draggingRef.current && setHoveredNode(node)}
                     onMouseLeave={() => setHoveredNode(null)}
+                    onTouchStart={(e) => handleNodeTouchStart(e, node)}
                     onFocus={() => setHoveredNode(node)}
                     onBlur={() => setHoveredNode(null)}
                     tabIndex={0}
-                    className={`article-graph__node${isHovered ? ' is-hovered' : ''}`}
+                    className={`article-graph__node${isHovered ? ' is-hovered' : ''}${guideMode ? ' guide-mode' : ''}`}
                   >
+                    {/* Borde amarillo animado al paso del viajero */}
+                    {shortestPathSet.has(node.id) && flowPathD && (
+                      <circle
+                        r={style.radius + 1}
+                        fill="none"
+                        stroke="#fbbf24"
+                        strokeWidth={4}
+                        className="article-graph__node-border-flow"
+                        style={{
+                          animationDuration: `${FLOW_DUR}s`,
+                          animationDelay: `${(nodeArrivalFractions[node.id] ?? 0) * FLOW_DUR}s`,
+                        }}
+                      />
+                    )}
                     {/* Sombra */}
                     <circle r={style.radius + 3} fill="rgba(0,0,0,0.09)" cy={2} />
                     {/* Círculo principal */}
@@ -531,6 +840,25 @@ function ArticleGraph() {
                 )
               })}
             </g>
+
+            {/* ── Viajero animado (encima de todo) ── */}
+            {flowPathD && (
+              <>
+                <path id="ag-flow-path" d={flowPathD} fill="none" stroke="none" />
+                {/* rotate="auto" orienta el grupo en la dirección del recorrido;
+                    los cx negativos quedan siempre detrás del cabezal → estela */}
+                <g className="article-graph__traveler">
+                  <circle cx={-32} cy={0} r={1}   fill="#fbbf24" opacity={0.08} />
+                  <circle cx={-24} cy={0} r={1.5} fill="#fbbf24" opacity={0.18} />
+                  <circle cx={-16} cy={0} r={2}   fill="#fbbf24" opacity={0.35} />
+                  <circle cx={-8}  cy={0} r={2.5} fill="#fbbf24" opacity={0.60} />
+                  <circle cx={0}   cy={0} r={4}   fill="#fbbf24" />
+                  <animateMotion dur={`${FLOW_DUR}s`} repeatCount="indefinite" calcMode="paced" rotate="auto">
+                    <mpath href="#ag-flow-path" />
+                  </animateMotion>
+                </g>
+              </>
+            )}
           </svg>
         )}
 

@@ -9,7 +9,6 @@ import KeywordRanking from '../components/dashboard/KeywordRanking'
 import TypePieChart from '../components/dashboard/TypePieChart'
 import CategoryBubbles from '../components/dashboard/CategoryBubbles'
 import AuthorsChart from '../components/dashboard/AuthorsChart'
-import ArticleGraph from '../components/dashboard/ArticleGraph'
 import '../styles/App.css'
 import '../styles/dashboard/Dashboard.css'
 import { useCollection } from '../context/CollectionContext'
@@ -252,9 +251,6 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="section">
-        <ArticleGraph />
-      </div>
     </div>
   )
 }

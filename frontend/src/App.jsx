@@ -18,6 +18,7 @@ import OpenAlexView from './pages/OpenAlexView'
 import CollectionArticles from './pages/CollectionArticles'
 import ReviewWorkflow from './pages/ReviewWorkflow'
 import PublicPreview from './pages/PublicPreview'
+import KnowledgeGraph from './pages/KnowledgeGraph'
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
               >
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="knowledge-graph" element={<KnowledgeGraph />} />
 
                 <Route path="articles" element={<Articles />} />
                 <Route path="articles/:id" element={<ArticleView />} />
