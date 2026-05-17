@@ -89,7 +89,7 @@ const chatDifferentiators = [
 const traceabilityItems = [
   {
     title: 'Origen del contexto',
-    text: 'Indica si la respuesta se apoya en texto completo, metadatos o una mezcla de ambos.',
+    text: 'Indica si la respuesta se apoya en texto completo o en metadatos, segun lo que el modulo admita.',
   },
   {
     title: 'Fragmentos de apoyo',

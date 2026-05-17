@@ -6,6 +6,7 @@ import {
   collectionSynthesisAPI,
   collectionsAPI,
   evidenceExtractionAPI,
+  redactionAPI,
   screeningAPI,
 } from '../api/index.js'
 import EmptyStepState from '../components/reviewWorkflow/EmptyStepState'
@@ -24,8 +25,6 @@ import '../styles/workspace/EvidenceExtraction.css'
 import '../styles/workspace/Clustering.css'
 import '../styles/workspace/CollectionSynthesis.css'
 import '../styles/workspace/ReviewWorkflow.css'
-
-const SCIENTIFIC_DRAFT_MARKER = 'MODO: REDACCION CIENTIFICA ASISTIDA'
 
 const STEP_IDS = ['preparation', 'screening', 'evidence', 'clustering', 'synthesis', 'writing']
 
@@ -138,10 +137,6 @@ const CONTEXT_SOURCE_LABELS = {
 
 function isActiveRunStatus(status) {
   return ['queued', 'processing'].includes(status)
-}
-
-function isScientificDraftRun(run) {
-  return String(run?.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
 }
 
 function formatTimestamp(value) {
@@ -356,6 +351,10 @@ function ReviewWorkflow() {
   const [creatingSynthesis, setCreatingSynthesis] = useState(false)
   const [synthesisPrompt, setSynthesisPrompt] = useState('')
 
+  const [redactionRuns, setRedactionRuns] = useState([])
+  const [loadingRedactionRuns, setLoadingRedactionRuns] = useState(false)
+  const [redactionRunsError, setRedactionRunsError] = useState(null)
+
   const selectedCollection = collections.find((collection) => collection._id === selectedCollectionId)
   const collectionName = selectedCollection?.name || null
 
@@ -519,16 +518,30 @@ function ReviewWorkflow() {
       setSynthesisRunsError(null)
       const response = await collectionSynthesisAPI.listRuns(selectedCollectionId)
       const nextRuns = response?.data?.runs || []
-      const nextCollectionSynthesisRuns = nextRuns.filter((run) => !isScientificDraftRun(run))
 
       setSynthesisRuns(nextRuns)
       setSelectedSynthesisRunId((previousRunId) =>
-        resolveRunSelection(nextCollectionSynthesisRuns, preferredRunId, preserveSelection ? previousRunId : null)
+        resolveRunSelection(nextRuns, preferredRunId, preserveSelection ? previousRunId : null)
       )
     } catch (error) {
       setSynthesisRunsError(error.message || 'Error al cargar sintesis guardadas')
     } finally {
       setLoadingSynthesisRuns(false)
+    }
+  }, [selectedCollectionId])
+
+  const loadRedactionRuns = useCallback(async () => {
+    if (!selectedCollectionId) return
+
+    try {
+      setLoadingRedactionRuns(true)
+      setRedactionRunsError(null)
+      const response = await redactionAPI.listRuns(selectedCollectionId)
+      setRedactionRuns(response?.data?.runs || [])
+    } catch (error) {
+      setRedactionRunsError(error.message || 'Error al cargar borradores')
+    } finally {
+      setLoadingRedactionRuns(false)
     }
   }, [selectedCollectionId])
 
@@ -555,6 +568,7 @@ function ReviewWorkflow() {
     setClusteringResults([])
     setSynthesisRuns([])
     setSelectedSynthesisRunId(null)
+    setRedactionRuns([])
 
     if (!selectedCollectionId) return
 
@@ -563,10 +577,12 @@ function ReviewWorkflow() {
     loadEvidenceRuns({ preserveSelection: false })
     loadClusteringRuns({ preserveSelection: false })
     loadSynthesisRuns({ preserveSelection: false })
+    loadRedactionRuns()
   }, [
     loadClusteringRuns,
     loadCollectionSummary,
     loadEvidenceRuns,
+    loadRedactionRuns,
     loadScreeningRuns,
     loadSynthesisRuns,
     selectedCollection?.article_count,
@@ -613,15 +629,9 @@ function ReviewWorkflow() {
     [evidenceRuns]
   )
 
-  const collectionSynthesisRuns = useMemo(
-    () => synthesisRuns.filter((run) => !isScientificDraftRun(run)),
-    [synthesisRuns]
-  )
+  const collectionSynthesisRuns = synthesisRuns
 
-  const scientificDraftRuns = useMemo(
-    () => synthesisRuns.filter(isScientificDraftRun),
-    [synthesisRuns]
-  )
+  const scientificDraftRuns = redactionRuns
 
   const selectedSynthesisRun = useMemo(
     () => collectionSynthesisRuns.find((run) => run._id === selectedSynthesisRunId) || null,
@@ -666,8 +676,9 @@ function ReviewWorkflow() {
       ...evidenceRuns,
       ...clusteringRuns,
       ...synthesisRuns,
+      ...redactionRuns,
     ].filter((run) => isActiveRunStatus(run.status)).length
-  }, [clusteringRuns, evidenceRuns, screeningRuns, synthesisRuns])
+  }, [clusteringRuns, evidenceRuns, redactionRuns, screeningRuns, synthesisRuns])
 
   const completedSteps = useMemo(() => {
     return [
@@ -780,22 +791,23 @@ function ReviewWorkflow() {
     },
     onCollectionSynthesisReady: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification(
-        String(data.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
-          ? 'Borrador cientifico completado'
-          : 'Sintesis completada correctamente'
-      )
+      setNotification('Sintesis completada correctamente')
       await loadSynthesisRuns({ preserveSelection: true, preferredRunId: data.run_id })
     },
     onCollectionSynthesisError: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification(
-        data.error_message ||
-          (String(data.prompt || '').includes(SCIENTIFIC_DRAFT_MARKER)
-            ? 'Error al generar el borrador'
-            : 'Error al generar la sintesis')
-      )
+      setNotification(data.error_message || 'Error al generar la sintesis')
       await loadSynthesisRuns({ preserveSelection: true, preferredRunId: data.run_id })
+    },
+    onRedactionReady: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification('Borrador cientifico completado')
+      await loadRedactionRuns()
+    },
+    onRedactionError: async (data) => {
+      if (data.collection_id !== selectedCollectionId) return
+      setNotification(data.error_message || 'Error al generar el borrador')
+      await loadRedactionRuns()
     },
   }, Boolean(selectedCollectionId))
 
@@ -805,6 +817,7 @@ function ReviewWorkflow() {
     loadEvidenceRuns({ preserveSelection: true, preferredRunId: selectedEvidenceRunId })
     loadClusteringRuns({ preserveSelection: true, preferredRunId: selectedClusteringRunId })
     loadSynthesisRuns({ preserveSelection: true, preferredRunId: selectedSynthesisRunId })
+    loadRedactionRuns()
     if (selectedScreeningRunId) loadScreeningResults(selectedScreeningRunId)
     if (selectedEvidenceRunId) loadEvidenceResults(selectedEvidenceRunId)
     if (selectedClusteringRunId) loadClusteringResults(selectedClusteringRunId)
@@ -819,6 +832,7 @@ function ReviewWorkflow() {
     loadEvidenceRuns({ preserveSelection: true })
     loadClusteringRuns({ preserveSelection: true })
     loadSynthesisRuns({ preserveSelection: true })
+    loadRedactionRuns()
     if (selectedScreeningRunId) loadScreeningResults(selectedScreeningRunId)
     if (selectedEvidenceRunId) loadEvidenceResults(selectedEvidenceRunId)
     if (selectedClusteringRunId) loadClusteringResults(selectedClusteringRunId)
@@ -1826,7 +1840,7 @@ function ReviewWorkflow() {
 
         <div className="workflow-context-note">
           <i className="fas fa-circle-info"></i>
-          <span>La sintesis puede trabajar aunque no hayas ejecutado clustering. Usara el mejor contexto disponible: texto completo, metadatos o una mezcla si el backend lo permite.</span>
+          <span>La sintesis puede ejecutarse aunque no hayas hecho clustering. Requiere al menos un articulo con PDF procesado en la coleccion y trabajara con el contenido de esos PDFs; los articulos sin PDF procesado no se incluiran.</span>
         </div>
 
         <div className="workflow-step-actions">

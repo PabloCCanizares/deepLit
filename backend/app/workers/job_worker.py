@@ -15,6 +15,13 @@ from app.services.screening_run_service import ScreeningRunService
 from app.services.collection_screening_service import CollectionScreeningService
 from app.services.collection_synthesis_service import CollectionSynthesisService
 from app.services.collection_synthesis_run_service import CollectionSynthesisRunService
+from app.models import RedactionRunRequest
+from app.services.redaction_service import (
+    RedactionService,
+    REDACTION_PROMPT_VERSION,
+    REDACTION_SCHEMA_VERSION,
+)
+from app.services.redaction_run_service import RedactionRunService
 from app.services.job_service import (
     JobService,
     PDF_PROCESSING_JOB,
@@ -22,6 +29,7 @@ from app.services.job_service import (
     COLLECTION_SYNTHESIS_JOB,
     EVIDENCE_EXTRACTION_JOB,
     CLUSTERING_JOB,
+    JOB_GENERATE_REDACTION,
 )
 from app.services.pdf_processing_service import PdfProcessingService
 from app.services.sse_manager import sse_manager
@@ -43,6 +51,8 @@ class JobWorker:
         self.collection_screening_service = CollectionScreeningService()
         self.collection_synthesis_service = CollectionSynthesisService()
         self.collection_synthesis_run_service = CollectionSynthesisRunService()
+        self.redaction_service = RedactionService()
+        self.redaction_run_service = RedactionRunService()
         self.pdf_processing_service = PdfProcessingService()
         self.article_graph_service = ArticleGraphService()
         self.storage_service = StorageService()
@@ -52,6 +62,7 @@ class JobWorker:
             COLLECTION_SYNTHESIS_JOB: self._process_collection_synthesis_job,
             EVIDENCE_EXTRACTION_JOB: self._process_evidence_extraction_job,
             CLUSTERING_JOB: self._process_clustering_job,
+            JOB_GENERATE_REDACTION: self._process_redaction_job,
         }
         self._task: Optional[asyncio.Task] = None
         self._running = False
@@ -413,6 +424,97 @@ class JobWorker:
                     "job_id": job_id,
                     "collection_id": collection_id,
                     "prompt": prompt,
+                    "status": "failed",
+                    "error_message": str(exc),
+                },
+            )
+
+    async def _process_redaction_job(self, job: dict) -> None:
+        payload = job.get("payload", {})
+        job_id = str(job.get("_id"))
+        user_id = payload.get("user_id")
+        run_id = payload.get("run_id")
+        collection_id = payload.get("collection_id")
+
+        try:
+            logger.info(
+                "Procesando job redaction %s para collection_id=%s",
+                job_id,
+                collection_id,
+            )
+
+            await self.redaction_run_service.mark_processing(
+                run_id=run_id,
+                user_id=user_id,
+            )
+
+            request = RedactionRunRequest(
+                user_idea=payload.get("user_idea"),
+                text_type=payload.get("text_type"),
+                synthesis_run_id=payload.get("synthesis_run_id"),
+                evidence_extraction_run_id=payload.get("evidence_extraction_run_id"),
+                parent_run_id=payload.get("parent_run_id"),
+            )
+            result = await self.redaction_service.generate_redaction(
+                user_id=user_id,
+                collection_id=collection_id,
+                request=request,
+            )
+
+            await self.job_service.mark_completed(job_id)
+            run = await self.redaction_run_service.mark_completed(
+                run_id=run_id,
+                user_id=user_id,
+                result=result,
+                prompt_version=REDACTION_PROMPT_VERSION,
+                schema_version=REDACTION_SCHEMA_VERSION,
+                context_source="full_text",
+            )
+
+            sse_manager.notify(
+                user_id,
+                "redaction_ready",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
+                    "status": "completed",
+                    "run": run,
+                },
+            )
+            logger.info("Job redaction %s completado", job_id)
+        except Exception as exc:
+            logger.exception("Error procesando job redaction %s", job_id)
+
+            try:
+                await self.job_service.mark_failed(job_id, str(exc))
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar el job %s como failed",
+                    job_id,
+                    exc_info=True,
+                )
+
+            try:
+                await self.redaction_run_service.mark_failed(
+                    run_id=run_id,
+                    user_id=user_id,
+                    error_message=str(exc),
+                )
+            except Exception:
+                logger.warning(
+                    "No se pudo marcar la redaccion %s como failed",
+                    run_id,
+                    exc_info=True,
+                )
+
+            sse_manager.notify(
+                user_id,
+                "redaction_error",
+                {
+                    "run_id": run_id,
+                    "job_id": job_id,
+                    "collection_id": collection_id,
                     "status": "failed",
                     "error_message": str(exc),
                 },

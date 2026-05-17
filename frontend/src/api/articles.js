@@ -49,6 +49,8 @@ export const articlesAPI = {
     onCollectionSynthesisError,
     onClusteringReady,
     onClusteringError,
+    onRedactionReady,
+    onRedactionError,
     onError,
   } = {}) => {
     const token = getAuthToken()
@@ -143,6 +145,24 @@ export const articlesAPI = {
         if (onClusteringError) onClusteringError(data)
       } catch (err) {
         console.error('Error parsing clustering_error event:', err)
+      }
+    })
+
+    eventSource.addEventListener('redaction_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (onRedactionReady) onRedactionReady(data)
+      } catch (err) {
+        console.error('Error parsing redaction_ready event:', err)
+      }
+    })
+
+    eventSource.addEventListener('redaction_error', (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (onRedactionError) onRedactionError(data)
+      } catch (err) {
+        console.error('Error parsing redaction_error event:', err)
       }
     })
 

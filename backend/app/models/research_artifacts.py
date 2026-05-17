@@ -2,6 +2,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 from app.models.clustering import ClusterSummary
+from app.models.redaction import RedactionResult, RedactionTextType
 
 
 class ScreeningDecisionData(BaseModel):
@@ -206,6 +207,43 @@ class ClusteringRunData(BaseModel):
     clusters: List[ClusterSummary] = Field(
         default_factory=list,
         description="Resumen de clusters generados en el run.",
+    )
+    error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
+
+
+class RedactionRunData(BaseModel):
+    collection_id: str = Field(..., description="Coleccion sobre la que se ejecuta la redaccion.")
+    parent_run_id: Optional[str] = Field(
+        None,
+        description="Run de redaccion previo cuando se trata de una revision encadenada.",
+    )
+    user_idea: str = Field(..., description="Aportacion intelectual del usuario.")
+    text_type: RedactionTextType = Field(
+        ...,
+        description="Tipo de texto academico solicitado.",
+    )
+    source_synthesis_run_id: Optional[str] = Field(
+        None,
+        description="Sintesis de coleccion usada como insumo.",
+    )
+    source_evidence_extraction_run_id: Optional[str] = Field(
+        None,
+        description="Evidence extraction usada como insumo.",
+    )
+    status: Literal["queued", "processing", "completed", "failed"] = Field(
+        default="queued",
+        description="Estado actual de la redaccion.",
+    )
+    job_id: Optional[str] = Field(None, description="Job asociado a la redaccion.")
+    prompt_version: Optional[str] = Field(None, description="Version del prompt usada por el workflow.")
+    schema_version: Optional[str] = Field(None, description="Version del schema usado por el workflow.")
+    context_source: Literal["full_text"] = Field(
+        default="full_text",
+        description="Fuente principal usada: siempre full_text por diseno.",
+    )
+    result: Optional[RedactionResult] = Field(
+        None,
+        description="Resultado estructurado del borrador cuando esta completado.",
     )
     error_message: Optional[str] = Field(None, description="Error de ejecucion si existe.")
 

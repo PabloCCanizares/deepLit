@@ -17,6 +17,8 @@ from .job_service import JobService
 from .collection_service import CollectionService
 from .paper_service import PaperService
 from .article_graph_service import ArticleGraphService
+from .redaction_service import RedactionService
+from .redaction_run_service import RedactionRunService
 
 __all__ = [
     "StorageService",
@@ -37,4 +39,6 @@ __all__ = [
     "CollectionService",
     "PaperService",
     "ArticleGraphService",
+    "RedactionService",
+    "RedactionRunService",
 ]

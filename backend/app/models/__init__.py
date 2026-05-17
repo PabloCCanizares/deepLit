@@ -36,10 +36,18 @@ from app.models.research_artifacts import (
     CollectionSynthesisRunRequest,
     ClusteringRunData,
     EvidenceExtractionRunData,
+    RedactionRunData,
     ScreeningDecisionData,
     ScreeningRunCounts,
     ScreeningRunData,
     SupportSnippetReference,
+)
+from app.models.redaction import (
+    ArticleReference,
+    RedactionLLMResult,
+    RedactionResult,
+    RedactionRunRequest,
+    SectionMarker,
 )
 from app.models.clustering import (
     ClusteringRunRequest,
@@ -119,6 +127,12 @@ __all__ = [
     "CollectionSynthesisRunRequest",
     "ClusteringRunData",
     "EvidenceExtractionRunData",
+    "RedactionRunData",
+    "RedactionRunRequest",
+    "RedactionResult",
+    "RedactionLLMResult",
+    "SectionMarker",
+    "ArticleReference",
     "ClusteringRunRequest",
     "ClusterSummary",
     "SupportSnippetReference",

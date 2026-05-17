@@ -13,6 +13,8 @@ const EVENT_HANDLER_KEYS = [
   'onCollectionSynthesisError',
   'onClusteringReady',
   'onClusteringError',
+  'onRedactionReady',
+  'onRedactionError',
   'onError',
 ]
 

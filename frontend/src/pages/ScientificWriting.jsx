@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { collectionSynthesisAPI, evidenceExtractionAPI } from '../api/index.js'
+import { collectionSynthesisAPI, evidenceExtractionAPI, redactionAPI } from '../api/index.js'
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
@@ -10,17 +10,12 @@ import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfEx
 import '../styles/App.css'
 import '../styles/workspace/ScientificWriting.css'
 
-const DRAFT_MARKER = 'MODO: REDACCION CIENTIFICA ASISTIDA'
-const DRAFT_EDITS_STORAGE_KEY = 'deeplit:scientific-writing:draft-edits'
-
 const TEXT_TYPE_OPTIONS = [
   { value: 'summary', label: 'Resumen', icon: 'fa-align-left' },
   { value: 'introduction', label: 'Introduccion', icon: 'fa-door-open' },
-  { value: 'state_of_art', label: 'Estado de la cuestion', icon: 'fa-book-open' },
-  { value: 'discussion', label: 'Discusion', icon: 'fa-comments' },
+  { value: 'state_of_the_art', label: 'Estado de la cuestion', icon: 'fa-book-open' },
   { value: 'conclusions', label: 'Conclusiones', icon: 'fa-flag-checkered' },
   { value: 'full_draft', label: 'Borrador completo', icon: 'fa-file-lines' },
-  { value: 'custom', label: 'Seccion personalizada', icon: 'fa-pen' },
 ]
 
 const DRAFT_SECTION_HEADINGS = [
@@ -65,13 +60,6 @@ function truncateText(value, maxLength = 900) {
   if (!text || text.length <= maxLength) return text
   const truncated = text.slice(0, maxLength).split(' ').slice(0, -1).join(' ').trim()
   return `${truncated || text.slice(0, maxLength)}...`
-}
-
-function getTextBlocks(value) {
-  return cleanAssistantText(value)
-    .split(/\n\s*\n/)
-    .map((block) => block.trim())
-    .filter(Boolean)
 }
 
 function normalizeHeading(value) {
@@ -119,21 +107,16 @@ function sortRunsByDate(runs) {
   })
 }
 
-function isScientificDraftRun(run) {
-  return String(run?.prompt || '').includes(DRAFT_MARKER)
+function getDraftTitle(run) {
+  return run?.result?.title || 'Borrador cientifico'
 }
 
-function getDraftTitle(run) {
-  const firstLine = cleanAssistantText(run?.prompt).split('\n')[0]?.trim()
-  if (firstLine?.toLowerCase().startsWith('borrador cientifico:')) {
-    return firstLine.replace(/^borrador cientifico:\s*/i, 'Borrador: ')
-  }
-  return 'Borrador cientifico'
+function getDraftText(run) {
+  return run?.result?.draft_text || ''
 }
 
 function getSynthesisTitle(run) {
   if (!run) return 'Sin sintesis'
-  if (isScientificDraftRun(run)) return getDraftTitle(run)
   return `Sintesis: ${truncateText(run.prompt || 'Sin prompt', 80)}`
 }
 
@@ -149,39 +132,6 @@ function resolveRunSelection(runs, currentId, preferredId) {
   return runs[0]?._id || null
 }
 
-function listToText(value, limit = 5) {
-  const items = Array.isArray(value)
-    ? value
-    : typeof value === 'string' && value.trim()
-      ? [value]
-      : []
-
-  return items
-    .map((item) => {
-      if (typeof item === 'string') return item.trim()
-      if (!item || typeof item !== 'object') return ''
-      return item.text || item.snippet || item.quote || item.content || ''
-    })
-    .filter(Boolean)
-    .slice(0, limit)
-    .join('; ')
-}
-
-function supportToText(value, limit = 3) {
-  const items = Array.isArray(value) ? value : []
-  return items
-    .map((item) => {
-      if (typeof item === 'string') return item.trim()
-      if (!item || typeof item !== 'object') return ''
-      const snippet = item.snippet || item.text || item.quote || item.content || ''
-      const page = item.page ? `p. ${item.page}` : ''
-      return [snippet, page].filter(Boolean).join(' ')
-    })
-    .filter(Boolean)
-    .slice(0, limit)
-    .join(' | ')
-}
-
 function formatEvidenceMode(value) {
   const labels = {
     all: 'Toda la coleccion',
@@ -189,112 +139,6 @@ function formatEvidenceMode(value) {
     screening_include_review: 'Incluidos + revision',
   }
   return labels[value] || value || 'Sin modo'
-}
-
-function buildEvidenceContext(results) {
-  if (!results.length) return 'No hay fichas de evidencia cargadas para este run.'
-
-  return results.slice(0, 8).map((item, index) => {
-    const lines = [
-      `Articulo ${index + 1}: ${item.article_title || item.article_id || 'Articulo sin titulo'}`,
-      item.objective ? `Objetivo: ${truncateText(item.objective, 420)}` : null,
-      item.methodology ? `Metodologia: ${truncateText(item.methodology, 420)}` : null,
-      item.dataset ? `Dataset: ${truncateText(item.dataset, 260)}` : null,
-      listToText(item.variables, 6) ? `Variables: ${listToText(item.variables, 6)}` : null,
-      listToText(item.metrics, 6) ? `Metricas: ${listToText(item.metrics, 6)}` : null,
-      listToText(item.findings, 6) ? `Hallazgos: ${truncateText(listToText(item.findings, 6), 650)}` : null,
-      listToText(item.limitations, 4) ? `Limitaciones: ${truncateText(listToText(item.limitations, 4), 420)}` : null,
-      supportToText(item.findings_support, 3) ? `Soporte textual: ${truncateText(supportToText(item.findings_support, 3), 650)}` : null,
-    ].filter(Boolean)
-
-    return lines.join('\n')
-  }).join('\n\n')
-}
-
-function buildDraftPrompt({
-  sectionLabel,
-  collectionName,
-  userIdeas,
-  synthesisRun,
-  evidenceRun,
-  evidenceResults,
-}) {
-  const synthesisContext = synthesisRun?.response
-    ? [
-        `Prompt original: ${truncateText(synthesisRun.prompt, 900)}`,
-        `Respuesta de sintesis: ${truncateText(synthesisRun.response, 6000)}`,
-      ].join('\n')
-    : 'No seleccionada.'
-
-  const evidenceContext = evidenceRun
-    ? [
-        `Run de evidence extraction: ${formatEvidenceMode(evidenceRun.selection_mode)} (${evidenceRun._id})`,
-        buildEvidenceContext(evidenceResults),
-      ].join('\n')
-    : 'No seleccionada.'
-
-  return [
-    `Borrador cientifico: ${sectionLabel}`,
-    '',
-    DRAFT_MARKER,
-    `Tipo de texto solicitado: ${sectionLabel}`,
-    `Coleccion activa: ${collectionName || 'Coleccion seleccionada'}`,
-    '',
-    'IDEAS, HIPOTESIS, CONCLUSIONES O INDICACIONES DEL USUARIO:',
-    userIdeas,
-    '',
-    'SINTESIS PREVIA SELECCIONADA:',
-    synthesisContext,
-    '',
-    'EVIDENCIA EXTRAIDA SELECCIONADA:',
-    evidenceContext,
-    '',
-    'INSTRUCCIONES OBLIGATORIAS:',
-    '- Redacta en espanol con tono academico, claro y revisable.',
-    '- El resultado es un borrador de trabajo, no una publicacion final.',
-    '- Usa las ideas del usuario como eje argumental, pero diferencia lo que aporta el usuario de lo que esta apoyado por articulos.',
-    '- No inventes citas, referencias, autores, anos, resultados ni detalles metodologicos.',
-    '- Si una afirmacion no tiene soporte suficiente en la sintesis o en la evidencia, indicalo como punto a revisar.',
-    '- Si mencionas literatura, usa solo titulos, identificadores o etiquetas disponibles en el contexto.',
-    '- Ordena los argumentos y evita afirmaciones demasiado fuertes cuando el soporte sea limitado.',
-    '- Devuelve exactamente estas secciones: APORTACION DEL USUARIO, EVIDENCIA UTILIZADA, BORRADOR, PUNTOS A REVISAR.',
-  ].join('\n')
-}
-
-function buildDraftRevisionPrompt({
-  collectionName,
-  draftTitle,
-  draftText,
-  instruction,
-}) {
-  return [
-    `Borrador cientifico: Revision de ${draftTitle || 'borrador'}`,
-    '',
-    DRAFT_MARKER,
-    `Coleccion activa: ${collectionName || 'Coleccion seleccionada'}`,
-    '',
-    'BORRADOR ACTUAL EDITABLE:',
-    draftText,
-    '',
-    'CAMBIOS SOLICITADOS POR EL USUARIO:',
-    instruction,
-    '',
-    'INSTRUCCIONES OBLIGATORIAS:',
-    '- Reescribe el borrador aplicando solo los cambios solicitados.',
-    '- Mantiene tono academico, coherencia argumental y estructura revisable.',
-    '- No inventes citas, referencias, autores, anos, resultados ni detalles metodologicos.',
-    '- Si una parte no puede reforzarse con el contexto disponible, indicarlo como punto a revisar.',
-    '- Conserva o mejora estas secciones cuando existan: APORTACION DEL USUARIO, EVIDENCIA UTILIZADA, BORRADOR, PUNTOS A REVISAR.',
-  ].join('\n')
-}
-
-function buildTxtFilename(collectionName, run) {
-  const base = `${collectionName || 'coleccion'}-${getDraftTitle(run)}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-  return `${base || 'borrador-cientifico'}.txt`
 }
 
 function buildPdfFilename(collectionName, run) {
@@ -314,36 +158,14 @@ function getDraftPdfSections(text) {
   return cleanedText ? [{ heading: 'BORRADOR', content: cleanedText }] : []
 }
 
-function loadStoredDraftEdits() {
-  if (typeof window === 'undefined') return {}
-
-  try {
-    const storedValue = window.localStorage.getItem(DRAFT_EDITS_STORAGE_KEY)
-    const parsedValue = storedValue ? JSON.parse(storedValue) : {}
-    return parsedValue && typeof parsedValue === 'object' ? parsedValue : {}
-  } catch {
-    return {}
-  }
-}
-
-function saveStoredDraftEdits(edits) {
-  if (typeof window === 'undefined') return
-
-  try {
-    window.localStorage.setItem(DRAFT_EDITS_STORAGE_KEY, JSON.stringify(edits))
-  } catch {
-    // Local persistence is a convenience; exports still work without it.
-  }
-}
-
 function ScientificWriting({ embedded = false }) {
   const { selectedCollectionId, collections } = useCollection()
 
-  const [textType, setTextType] = useState('discussion')
-  const [customSection, setCustomSection] = useState('')
+  const [textType, setTextType] = useState('summary')
   const [userIdeas, setUserIdeas] = useState('')
 
   const [synthesisRuns, setSynthesisRuns] = useState([])
+  const [redactionRuns, setRedactionRuns] = useState([])
   const [evidenceRuns, setEvidenceRuns] = useState([])
   const [evidenceResults, setEvidenceResults] = useState([])
   const [selectedSynthesisRunId, setSelectedSynthesisRunId] = useState(null)
@@ -352,21 +174,20 @@ function ScientificWriting({ embedded = false }) {
   const [selectedDraftRunId, setSelectedDraftRunId] = useState(null)
 
   const [loadingSynthesisRuns, setLoadingSynthesisRuns] = useState(false)
+  const [loadingRedactionRuns, setLoadingRedactionRuns] = useState(false)
   const [loadingEvidenceRuns, setLoadingEvidenceRuns] = useState(false)
   const [loadingEvidenceResults, setLoadingEvidenceResults] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRequestingRevision, setIsRequestingRevision] = useState(false)
   const [notification, setNotification] = useState('')
-  const [localDraftEdits, setLocalDraftEdits] = useState(loadStoredDraftEdits)
-  const [isEditorOpen, setIsEditorOpen] = useState(false)
-  const [editorText, setEditorText] = useState('')
-  const [editorInstruction, setEditorInstruction] = useState('')
+  const [revisionInstruction, setRevisionInstruction] = useState('')
 
   const activeCollectionIdRef = useRef(selectedCollectionId)
   const selectedDraftRunIdRef = useRef(selectedDraftRunId)
   const selectedSynthesisRunIdRef = useRef(selectedSynthesisRunId)
   const selectedEvidenceRunIdRef = useRef(selectedEvidenceRunId)
   const synthesisRequestIdRef = useRef(0)
+  const redactionRequestIdRef = useRef(0)
   const evidenceRunsRequestIdRef = useRef(0)
   const evidenceResultsRequestIdRef = useRef(0)
 
@@ -377,11 +198,11 @@ function ScientificWriting({ embedded = false }) {
   const collectionName = selectedCollection?.name || null
 
   const draftRuns = useMemo(
-    () => sortRunsByDate(synthesisRuns.filter(isScientificDraftRun)),
-    [synthesisRuns]
+    () => sortRunsByDate(redactionRuns),
+    [redactionRuns]
   )
   const completedSynthesisRuns = useMemo(
-    () => sortRunsByDate(synthesisRuns.filter((run) => run.status === 'completed' && !isScientificDraftRun(run))),
+    () => sortRunsByDate(synthesisRuns.filter((run) => run.status === 'completed')),
     [synthesisRuns]
   )
   const completedEvidenceRuns = useMemo(
@@ -392,19 +213,27 @@ function ScientificWriting({ embedded = false }) {
     () => draftRuns.find((run) => run._id === selectedDraftRunId) || null,
     [draftRuns, selectedDraftRunId]
   )
-  const selectedDraftText = useMemo(() => {
-    if (!selectedDraftRun) return ''
-    return localDraftEdits[selectedDraftRun._id] || selectedDraftRun.response || ''
-  }, [localDraftEdits, selectedDraftRun])
+  const selectedDraftText = useMemo(
+    () => (selectedDraftRun ? getDraftText(selectedDraftRun) : ''),
+    [selectedDraftRun]
+  )
+  const selectedDraftSections = useMemo(
+    () => (selectedDraftText ? parseDraftSections(selectedDraftText) : []),
+    [selectedDraftText]
+  )
+  const selectedDraftReferences = useMemo(() => {
+    const references = selectedDraftRun?.result?.references
+    return Array.isArray(references) ? references : []
+  }, [selectedDraftRun])
   const selectedSynthesisRun = useMemo(
     () => synthesisRuns.find((run) => run._id === selectedSynthesisRunId) || null,
     [synthesisRuns, selectedSynthesisRunId]
   )
-  const selectedTextTypeOption = TEXT_TYPE_OPTIONS.find((option) => option.value === textType) || TEXT_TYPE_OPTIONS[0]
-  const sectionLabel = textType === 'custom'
-    ? customSection.trim() || 'Seccion personalizada'
-    : selectedTextTypeOption.label
-  const hasLocalDraftEdit = Boolean(selectedDraftRun && localDraftEdits[selectedDraftRun._id])
+  const selectedReviewPoints = useMemo(() => {
+    if (!selectedDraftRun || selectedDraftRun.status !== 'completed') return []
+    const points = selectedDraftRun.result?.review_points
+    return Array.isArray(points) ? points.filter((item) => typeof item === 'string' && item.trim()) : []
+  }, [selectedDraftRun])
   const activeDraftRuns = useMemo(
     () => draftRuns.filter((run) => isActiveRunStatus(run.status)).length,
     [draftRuns]
@@ -429,23 +258,10 @@ function ScientificWriting({ embedded = false }) {
   }, [notification])
 
   useEffect(() => {
-    if (!isEditorOpen) return undefined
+    setRevisionInstruction('')
+  }, [selectedDraftRunId])
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [isEditorOpen])
-
-  useEffect(() => {
-    if (!isEditorOpen) return
-    setEditorText(selectedDraftText)
-    setEditorInstruction('')
-  }, [isEditorOpen, selectedDraftRunId])
-
-  const loadSynthesisRuns = useCallback(async (collectionId, preferredDraftRunId = null, options = {}) => {
+  const loadSynthesisRuns = useCallback(async (collectionId, options = {}) => {
     const { preserveSelection = true } = options
     if (!collectionId) return
 
@@ -458,14 +274,7 @@ function ScientificWriting({ embedded = false }) {
       if (activeCollectionIdRef.current !== collectionId || synthesisRequestIdRef.current !== requestId) return
 
       const nextRuns = response?.data?.runs || []
-      const nextDraftRuns = sortRunsByDate(nextRuns.filter(isScientificDraftRun))
       setSynthesisRuns(nextRuns)
-
-      setSelectedDraftRunId(resolveRunSelection(
-        nextDraftRuns,
-        preserveSelection ? selectedDraftRunIdRef.current : null,
-        preferredDraftRunId
-      ))
 
       const currentSynthesisId = preserveSelection ? selectedSynthesisRunIdRef.current : null
       setSelectedSynthesisRunId(
@@ -479,6 +288,36 @@ function ScientificWriting({ embedded = false }) {
     } finally {
       if (activeCollectionIdRef.current === collectionId && synthesisRequestIdRef.current === requestId) {
         setLoadingSynthesisRuns(false)
+      }
+    }
+  }, [])
+
+  const loadRedactionRuns = useCallback(async (collectionId, preferredRunId = null, options = {}) => {
+    const { preserveSelection = true } = options
+    if (!collectionId) return
+
+    const requestId = redactionRequestIdRef.current + 1
+    redactionRequestIdRef.current = requestId
+
+    try {
+      setLoadingRedactionRuns(true)
+      const response = await redactionAPI.listRuns(collectionId)
+      if (activeCollectionIdRef.current !== collectionId || redactionRequestIdRef.current !== requestId) return
+
+      const nextRuns = sortRunsByDate(response?.data?.runs || [])
+      setRedactionRuns(nextRuns)
+
+      setSelectedDraftRunId(resolveRunSelection(
+        nextRuns,
+        preserveSelection ? selectedDraftRunIdRef.current : null,
+        preferredRunId
+      ))
+    } catch (error) {
+      if (activeCollectionIdRef.current !== collectionId || redactionRequestIdRef.current !== requestId) return
+      setNotification(error.message || 'Error al cargar los borradores')
+    } finally {
+      if (activeCollectionIdRef.current === collectionId && redactionRequestIdRef.current === requestId) {
+        setLoadingRedactionRuns(false)
       }
     }
   }, [])
@@ -545,10 +384,12 @@ function ScientificWriting({ embedded = false }) {
   useEffect(() => {
     activeCollectionIdRef.current = selectedCollectionId
     synthesisRequestIdRef.current += 1
+    redactionRequestIdRef.current += 1
     evidenceRunsRequestIdRef.current += 1
     evidenceResultsRequestIdRef.current += 1
 
     setSynthesisRuns([])
+    setRedactionRuns([])
     setEvidenceRuns([])
     setEvidenceResults([])
     setSelectedSynthesisRunId(null)
@@ -558,29 +399,39 @@ function ScientificWriting({ embedded = false }) {
 
     if (!selectedCollectionId) {
       setLoadingSynthesisRuns(false)
+      setLoadingRedactionRuns(false)
       setLoadingEvidenceRuns(false)
       setLoadingEvidenceResults(false)
       return
     }
 
-    loadSynthesisRuns(selectedCollectionId, null, { preserveSelection: false })
+    loadSynthesisRuns(selectedCollectionId, { preserveSelection: false })
+    loadRedactionRuns(selectedCollectionId, null, { preserveSelection: false })
     loadEvidenceRuns(selectedCollectionId, { preserveSelection: false })
-  }, [loadEvidenceRuns, loadSynthesisRuns, selectedCollectionId])
+  }, [loadEvidenceRuns, loadRedactionRuns, loadSynthesisRuns, selectedCollectionId])
 
   useEffect(() => {
     loadEvidenceResults(selectedEvidenceRunId)
   }, [loadEvidenceResults, selectedEvidenceRunId])
 
   useArticlesEvents({
+    onRedactionReady: async (data) => {
+      if (data.collection_id !== activeCollectionIdRef.current) return
+      setNotification('Borrador completado correctamente')
+      await loadRedactionRuns(data.collection_id, data.run_id)
+    },
+    onRedactionError: async (data) => {
+      if (data.collection_id !== activeCollectionIdRef.current) return
+      setNotification(data.error_message || 'Error al generar el borrador')
+      await loadRedactionRuns(data.collection_id, data.run_id)
+    },
     onCollectionSynthesisReady: async (data) => {
       if (data.collection_id !== activeCollectionIdRef.current) return
-      setNotification('Generacion actualizada correctamente')
-      await loadSynthesisRuns(data.collection_id, data.run_id)
+      await loadSynthesisRuns(data.collection_id)
     },
     onCollectionSynthesisError: async (data) => {
       if (data.collection_id !== activeCollectionIdRef.current) return
-      setNotification(data.error_message || 'Error al generar el borrador')
-      await loadSynthesisRuns(data.collection_id, data.run_id)
+      await loadSynthesisRuns(data.collection_id)
     },
     onEvidenceExtractionReady: async (data) => {
       if (data.collection_id !== activeCollectionIdRef.current) return
@@ -593,7 +444,7 @@ function ScientificWriting({ embedded = false }) {
 
   useIntervalPolling(() => {
     if (!selectedCollectionId) return
-    loadSynthesisRuns(selectedCollectionId, selectedDraftRunIdRef.current)
+    loadRedactionRuns(selectedCollectionId, selectedDraftRunIdRef.current)
   }, {
     enabled: Boolean(selectedCollectionId && activeDraftRuns > 0),
     intervalMs: 4000,
@@ -608,21 +459,18 @@ function ScientificWriting({ embedded = false }) {
       return
     }
 
-    const prompt = buildDraftPrompt({
-      sectionLabel,
-      collectionName,
-      userIdeas: trimmedIdeas,
-      synthesisRun: selectedSynthesisRun,
-      evidenceRun: selectedEvidenceRun,
-      evidenceResults,
-    })
-
     try {
       setIsSubmitting(true)
-      const response = await collectionSynthesisAPI.runSynthesis(selectedCollectionId, prompt)
-      const createdRun = response?.data?.run || null
+      const response = await redactionAPI.createRun(selectedCollectionId, {
+        user_idea: trimmedIdeas,
+        text_type: textType,
+        synthesis_run_id: selectedSynthesisRunId || null,
+        evidence_extraction_run_id: selectedEvidenceRunId || null,
+        parent_run_id: null,
+      })
+      const createdRunId = response?.data?.run_id || null
 
-      await loadSynthesisRuns(selectedCollectionId, createdRun?._id || null)
+      await loadRedactionRuns(selectedCollectionId, createdRunId)
       setNotification('Borrador encolado correctamente')
     } catch (error) {
       setNotification(error.message || 'Error al generar el borrador cientifico')
@@ -650,21 +498,6 @@ function ScientificWriting({ embedded = false }) {
       document.body.removeChild(textarea)
       setNotification('Borrador copiado al portapapeles')
     }
-  }
-
-  const handleDownloadDraft = () => {
-    const text = cleanAssistantText(selectedDraftText)
-    if (!text) return
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = buildTxtFilename(collectionName, selectedDraftRun)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
   }
 
   const handleOpenDraftPdf = () => {
@@ -697,78 +530,28 @@ function ScientificWriting({ embedded = false }) {
     downloadPdfBlob(blob, buildPdfFilename(collectionName, selectedDraftRun))
   }
 
-  const handleOpenEditor = () => {
-    setEditorText(selectedDraftText)
-    setEditorInstruction('')
-    setIsEditorOpen(true)
-  }
-
-  const handleCloseEditor = () => {
-    setIsEditorOpen(false)
-    setEditorInstruction('')
-  }
-
-  const handleSaveLocalDraft = () => {
-    if (!selectedDraftRun) return
-
-    const originalText = cleanAssistantText(selectedDraftRun.response || '')
-    const nextText = cleanAssistantText(editorText)
-
-    setLocalDraftEdits((previousEdits) => {
-      const nextEdits = { ...previousEdits }
-      if (!nextText || nextText === originalText) {
-        delete nextEdits[selectedDraftRun._id]
-      } else {
-        nextEdits[selectedDraftRun._id] = nextText
-      }
-      saveStoredDraftEdits(nextEdits)
-      return nextEdits
-    })
-
-    setNotification('Cambios guardados en este navegador')
-  }
-
-  const handleRestoreOriginalDraft = () => {
-    if (!selectedDraftRun) return
-
-    setEditorText(cleanAssistantText(selectedDraftRun.response || ''))
-    setLocalDraftEdits((previousEdits) => {
-      const nextEdits = { ...previousEdits }
-      delete nextEdits[selectedDraftRun._id]
-      saveStoredDraftEdits(nextEdits)
-      return nextEdits
-    })
-    setNotification('Borrador restaurado a la version generada')
-  }
-
   const handleRequestDraftRevision = async () => {
-    const instruction = editorInstruction.trim()
-    const draftText = cleanAssistantText(editorText)
+    const instruction = revisionInstruction.trim()
 
     if (!selectedCollectionId || !selectedDraftRun || isRequestingRevision) return
     if (!instruction) {
       setNotification('Escribe que quieres cambiar antes de pedir una revision')
       return
     }
-    if (!draftText) {
-      setNotification('El documento no tiene contenido para revisar')
-      return
-    }
 
     try {
       setIsRequestingRevision(true)
-      handleSaveLocalDraft()
-      const prompt = buildDraftRevisionPrompt({
-        collectionName,
-        draftTitle: getDraftTitle(selectedDraftRun),
-        draftText,
-        instruction,
+      const response = await redactionAPI.createRun(selectedCollectionId, {
+        user_idea: instruction,
+        text_type: textType,
+        synthesis_run_id: selectedSynthesisRunId || null,
+        evidence_extraction_run_id: selectedEvidenceRunId || null,
+        parent_run_id: selectedDraftRun._id,
       })
-      const response = await collectionSynthesisAPI.runSynthesis(selectedCollectionId, prompt)
-      const createdRun = response?.data?.run || null
-      setEditorInstruction('')
+      const createdRunId = response?.data?.run_id || null
+      setRevisionInstruction('')
       setNotification('Revision con agente encolada correctamente')
-      await loadSynthesisRuns(selectedCollectionId, createdRun?._id || null)
+      await loadRedactionRuns(selectedCollectionId, createdRunId)
     } catch (error) {
       setNotification(error.message || 'Error al pedir cambios al agente')
     } finally {
@@ -824,11 +607,12 @@ function ScientificWriting({ embedded = false }) {
               className="btn-secondary"
               onClick={() => {
                 loadSynthesisRuns(selectedCollectionId)
+                loadRedactionRuns(selectedCollectionId, selectedDraftRunIdRef.current)
                 loadEvidenceRuns(selectedCollectionId)
               }}
             >
               <i className="fas fa-rotate-right"></i>
-              <span>{loadingSynthesisRuns || loadingEvidenceRuns ? 'Actualizando...' : 'Actualizar'}</span>
+              <span>{loadingSynthesisRuns || loadingRedactionRuns || loadingEvidenceRuns ? 'Actualizando...' : 'Actualizar'}</span>
             </button>
           </div>
 
@@ -903,18 +687,6 @@ function ScientificWriting({ embedded = false }) {
             </div>
           </div>
 
-          {textType === 'custom' ? (
-            <label className="scientific-writing-field">
-              <span>Nombre de la seccion</span>
-              <input
-                type="text"
-                value={customSection}
-                onChange={(event) => setCustomSection(event.target.value)}
-                placeholder="Ejemplo: Implicaciones teoricas"
-              />
-            </label>
-          ) : null}
-
           <label className="scientific-writing-field">
             <span>Ideas, hipotesis o conclusiones</span>
             <textarea
@@ -949,14 +721,14 @@ function ScientificWriting({ embedded = false }) {
               <span className="scientific-writing-count">{draftRuns.length}</span>
             </div>
 
-            {loadingSynthesisRuns && draftRuns.length === 0 ? (
+            {loadingRedactionRuns && draftRuns.length === 0 ? (
               <div className="scientific-writing-mini-empty">
                 <span className="spinner"></span>
                 <p>Cargando borradores...</p>
               </div>
             ) : null}
 
-            {!loadingSynthesisRuns && draftRuns.length === 0 ? (
+            {!loadingRedactionRuns && draftRuns.length === 0 ? (
               <div className="scientific-writing-mini-empty">
                 <i className="fas fa-file-circle-plus"></i>
                 <p>No hay borradores cientificos todavia para esta coleccion.</p>
@@ -987,7 +759,6 @@ function ScientificWriting({ embedded = false }) {
                 <span className="scientific-writing-kicker">Resultado</span>
                 <h2>{selectedDraftRun ? getDraftTitle(selectedDraftRun) : 'Borrador cientifico'}</h2>
               </div>
-              {hasLocalDraftEdit ? <span className="scientific-writing-edited-pill">Editado local</span> : null}
             </div>
 
             {!selectedDraftRun ? (
@@ -1013,7 +784,7 @@ function ScientificWriting({ embedded = false }) {
               <div className="scientific-writing-error">{selectedDraftRun.error_message}</div>
             ) : null}
 
-            {selectedDraftRun?.status === 'completed' && !selectedDraftRun.response ? (
+            {selectedDraftRun?.status === 'completed' && !selectedDraftText ? (
               <div className="scientific-writing-empty-result">
                 <i className="fas fa-file-circle-question"></i>
                 <p>Este run termino, pero no contiene texto de respuesta.</p>
@@ -1021,22 +792,67 @@ function ScientificWriting({ embedded = false }) {
             ) : null}
 
             {selectedDraftText ? (
-              <div className="scientific-writing-document-gate">
-                <i className="fas fa-file-lines"></i>
-                <h3>Documento preparado</h3>
-                <p>
-                  El borrador no se muestra directamente en el flujo. Abre el documento
-                  para leerlo, editarlo o pedir cambios al agente.
-                </p>
-                <button type="button" className="btn-primary" onClick={handleOpenEditor}>
-                  <i className="fas fa-file-pen"></i>
-                  <span>Ver doc</span>
-                </button>
+              <article className="scientific-writing-draft-readonly" aria-label="Borrador en solo lectura">
+                {selectedDraftSections.length > 0 ? (
+                  selectedDraftSections.map((section, index) => (
+                    <section
+                      key={`${selectedDraftRun._id}-section-${index}`}
+                      className="scientific-writing-draft-section"
+                    >
+                      <h3>{section.heading}</h3>
+                      {section.content.split('\n\n').map((paragraph, paragraphIndex) => (
+                        <p key={`${selectedDraftRun._id}-section-${index}-p-${paragraphIndex}`}>
+                          {paragraph}
+                        </p>
+                      ))}
+                    </section>
+                  ))
+                ) : (
+                  cleanAssistantText(selectedDraftText)
+                    .split('\n\n')
+                    .map((paragraph, paragraphIndex) => (
+                      <p key={`${selectedDraftRun._id}-p-${paragraphIndex}`}>{paragraph}</p>
+                    ))
+                )}
+
+                {selectedDraftReferences.length > 0 ? (
+                  <section className="scientific-writing-draft-references">
+                    <h3>Referencias citadas</h3>
+                    <ul>
+                      {selectedDraftReferences.map((reference, index) => (
+                        <li key={`${selectedDraftRun._id}-ref-${index}`}>
+                          <strong>{reference.cited_as || reference.article_title}</strong>
+                          {reference.article_title && reference.cited_as
+                            ? ` · ${reference.article_title}`
+                            : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+              </article>
+            ) : null}
+
+            {selectedReviewPoints.length > 0 ? (
+              <div className="scientific-writing-review-points">
+                <h3>
+                  <i className="fas fa-list-check"></i>
+                  <span>Puntos a revisar</span>
+                </h3>
+                <ul>
+                  {selectedReviewPoints.map((point, index) => (
+                    <li key={`${selectedDraftRun._id}-review-${index}`}>{point}</li>
+                  ))}
+                </ul>
               </div>
             ) : null}
 
             {selectedDraftText ? (
               <div className="scientific-writing-result-footer">
+                <button type="button" className="btn-secondary" onClick={handleCopyDraft}>
+                  <i className="fas fa-copy"></i>
+                  <span>Copiar al portapapeles</span>
+                </button>
                 <button type="button" className="btn-secondary" onClick={handleOpenDraftPdf}>
                   <i className="fas fa-eye"></i>
                   <span>Ver PDF</span>
@@ -1047,84 +863,34 @@ function ScientificWriting({ embedded = false }) {
                 </button>
               </div>
             ) : null}
+
+            {selectedDraftRun?.status === 'completed' && selectedDraftText ? (
+              <div className="scientific-writing-revision-panel">
+                <span className="scientific-writing-kicker">Pedir revision</span>
+                <h3>¿Que quieres cambiar?</h3>
+                <textarea
+                  value={revisionInstruction}
+                  onChange={(event) => setRevisionInstruction(event.target.value)}
+                  placeholder="Ejemplo: refuerza la discusion teorica, reduce repeticiones y aclara que las citas deben revisarse."
+                  rows={6}
+                />
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleRequestDraftRevision}
+                  disabled={isRequestingRevision || !revisionInstruction.trim()}
+                >
+                  <i className={`fas ${isRequestingRevision ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
+                  <span>{isRequestingRevision ? 'Pidiendo revision...' : 'Pedir revision'}</span>
+                </button>
+                <p>
+                  Se generara un nuevo borrador en el historial encadenado al actual mediante <code>parent_run_id</code>.
+                </p>
+              </div>
+            ) : null}
           </section>
         </main>
       </div>
-
-      {isEditorOpen && selectedDraftRun ? (
-        <div className="scientific-writing-editor-overlay" role="dialog" aria-modal="true">
-          <div className="scientific-writing-editor-shell">
-            <section className="scientific-writing-editor-document">
-              <header className="scientific-writing-editor-header">
-                <div>
-                  <span className="scientific-writing-kicker">Documento editable</span>
-                  <h2>{getDraftTitle(selectedDraftRun)}</h2>
-                </div>
-                <button
-                  type="button"
-                  className="scientific-writing-editor-close"
-                  onClick={handleCloseEditor}
-                  aria-label="Cerrar documento"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </header>
-
-              <textarea
-                className="scientific-writing-editor-textarea"
-                value={editorText}
-                onChange={(event) => setEditorText(event.target.value)}
-                spellCheck="true"
-              />
-
-              <footer className="scientific-writing-editor-actions">
-                <button type="button" className="btn-primary" onClick={handleSaveLocalDraft}>
-                  <i className="fas fa-floppy-disk"></i>
-                  <span>Guardar cambios</span>
-                </button>
-                <button type="button" className="btn-secondary" onClick={handleRestoreOriginalDraft}>
-                  <i className="fas fa-rotate-left"></i>
-                  <span>Restaurar original</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    handleSaveLocalDraft()
-                    handleCloseEditor()
-                  }}
-                >
-                  <i className="fas fa-check"></i>
-                  <span>Aplicar y cerrar</span>
-                </button>
-              </footer>
-            </section>
-
-            <aside className="scientific-writing-editor-agent">
-              <span className="scientific-writing-kicker">Agente de revision</span>
-              <h3>Pedir cambios sobre el documento</h3>
-              <textarea
-                value={editorInstruction}
-                onChange={(event) => setEditorInstruction(event.target.value)}
-                placeholder="Ejemplo: refuerza la discusion teorica, reduce repeticiones y deja mas claro que las citas deben revisarse."
-                rows={12}
-              />
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handleRequestDraftRevision}
-                disabled={isRequestingRevision || !editorInstruction.trim()}
-              >
-                <i className={`fas ${isRequestingRevision ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
-                <span>{isRequestingRevision ? 'Pidiendo cambios...' : 'Aplicar con IA'}</span>
-              </button>
-              <p>
-                Se generara un nuevo borrador en el historial usando el texto editable como base.
-              </p>
-            </aside>
-          </div>
-        </div>
-      ) : null}
 
       <NotificationToast message={notification} onClose={() => setNotification('')} />
     </div>

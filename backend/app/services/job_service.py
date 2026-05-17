@@ -12,6 +12,7 @@ COLLECTION_SCREENING_JOB = "screen_collection"
 COLLECTION_SYNTHESIS_JOB = "synthesize_collection"
 EVIDENCE_EXTRACTION_JOB = "extract_evidence"
 CLUSTERING_JOB = "cluster_evidence"
+JOB_GENERATE_REDACTION = "generate_redaction"
 
 
 class JobService:
@@ -147,6 +148,33 @@ class JobService:
                 "collection_id": collection_id,
                 "evidence_extraction_run_id": evidence_extraction_run_id,
                 "requested_cluster_count": requested_cluster_count,
+            },
+        )
+
+    async def enqueue_redaction(
+        self,
+        *,
+        user_id: str,
+        run_id: str,
+        collection_id: str,
+        user_idea: str,
+        text_type: str,
+        synthesis_run_id: str | None = None,
+        evidence_extraction_run_id: str | None = None,
+        parent_run_id: str | None = None,
+    ) -> str:
+        return await self.enqueue(
+            job_type=JOB_GENERATE_REDACTION,
+            user_id=user_id,
+            payload={
+                "user_id": user_id,
+                "run_id": run_id,
+                "collection_id": collection_id,
+                "user_idea": user_idea,
+                "text_type": text_type,
+                "synthesis_run_id": synthesis_run_id,
+                "evidence_extraction_run_id": evidence_extraction_run_id,
+                "parent_run_id": parent_run_id,
             },
         )
 
