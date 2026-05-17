@@ -37,6 +37,11 @@ class CollectionSynthesisController:
         if not exists:
             raise NotFoundError("Coleccion no encontrada")
 
+        await self.collection_synthesis_service.ensure_collection_has_processed_pdfs(
+            user_id=current_user["_id"],
+            collection_id=collection_id,
+        )
+
         run = await self.collection_synthesis_run_service.create_run(
             user_id=current_user["_id"],
             run_data=CollectionSynthesisData(

@@ -3,6 +3,8 @@ import logging
 import re
 from typing import Optional
 
+from fastapi import Depends
+
 from app.ai_assistant.agents.base_agents.base_agent import BaseAgent
 from app.ai_assistant.agents.base_agents.rag_engine import RagEngine
 from app.ai_assistant.config import (
@@ -10,13 +12,20 @@ from app.ai_assistant.config import (
     get_rag_strategy_config,
 )
 from app.ai_assistant.retrieval.faiss_loader import load_faiss_indexes
-from app.ai_assistant.retrieval.metadata_index import ensure_metadata_index
+from app.core.exceptions import ValidationError
+from app.repositories import ArticleRepository
+from app.services.storage_service import StorageService
 
 logger = logging.getLogger(__name__)
 
 FULL_TEXT_CONTEXT = "full_text"
-METADATA_CONTEXT = "metadata"
 COLLECTION_SYNTHESIS_PROMPT_VERSION = "v2.0.0"
+COLLECTION_SYNTHESIS_NO_PDF_MESSAGE = (
+    "Esta colección no contiene ningún artículo con PDF procesado. "
+    "La síntesis necesita al menos un PDF para producir un resultado fiable. "
+    "Procesa al menos un PDF de los artículos de esta colección, o utiliza el "
+    "asistente conversacional para hacer preguntas sobre los metadatos."
+)
 COLLECTION_SYNTHESIS_SYSTEM_PROMPT = """
 Eres un sintetizador de colecciones cientificas.
 Trabajas sobre una sola coleccion del usuario y debes convertir varios documentos en una sintesis util.
@@ -73,6 +82,36 @@ def rag_has_context(rag_context: Optional[str]) -> bool:
 
 
 class CollectionSynthesisService:
+    def __init__(
+        self,
+        article_repository: ArticleRepository = Depends(ArticleRepository),
+        storage_service: StorageService = Depends(StorageService),
+    ):
+        self.article_repository = article_repository
+        self.storage_service = storage_service
+
+    async def ensure_collection_has_processed_pdfs(
+        self,
+        *,
+        user_id: str,
+        collection_id: str,
+    ) -> None:
+        article_ids = await self.article_repository.get_scope_article_ids(
+            user_id=user_id,
+            collection_id=collection_id,
+        )
+        for article_id in article_ids:
+            faiss_file = (
+                self.storage_service.get_faiss_article_dir(
+                    user_id=user_id,
+                    article_id=article_id,
+                )
+                / "index.faiss"
+            )
+            if faiss_file.exists():
+                return
+        raise ValidationError(COLLECTION_SYNTHESIS_NO_PDF_MESSAGE)
+
     def _build_agents(self) -> tuple[BaseAgent, RagEngine]:
         config = get_collection_synthesis_config()
         llm_agent = BaseAgent(
@@ -134,11 +173,6 @@ class CollectionSynthesisService:
         if rag_has_context(rag_context):
             return rag_context, FULL_TEXT_CONTEXT
 
-        await ensure_metadata_index(agent=agent, user_id=user_id, collection_id=collection_id)
-        rag_context = agent.retrieve(user_message=user_message, strategy=strategy)
-        if rag_has_context(rag_context):
-            return rag_context, METADATA_CONTEXT
-
         return rag_context, None
 
     def _build_prompt_input(
@@ -148,15 +182,10 @@ class CollectionSynthesisService:
         collection_id: str,
         context_source: str,
     ) -> str:
-        source_label = (
-            "texto completo indexado"
-            if context_source == FULL_TEXT_CONTEXT
-            else "metadatos, abstracts y notas del usuario"
-        )
         return (
             f"Coleccion activa: {collection_id}\n"
             f"Solicitud del usuario: {user_message}\n"
-            f"Fuente principal disponible: {source_label}\n\n"
+            f"Fuente principal disponible: texto completo indexado\n\n"
         )
 
     def _normalize_output(self, raw_output: str) -> str:
@@ -213,6 +242,11 @@ class CollectionSynthesisService:
                 "context_source": None,
             }
 
+        await self.ensure_collection_has_processed_pdfs(
+            user_id=user_id,
+            collection_id=collection_id,
+        )
+
         llm_agent, rag_engine = self._build_agents()
 
         rag_context, context_source = await self._retrieve_collection_context(
@@ -251,13 +285,6 @@ class CollectionSynthesisService:
             if fail_on_timeout:
                 raise RuntimeError(timeout_message) from exc
             output = timeout_message
-
-        if context_source == METADATA_CONTEXT:
-            output = (
-                "Nota: esta sintesis se ha generado con metadatos y resumenes disponibles, "
-                "porque no encontre suficiente texto completo indexado en la coleccion.\n\n"
-                f"{output}"
-            )
 
         output = self._normalize_output(output)
         llm_agent.print_agent_execution(
