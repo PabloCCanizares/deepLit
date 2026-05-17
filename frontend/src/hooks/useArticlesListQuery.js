@@ -47,5 +47,6 @@ export function useArticlesListQuery({
         sort_by: sortBy,
       }),
     enabled,
+    staleTime: 0, 
   })
 }

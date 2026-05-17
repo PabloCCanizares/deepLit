@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import ArticleGraph from '../components/dashboard/ArticleGraph'
 import { articleGraphAPI } from '../api/index.js'
 import '../styles/App.css'
 
 function KnowledgeGraph() {
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   const { isFetching, refetch } = useQuery({
     queryKey: ['article-graph'],
     queryFn: async () => {

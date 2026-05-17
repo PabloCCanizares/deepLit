@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from typing import Dict, List, Optional
 
 from langchain_core.documents import Document
@@ -16,7 +15,6 @@ from app.ai_assistant.knowledge_graph.schema import (
     node_key,
     normalize_rel_type,
     sanitize_entity_type,
-    validate_graph_documents,
 )
 from app.config import settings
 
@@ -28,7 +26,6 @@ class KnowledgeGraphService:
         self.mongo = MongoClient(settings.MONGODB_URL)
         self.db = self.mongo[settings.DATABASE_NAME]
         self.articles = self.db["articles"]
-        self.quality_logs = self.db["knowledge_graph_quality"]
 
     def _get_graph(self):
         if not all([settings.NEO4J_URL, settings.NEO4J_USERNAME, settings.NEO4J_PASSWORD]):
@@ -80,19 +77,6 @@ class KnowledgeGraphService:
                 )
             )
         return truncated
-
-    def _save_quality_log(self, user_id: str, article_id: str, report: Dict) -> None:
-        try:
-            self.quality_logs.insert_one(
-                {
-                    "user_id": user_id,
-                    "article_id": article_id,
-                    "created_at": datetime.utcnow(),
-                    **report,
-                }
-            )
-        except Exception as exc:
-            logger.warning("No se pudo guardar quality log de KG: %s", exc)
 
     def _upsert_paper_node(self, graph, user_id: str, article_id: str, title: str, collection_ids: List[str]) -> None:
         graph.query(
@@ -222,7 +206,6 @@ class KnowledgeGraphService:
         transformer = self._build_transformer()
         docs_for_kg = self._truncate_docs(docs)
         graph_documents = transformer.convert_to_graph_documents(docs_for_kg)
-        quality_report = validate_graph_documents(graph_documents)
 
         for graph_doc in graph_documents:
             for node in (getattr(graph_doc, "nodes", []) or []):
@@ -239,12 +222,7 @@ class KnowledgeGraphService:
                     target_node=getattr(rel, "target", None),
                 )
 
-        self._save_quality_log(user_id=user_id, article_id=article_id, report=quality_report)
-        return {
-            "enabled": True,
-            "article_id": article_id,
-            "extraction_quality": quality_report,
-        }
+        return {"enabled": True, "article_id": article_id}
 
     def ingest_article_record(self, article: Dict, user_id: str, reprocess: bool = False) -> Dict:
         article_id = str(article.get("_id", ""))
@@ -354,17 +332,6 @@ class KnowledgeGraphService:
                 "limit": int(limit),
             },
         )
-
-    def get_quality_logs(self, user_id: str, article_id: Optional[str] = None, limit: int = 50) -> List[Dict]:
-        query: Dict = {"user_id": user_id}
-        if article_id:
-            query["article_id"] = article_id
-        cursor = self.quality_logs.find(query).sort("created_at", -1).limit(int(limit))
-        result = []
-        for row in cursor:
-            row["_id"] = str(row["_id"])
-            result.append(row)
-        return result
 
     def backfill(self, user_id: str, collection_id: Optional[str] = None, limit: int = 100, reprocess: bool = False) -> Dict:
         query: Dict = {"id_user": user_id, "status": "ready"}

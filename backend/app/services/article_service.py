@@ -329,14 +329,19 @@ class ArticleService:
         article_id: str,
         user_id: str,
         features: Dict
-    ) -> Dict:
+    ) -> Optional[Dict]:
         """
         Actualizar artículo después del procesamiento en background.
         Cambia status a 'ready' e inyecta la metadata extraída.
+        Devuelve None si el artículo no existe (puede haber sido eliminado).
         """
         article = await self.article_repo.find_by_id(article_id)
         if not article:
-            raise NotFoundError("Artículo no encontrado")
+            logger.warning(
+                "update_from_processing: artículo %s no encontrado (puede haber sido eliminado mientras se procesaba)",
+                article_id,
+            )
+            return None
         if article.get("id_user") != user_id:
             raise AuthorizationError("No tienes permiso para modificar este artículo")
 
@@ -358,7 +363,7 @@ class ArticleService:
     ) -> Optional[Dict]:
         article = await self.article_repo.find_by_id(article_id)
         if not article:
-            raise NotFoundError("Artículo no encontrado")
+            return None
         if article.get("id_user") != user_id:
             raise AuthorizationError("No tienes permiso para modificar este artículo")
 
@@ -668,6 +673,8 @@ class ArticleService:
 
         # Actualizar
         updated_article = await self.article_repo.update(article_id, normalized_partial)
+        if updated_article:
+            await self._sync_article_graph(updated_article, user_id)
         return updated_article
     
     async def get_queue(self, user_id: str) -> List[Dict]:

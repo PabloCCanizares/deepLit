@@ -20,4 +20,5 @@ class AgentState(TypedDict):
     prompt_version: Optional[str]
     web_search_meta: Optional[dict]
     previous_agent: Optional[str]
-    next_agent: Optional[str] 
+    next_agent: Optional[str]
+    graph_rag_context: Optional[str]

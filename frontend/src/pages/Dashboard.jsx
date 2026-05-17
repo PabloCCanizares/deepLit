@@ -54,6 +54,7 @@ function Dashboard() {
     onArticleReady: () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       queryClient.invalidateQueries({ queryKey: ['article-graph'] })
+      queryClient.invalidateQueries({ queryKey: ['articles', 'list'] })
     },
   })
 

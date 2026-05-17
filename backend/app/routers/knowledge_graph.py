@@ -79,24 +79,6 @@ async def get_entity_neighbors(
     )
 
 
-@router.get(
-    "/quality",
-    response_model=StandardResponse,
-    summary="Consultar calidad de extracción de relaciones",
-)
-async def get_quality_logs(
-    article_id: Optional[str] = None,
-    limit: int = Query(default=50, ge=1, le=300),
-    current_user: dict = Depends(get_current_user),
-    controller: KnowledgeGraphController = Depends(),
-):
-    return await controller.get_quality_logs(
-        current_user=current_user,
-        article_id=article_id,
-        limit=limit,
-    )
-
-
 @router.post(
     "/backfill",
     response_model=StandardResponse,

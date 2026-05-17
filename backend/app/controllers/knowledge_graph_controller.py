@@ -50,16 +50,6 @@ class KnowledgeGraphController:
         )
         return StandardResponse(success=True, message="Vecinos de entidad obtenidos", data={"items": data})
 
-    async def get_quality_logs(
-        self,
-        current_user: dict,
-        article_id: str = None,
-        limit: int = 50,
-    ) -> StandardResponse:
-        user_id = current_user.get("_id")
-        data = self.service.get_quality_logs(user_id=user_id, article_id=article_id, limit=limit)
-        return StandardResponse(success=True, message="Calidad de extraccion obtenida", data={"items": data})
-
     async def backfill(
         self,
         current_user: dict,

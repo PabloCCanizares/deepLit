@@ -6,6 +6,7 @@ import logging
 from typing import Optional
 
 from app.services.article_service import ArticleService
+from app.services.article_graph_service import ArticleGraphService
 from app.services.clustering_run_service import ClusteringRunService
 from app.services.clustering_service import ClusteringService
 from app.services.evidence_extraction_run_service import EvidenceExtractionRunService
@@ -22,7 +23,6 @@ from app.services.job_service import (
     EVIDENCE_EXTRACTION_JOB,
     CLUSTERING_JOB,
 )
-from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.pdf_processing_service import PdfProcessingService
 from app.services.sse_manager import sse_manager
 from app.services.storage_service import StorageService
@@ -43,8 +43,8 @@ class JobWorker:
         self.collection_screening_service = CollectionScreeningService()
         self.collection_synthesis_service = CollectionSynthesisService()
         self.collection_synthesis_run_service = CollectionSynthesisRunService()
-        self.knowledge_graph_service = KnowledgeGraphService()
         self.pdf_processing_service = PdfProcessingService()
+        self.article_graph_service = ArticleGraphService()
         self.storage_service = StorageService()
         self.handlers = {
             PDF_PROCESSING_JOB: self._process_pdf_job,
@@ -84,11 +84,6 @@ class JobWorker:
         finally:
             self._task = None
 
-        try:
-            self.knowledge_graph_service.mongo.close()
-        except Exception:
-            logger.debug("No se pudo cerrar cliente sync del knowledge graph", exc_info=True)
-
         logger.info("Job worker detenido")
 
     async def run(self) -> None:
@@ -120,6 +115,22 @@ class JobWorker:
 
         await handler(job)
 
+    async def _refresh_embeddings(self, user_id: str) -> None:
+        """Recalcula embeddings del grafo para el usuario (best-effort, no bloquea el worker)."""
+        try:
+            result = await asyncio.to_thread(
+                self.article_graph_service.compute_embeddings,
+                user_id,
+            )
+            if result.get("success"):
+                written = result.get("embeddings_written", 0)
+                if written:
+                    logger.info("Embeddings calculados para user_id=%s: %s nodos nuevos", user_id, written)
+            else:
+                logger.debug("compute_embeddings sin cambios para user_id=%s: %s", user_id, result.get("reason"))
+        except Exception as exc:
+            logger.warning("No se pudieron calcular embeddings para user_id=%s: %s", user_id, exc)
+
     async def _process_pdf_job(self, job: dict) -> None:
         payload = job.get("payload", {})
         job_id = str(job.get("_id"))
@@ -128,6 +139,15 @@ class JobWorker:
         absolute_path = payload.get("absolute_path")
         filename = payload.get("filename") or article_id or "PDF"
         collection_id = payload.get("collection_id")
+
+        if not article_id:
+            logger.error(
+                "Job PDF %s no tiene article_id en el payload. Marcando como fallido.", job_id
+            )
+            await self.job_service.mark_failed(
+                job_id, "Payload inválido: falta article_id"
+            )
+            return
 
         try:
             logger.info("Procesando job PDF %s para article_id=%s", job_id, article_id)
@@ -145,28 +165,30 @@ class JobWorker:
                 features=processed_info["metadata"],
             )
             if not updated_article:
-                raise RuntimeError(f"No se pudo actualizar el articulo {article_id}")
-
-            try:
-                await asyncio.to_thread(
-                    self.knowledge_graph_service.ingest_documents,
-                    user_id=user_id,
-                    article_id=article_id,
-                    title=updated_article.get("title", filename),
-                    docs=processed_info.get("docs", []),
-                    collection_ids=updated_article.get("collection_ids", []) or (
-                        [] if not collection_id else [collection_id]
-                    ),
-                    reprocess=True,
-                )
-            except Exception as kg_exc:
                 logger.warning(
-                    "Knowledge graph no actualizado para %s: %s",
+                    "Artículo %s no encontrado al actualizar tras procesamiento "
+                    "(puede haber sido eliminado). Marcando job %s como fallido.",
                     article_id,
-                    kg_exc,
+                    job_id,
                 )
+                await self.job_service.mark_failed(
+                    job_id,
+                    f"Artículo {article_id} no encontrado al actualizar (puede haber sido eliminado)",
+                )
+                sse_manager.notify(
+                    user_id,
+                    "article_error",
+                    {
+                        "_id": article_id,
+                        "title": filename,
+                        "status": "error",
+                        "error_message": "Artículo eliminado durante el procesamiento",
+                    },
+                )
+                return
 
             await self.job_service.mark_completed(job_id)
+            asyncio.create_task(self._refresh_embeddings(user_id))
 
             sse_manager.notify(
                 user_id,

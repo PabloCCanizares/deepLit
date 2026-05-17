@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { articleGraphAPI } from '../../api/index.js'
 import { useArticlesEvents } from '../../hooks/useArticlesEvents.js'
+import ArticleNodeCard from './ArticleNodeCard.jsx'
 import '../../styles/dashboard/ArticleGraph.css'
 
 // ─── constantes visuales ───────────────────────────────────────────────────────
@@ -18,10 +19,19 @@ const NODE_STYLES = {
 }
 
 const EDGE_LABELS = {
-  WROTE:       'escribió',
+  WROTE:       'autor',
   HAS_KEYWORD: 'keyword',
   IN_CATEGORY: 'categoría',
   OF_TYPE:     'tipo',
+}
+
+// Configuración por tipo de nodo para las consultas de similitud GDS
+const SIM_NODE_CONFIG = {
+  Article:  { node_id_prop: 'article_id', label_prop: 'title', getId: (n) => n.article_id },
+  Author:   { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  Keyword:  { node_id_prop: 'key_lower',  label_prop: 'key',   getId: (n) => n.label?.toLowerCase() },
+  Category: { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  Type:     { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
 }
 
 const WIDTH     = 1400
@@ -312,6 +322,18 @@ function ArticleGraph() {
   const [shortestPath,  setShortestPath]  = useState(null)
   const [viewport,      setViewport]      = useState({ x: 0, y: 0, scale: 1 })
   const [isPanning,     setIsPanning]     = useState(false)
+  const [showSearch,       setShowSearch]       = useState(false)
+  const [searchQuery,      setSearchQuery]      = useState('')
+  const [searchTypes,      setSearchTypes]      = useState(() => new Set(NODE_TYPES))
+  const [showSearchFilter, setShowSearchFilter] = useState(false)
+  const [showSimilarity,   setShowSimilarity]   = useState(false)
+  const [simNode,          setSimNode]          = useState(null)
+  const [simOp,            setSimOp]            = useState('gte')
+  const [simThreshold,     setSimThreshold]     = useState(70)
+  const [simResultSet,     setSimResultSet]     = useState(null)   // Set<graphNodeId> | null
+  const [cardNode,         setCardNode]         = useState(null)   // nodo Article para el popup
+  const lastClickRef = useRef({ id: null, time: 0 })
+  const [simLoading,       setSimLoading]       = useState(false)
   const containerRef = useRef(null)
   const svgRef       = useRef(null)
   const draggingRef  = useRef(null)
@@ -388,6 +410,16 @@ function ArticleGraph() {
   // Conjuntos para el camino más corto (guía)
   const shortestPathSet = useMemo(() => new Set(shortestPath || []), [shortestPath])
 
+  // Aristas que forman el camino (pares consecutivos)
+  const shortestPathEdgeSet = useMemo(() => {
+    if (!shortestPath || shortestPath.length < 2) return new Set()
+    const s = new Set()
+    for (let i = 0; i < shortestPath.length - 1; i++) {
+      s.add(`${shortestPath[i]}|${shortestPath[i + 1]}`)
+    }
+    return s
+  }, [shortestPath])
+
   // Datos del flujo animado — path por bordes de nodos (no por centros)
   const flowPathD = useMemo(() => {
     if (!shortestPath || shortestPath.length < 2) return null
@@ -424,6 +456,29 @@ function ArticleGraph() {
     return fracs
   }, [shortestPath, positionsById])
 
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return []
+    return displayNodes
+      .filter((n) => searchTypes.has(n.type) && n.label?.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [searchQuery, searchTypes, displayNodes])
+
+  const focusNode = (node) => {
+    // zoom para que el nodo ocupe ~la mitad del alto visible
+    const style = getNodeStyle(node.type)
+    const zoomScale = HEIGHT / (style.radius * 4)
+    setViewport({
+      scale: zoomScale,
+      x: node.x - WIDTH  / (2 * zoomScale),
+      y: node.y - HEIGHT / (2 * zoomScale),
+    })
+    setHoveredNode(node)
+    setShowSearch(false)
+    setSearchQuery('')
+    setShowSearchFilter(false)
+  }
+
   const toggleType = (type) => {
     setActiveTypes((prev) => {
       const next = new Set(prev)
@@ -434,30 +489,35 @@ function ArticleGraph() {
 
   useEffect(() => { setHoveredNode(null) }, [activeTypes])
 
-  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
-    if (!showLegend) return
+    if (!showLegend && !showSearch) return
     const handleOutside = (e) => {
-      if (!legendRef.current?.contains(e.target)) setShowLegend(false)
+      if (!legendRef.current?.contains(e.target)) {
+        setShowLegend(false)
+        setShowSearch(false)
+        setShowSearchFilter(false)
+      }
     }
     document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
-  }, [showLegend])
+  }, [showLegend, showSearch])
 
-  // Mantener ref del viewport sincronizada (para usarla en handlers nativos sin closure stale)
   useEffect(() => { viewportRef.current = viewport }, [viewport])
 
-  // Zoom con rueda del ratón — listener nativo para poder llamar preventDefault
   useEffect(() => {
-    const svg = svgRef.current
-    if (!svg) return
+    const container = containerRef.current
+    const svg       = svgRef.current
+    if (!container || !svg) return
+
     const onWheel = (e) => {
       e.preventDefault()
       const factor = e.deltaY < 0 ? 1.12 : 0.88
       const pt = svg.createSVGPoint()
       pt.x = e.clientX
       pt.y = e.clientY
-      const sp = pt.matrixTransform(svg.getScreenCTM().inverse())
+      const svgCTM = svg.getScreenCTM()
+      if (!svgCTM) return
+      const sp = pt.matrixTransform(svgCTM.inverse())
       setViewport((prev) => {
         const newScale = Math.min(6, Math.max(0.2, prev.scale * factor))
         const newX = sp.x - (sp.x - prev.x) * (prev.scale / newScale)
@@ -465,8 +525,9 @@ function ArticleGraph() {
         return { x: newX, y: newY, scale: newScale }
       })
     }
-    svg.addEventListener('wheel', onWheel, { passive: false })
-    return () => svg.removeEventListener('wheel', onWheel)
+
+    container.addEventListener('wheel', onWheel, { passive: false })
+    return () => container.removeEventListener('wheel', onWheel)
   }, [])
 
   // ── helpers de drag ─────────────────────────────────────────────────────────────────
@@ -480,8 +541,68 @@ function ArticleGraph() {
     return pt.matrixTransform(svg.getScreenCTM().inverse())
   }
 
-  // Selección de nodo para guía (sólo si no se arrastro)
+  const handleSimSearch = async () => {
+    if (!simNode) return
+    const cfg = SIM_NODE_CONFIG[simNode.type]
+    if (!cfg) return
+    const nodeIdValue = cfg.getId(simNode)
+    if (!nodeIdValue) return
+    setSimLoading(true)
+    try {
+      await articleGraphAPI.computeEmbeddings()
+
+      const response = await articleGraphAPI.getSimilar({
+        node_label:     simNode.type,
+        node_id_prop:   cfg.node_id_prop,
+        node_id_value:  nodeIdValue,
+        label_prop:     cfg.label_prop,
+        min_similarity: 0,
+        top_k:          50,
+      })
+      if (!response?.success) { setSimResultSet(new Set()); return }
+      const results  = response.data?.results || []
+      const thresh   = simThreshold / 100
+      const filtered = results.filter(({ similarity_score: s }) => {
+        if (simOp === 'gte') return s >= thresh
+        if (simOp === 'lte') return s <= thresh
+        if (simOp === 'eq')  return Math.abs(s - thresh) <= 0.05
+        return false
+      })
+      const matchIds = new Set()
+      for (const result of filtered) {
+        const match = allNodes.find((n) => {
+          if (n.type !== simNode.type) return false
+          if (simNode.type === 'Article') return String(n.article_id) === String(result.node_id)
+          return n.label?.toLowerCase() === result.node_id
+        })
+        if (match) matchIds.add(match.id)
+      }
+      setSimResultSet(matchIds)
+    } catch (err) {
+      console.error('Similitud:', err)
+      setSimResultSet(new Set())
+    } finally {
+      setSimLoading(false)
+    }
+  }
+
   const handleNodeClick = (node) => {
+    // Doble clic en artículo → abrir card de información
+    if (node.type === 'Article') {
+      const now = Date.now()
+      if (lastClickRef.current.id === node.id && now - lastClickRef.current.time < 400) {
+        lastClickRef.current = { id: null, time: 0 }
+        setCardNode(node)
+        return
+      }
+      lastClickRef.current = { id: node.id, time: now }
+    }
+
+    if (showSimilarity) {
+      setSimNode(node)
+      setSimResultSet(null) 
+      return
+    }
     if (!guideMode) return
     if (!pathOrigin) {
       setPathOrigin(node); setPathDest(null); setShortestPath(null)
@@ -546,13 +667,18 @@ function ArticleGraph() {
       const rect = svg.getBoundingClientRect()
       const dx = (e.clientX - clientX) / rect.width  * (WIDTH  / scale)
       const dy = (e.clientY - clientY) / rect.height * (HEIGHT / scale)
+      isPanningRef.current.hasMoved = true
       setViewport((prev) => ({ ...prev, x: vx - dx, y: vy - dy }))
     }
   }
 
   const handleSVGTouchMove  = (e) => { if (e.touches.length === 1) applyDrag(e.touches[0].clientX, e.touches[0].clientY) }
-  const handleDragEnd       = ()  => {
+  const handleDragEnd       = (e)  => {
     if (draggingRef.current && !draggingRef.current.hasMoved) handleNodeClick(draggingRef.current.clickNode)
+    if (e?.type === 'mouseup' && !draggingRef.current && !isPanningRef.current?.hasMoved) {
+      setPathOrigin(null); setPathDest(null); setShortestPath(null)
+      setSimNode(null); setSimResultSet(null)
+    }
     draggingRef.current = null
     isPanningRef.current = null
     setIsDragging(false)
@@ -583,7 +709,9 @@ function ArticleGraph() {
             { key: 'relationships', label: 'Relaciones', color: '#64748b' },
           ].map(({ key, label, color }) => (
             <div key={key} className="article-graph__kpi" style={{ '--kpi-color': color }}>
-              <span className="article-graph__kpi-value">{stats[key] ?? 0}</span>
+              <span className="article-graph__kpi-value">
+                {stats[key] ?? 0}
+              </span>
               <span className="article-graph__kpi-label">{label}</span>
             </div>
           ))}
@@ -609,12 +737,52 @@ function ArticleGraph() {
               onClick={() => {
                 const next = !guideMode
                 setGuideMode(next)
-                if (next) setShowLegend(false)
+                if (next) {
+                  setShowLegend(false)
+                  setShowSimilarity(false)
+                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                }
                 setPathOrigin(null); setPathDest(null); setShortestPath(null)
               }}
             >
               <i className="fas fa-route" />
               Enrutador
+            </button>
+            <span className="article-graph__legend-separator" />
+            <button
+              type="button"
+              className={`article-graph__legend-trigger${showSimilarity ? ' is-active' : ''}`}
+              title="Similitud de nodo"
+              onClick={() => {
+                const next = !showSimilarity
+                setShowSimilarity(next)
+                if (next) {
+                  setShowLegend(false); setShowSearch(false); setSearchQuery(''); setShowSearchFilter(false)
+                  setGuideMode(false)
+                  setPathOrigin(null); setPathDest(null); setShortestPath(null)
+                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                } else {
+                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                }
+              }}
+            >
+              <i className="fas fa-share-nodes" />
+              Similitud
+            </button>
+            <span className="article-graph__legend-separator" />
+            <button
+              type="button"
+              className={`article-graph__legend-trigger${showSearch ? ' is-active' : ''}`}
+              title="Buscar nodo"
+              onClick={() => {
+                const next = !showSearch
+                setShowSearch(next)
+                if (next) { setShowLegend(false); setShowSimilarity(false) }
+                else { setSearchQuery(''); setShowSearchFilter(false) }
+              }}
+            >
+              <i className="fas fa-search" />
+              Buscar
             </button>
           </div>
 
@@ -683,6 +851,152 @@ function ArticleGraph() {
               )}
             </div>
           )}
+
+          {showSimilarity && (
+            <div className="article-graph__legend-dropdown article-graph__sim-panel">
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
+                Nodo
+                <span
+                  className="article-graph__guide-node-name"
+                  style={{ color: simNode ? getNodeStyle(simNode.type).color : undefined }}
+                >
+                  {simNode?.label || '—'}
+                </span>
+              </div>
+              <span className="article-graph__legend-separator" />
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default', padding: '0 0.25rem' }}>
+                <select
+                  className="article-graph__sim-op-select"
+                  value={simOp}
+                  onChange={(e) => setSimOp(e.target.value)}
+                >
+                  <option value="gte">mayor o igual</option>
+                  <option value="lte">menor o igual</option>
+                  <option value="eq">igual a</option>
+                </select>
+              </div>
+              <span className="article-graph__legend-separator" />
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default', gap: '0.5rem', flexShrink: 1 }}>
+                <input
+                  type="range"
+                  className="article-graph__sim-slider"
+                  min={0}
+                  max={100}
+                  value={simThreshold}
+                  style={{ '--val': simThreshold }}
+                  onChange={(e) => setSimThreshold(Number(e.target.value))}
+                />
+                <span className="article-graph__sim-value">{simThreshold}%</span>
+              </div>
+              <span className="article-graph__legend-separator" />
+              <button
+                type="button"
+                className="article-graph__legend-item is-active"
+                onClick={handleSimSearch}
+                disabled={!simNode || simLoading}
+                style={{ opacity: (!simNode || simLoading) ? 0.45 : 1, cursor: (!simNode || simLoading) ? 'not-allowed' : 'pointer' }}
+                title="Buscar nodos similares"
+              >
+                {simLoading
+                  ? <i className="fas fa-spinner fa-spin" style={{ fontSize: '0.72rem' }} />
+                  : <i className="fas fa-search" style={{ fontSize: '0.72rem' }} />}
+                Buscar
+              </button>
+              {(simNode || simResultSet !== null) && (
+                <>
+                  <span className="article-graph__legend-separator" />
+                  <button
+                    type="button"
+                    className="article-graph__legend-item is-active"
+                    onClick={() => { setSimNode(null); setSimResultSet(null) }}
+                  >
+                    <i className="fas fa-eraser" style={{ fontSize: '0.72rem' }} />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {showSearch && (
+            <div className="article-graph__search-panel">
+              {/* Fila: icono + input + botón filtro */}
+              <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
+                <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.72rem', flexShrink: 0 }} />
+                <input
+                  className="article-graph__search-input"
+                  placeholder="Buscar nodo..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className={`article-graph__search-filter-btn${showSearchFilter ? ' is-active' : ''}`}
+                  onClick={() => setShowSearchFilter((v) => !v)}
+                  title="Filtrar por tipo"
+                >
+                  <i className="fas fa-filter" />
+                </button>
+              </div>
+
+              {/* Filtro de tipos */}
+              {showSearchFilter && (
+                <>
+                  <div className="article-graph__search-divider" />
+                  <div className="article-graph__search-type-row">
+                    {NODE_TYPES.map((type, idx) => {
+                      const style  = getNodeStyle(type)
+                      const active = searchTypes.has(type)
+                      return (
+                        <div key={type} style={{ display: 'contents' }}>
+                          {idx > 0 && <span className="article-graph__legend-separator" />}
+                          <button
+                            type="button"
+                            className={`article-graph__legend-item${active ? ' is-active' : ''}`}
+                            onClick={() => setSearchTypes((prev) => {
+                              const next = new Set(prev)
+                              next.has(type) ? next.delete(type) : next.add(type)
+                              return next.size === 0 ? new Set([type]) : next
+                            })}
+                          >
+                            <span className="article-graph__legend-dot" style={{ backgroundColor: style.color }} />
+                            {style.label}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Resultados */}
+              {searchQuery.trim() && (
+                <>
+                  <div className="article-graph__search-divider" />
+                  {searchResults.length > 0 ? (
+                    searchResults.map((node) => (
+                      <button
+                        key={node.id}
+                        type="button"
+                        className="article-graph__legend-item is-active article-graph__search-result"
+                        onClick={() => focusNode(node)}
+                      >
+                        <span
+                          className="article-graph__legend-dot"
+                          style={{ backgroundColor: getNodeStyle(node.type).color }}
+                        />
+                        {node.label}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="article-graph__legend-item is-active" style={{ cursor: 'default', opacity: 0.5 }}>
+                      Sin resultados
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
         {isLoading ? (
           <div className="article-graph__placeholder">
@@ -735,6 +1049,8 @@ function ArticleGraph() {
                 if (!src || !tgt) return null
 
                 const isPathEdge = false  // flujo ahora lo lleva el viajero animado
+                const dimmedEdge = (!!shortestPath && !shortestPathEdgeSet.has(`${edge.source}|${edge.target}`))
+                                 || (simResultSet !== null && !simResultSet.has(edge.source) && !simResultSet.has(edge.target) && edge.source !== simNode?.id && edge.target !== simNode?.id)
                 const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
                 const mx  = (x1 + x2) / 2
                 const my  = (y1 + y2) / 2
@@ -746,7 +1062,7 @@ function ArticleGraph() {
                 const bgH      = 15
 
                 return (
-                  <g key={`e-${edge.source}-${edge.target}-${idx}`}>
+                  <g key={`e-${edge.source}-${edge.target}-${idx}`} opacity={dimmedEdge ? 0.08 : 1}>
                     <line
                       x1={x1} y1={y1} x2={x2} y2={y2}
                       className="article-graph__edge"
@@ -783,6 +1099,8 @@ function ArticleGraph() {
                 const isOrigin    = pathOrigin?.id === node.id
                 const isDest      = pathDest?.id   === node.id
                 const isOnPath    = !isOrigin && !isDest && shortestPathSet.has(node.id)
+                const dimmedNode  = (!!shortestPath && !shortestPathSet.has(node.id))
+                                 || (simResultSet !== null && !simResultSet.has(node.id) && node.id !== simNode?.id)
                 const lines       = wrapLabel(node.label, style.radius)
                 const lineH       = 13
                 const startY      = lines.length === 1 ? 0 : -(lineH / 2)
@@ -791,6 +1109,7 @@ function ArticleGraph() {
                   <g
                     key={node.id}
                     transform={`translate(${node.x},${node.y})`}
+                    opacity={dimmedNode ? 0.18 : 1}
                     onMouseDown={(e) => handleNodeMouseDown(e, node)}
                     onMouseEnter={() => !draggingRef.current && setHoveredNode(node)}
                     onMouseLeave={() => setHoveredNode(null)}
@@ -798,22 +1117,8 @@ function ArticleGraph() {
                     onFocus={() => setHoveredNode(node)}
                     onBlur={() => setHoveredNode(null)}
                     tabIndex={0}
-                    className={`article-graph__node${isHovered ? ' is-hovered' : ''}${guideMode ? ' guide-mode' : ''}`}
+                    className={`article-graph__node${isHovered ? ' is-hovered' : ''}${guideMode || showSimilarity ? ' guide-mode' : ''}`}
                   >
-                    {/* Borde amarillo animado al paso del viajero */}
-                    {shortestPathSet.has(node.id) && flowPathD && (
-                      <circle
-                        r={style.radius + 1}
-                        fill="none"
-                        stroke="#fbbf24"
-                        strokeWidth={4}
-                        className="article-graph__node-border-flow"
-                        style={{
-                          animationDuration: `${FLOW_DUR}s`,
-                          animationDelay: `${(nodeArrivalFractions[node.id] ?? 0) * FLOW_DUR}s`,
-                        }}
-                      />
-                    )}
                     {/* Sombra */}
                     <circle r={style.radius + 3} fill="rgba(0,0,0,0.09)" cy={2} />
                     {/* Círculo principal */}
@@ -860,6 +1165,15 @@ function ArticleGraph() {
               </>
             )}
           </svg>
+        )}
+
+        {cardNode && (
+          <ArticleNodeCard
+            node={cardNode}
+            allNodes={allNodes}
+            allEdges={allEdges}
+            onClose={() => setCardNode(null)}
+          />
         )}
 
         {hoveredNode && (
