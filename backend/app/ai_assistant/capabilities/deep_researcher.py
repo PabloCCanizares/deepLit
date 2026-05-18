@@ -48,7 +48,6 @@ async def deep_research(state):
     collection_id = state.get("collection_id")
     input_processed = f"{user_message} El historial es: {history}"
 
-    # 1. Cargar índices FAISS y recuperar docs estándar
     await load_faiss_indexes(agent=agent, user_id=user_id, collection_id=collection_id)
     docs = agent.search_docs(user_message=user_message, strategy=get_rag_strategy_config())
     rag = agent.format_docs_as_context(docs, strategy=get_rag_strategy_config())
@@ -66,7 +65,6 @@ async def deep_research(state):
             "prompt_version": prompt_spec.version,
         }
 
-    # 2. Extraer article_ids de los docs FAISS (semillas para el grafo)
     seed_ids: List[str] = list(
         dict.fromkeys(
             str(doc.metadata.get("article_id"))
@@ -75,11 +73,9 @@ async def deep_research(state):
         )
     )
 
-    # 3. El grafo calcula relaciones ENTRE los artículos que encontró el RAG
     graph_result = await _run_hybrid_graph(user_id, seed_ids)
     graph_context: str = graph_result.get("formatted_context", "")
 
-    # 4. Prompt: contexto del grafo primero (relaciones), luego el RAG (contenido)
     prompt_final = agent.create_prompt(
         message=input_processed
         + (graph_context + "\n" if graph_context else "")

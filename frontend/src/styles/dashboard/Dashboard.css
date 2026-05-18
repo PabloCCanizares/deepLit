@@ -229,3 +229,49 @@ body[data-theme='dark'] .notification {
     grid-template-columns: 1fr;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Knowledge Graph page — viewport-fit layout (no scroll)
+   ══════════════════════════════════════════════════════════════ */
+.knowledge-graph-page {
+  height: calc(100vh - 64px);
+  min-height: unset;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.knowledge-graph-page .header {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 1.5rem;
+}
+
+.knowledge-graph-page .section {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  transition: none;
+}
+
+.knowledge-graph-page .section:hover {
+  transform: none;
+}
+
+.knowledge-graph-page .article-graph {
+  flex: 1;
+  min-height: 0;
+}
+
+.knowledge-graph-page .article-graph__canvas-wrapper {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+

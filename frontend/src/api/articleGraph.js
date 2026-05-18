@@ -4,10 +4,8 @@ export const articleGraphAPI = {
   getGraph: async ({ limit = 250 } = {}) => {
     const params = new URLSearchParams()
     if (limit) params.set('limit', String(limit))
-
     const query = params.toString()
-    const url = query ? `/article-graph/?${query}` : '/article-graph/'
-    return apiFetch(url)
+    return apiFetch(query ? `/article-graph/?${query}` : '/article-graph/')
   },
 
   getStats: async () => apiFetch('/article-graph/stats'),
@@ -22,4 +20,15 @@ export const articleGraphAPI = {
   computeEmbeddings: async () => apiFetch('/article-graph/embeddings/compute', { method: 'POST' }),
 
   getEmbeddingStatus: async () => apiFetch('/article-graph/embeddings/status'),
+
+  clearEmbeddings: async () => apiFetch('/article-graph/embeddings', { method: 'DELETE' }),
+
+  getExpansionSchema: async () => apiFetch('/article-graph/expand/schema'),
+
+  startExpansion: async ({ typeLimits = null } = {}) => apiFetch('/article-graph/expand', {
+    method: 'POST',
+    body: JSON.stringify({ type_limits: typeLimits }),
+  }),
+
+  getExpansionStatus: async () => apiFetch('/article-graph/expand/status'),
 }

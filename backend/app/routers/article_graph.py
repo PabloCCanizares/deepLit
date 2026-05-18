@@ -1,16 +1,27 @@
-"""
-Rutas del grafo de artículos.
+"""Rutas del grafo de artículos."""
+from typing import Dict, Optional
 
-Expone los endpoints necesarios para que el dashboard pueda visualizar
-el grafo construido en Neo4j.
-"""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from pydantic import BaseModel, Field
 
 from app.controllers.article_graph_controller import ArticleGraphController
 from app.core import StandardResponse, create_response_examples, get_current_user
 
 
 router = APIRouter(prefix="/article-graph", tags=["Article Graph"])
+
+
+class ExpansionRequest(BaseModel):
+    """Configuración opcional para la expansión semántica."""
+
+    type_limits: Optional[Dict[str, int]] = Field(
+        default=None,
+        description=(
+            "Diccionario opcional ``{tipo_nodo: máximo}`` que indica cuántas "
+            "entidades de cada tipo puede generar el LLM como máximo por "
+            "artículo. Si se omite o se deja vacío, no se aplican límites."
+        ),
+    )
 
 
 @router.get(
@@ -25,12 +36,8 @@ router = APIRouter(prefix="/article-graph", tags=["Article Graph"])
                 "nodes": [],
                 "edges": [],
                 "stats": {
-                    "articles": 0,
-                    "authors": 0,
-                    "keywords": 0,
-                    "categories": 0,
-                    "types": 0,
-                    "relationships": 0,
+                    "articles": 0, "authors": 0, "keywords": 0,
+                    "categories": 0, "types": 0, "relationships": 0,
                 },
             },
         },
@@ -46,7 +53,7 @@ async def get_article_graph(
     current_user: dict = Depends(get_current_user),
     controller: ArticleGraphController = Depends(),
 ):
-    """Devuelve los nodos y relaciones del grafo del usuario actual."""
+    """Devuelve nodos y aristas (no dirigidas) del grafo del usuario."""
     return await controller.get_user_graph(current_user=current_user, limit=limit)
 
 
@@ -62,6 +69,7 @@ async def get_article_graph_stats(
     """Devuelve las cardinalidades del grafo del usuario."""
     return await controller.get_stats(current_user=current_user)
 
+
 @router.post(
     "/embeddings/compute",
     response_model=StandardResponse,
@@ -71,13 +79,7 @@ async def compute_embeddings(
     current_user: dict = Depends(get_current_user),
     controller: ArticleGraphController = Depends(),
 ):
-    """
-    Proyecta el grafo completo del usuario (schema-agnostic), ejecuta
-    FastRP y persiste los vectores en Neo4j.
-
-    Debe llamarse antes de usar el endpoint de similitud.
-    Es idempotente: si ya existen embeddings, los sobreescribe.
-    """
+    """Proyecta el grafo, ejecuta FastRP y persiste los vectores en Neo4j."""
     return await controller.compute_embeddings(current_user=current_user)
 
 
@@ -90,7 +92,7 @@ async def get_embedding_status(
     current_user: dict = Depends(get_current_user),
     controller: ArticleGraphController = Depends(),
 ):
-    """Cuántos nodos del usuario tienen embeddings calculados."""
+    """Devuelve cuántos nodos tienen embeddings calculados."""
     return await controller.get_embedding_status(current_user=current_user)
 
 
@@ -122,12 +124,7 @@ async def find_similar_nodes(
     current_user: dict = Depends(get_current_user),
     controller: ArticleGraphController = Depends(),
 ):
-    """
-    Devuelve los nodos más similares al nodo indicado según sus embeddings FastRP.
-
-    Funciona con cualquier label del grafo (Article, Author, Keyword, etc.).
-    Solo compara y devuelve nodos del mismo label y del mismo usuario.
-    """
+    """Devuelve los nodos del mismo label más similares al nodo indicado."""
     return await controller.find_similar_nodes(
         current_user=current_user,
         node_label=node_label,
@@ -137,3 +134,66 @@ async def find_similar_nodes(
         min_similarity=min_similarity,
         top_k=top_k,
     )
+
+
+@router.get(
+    "/expand/schema",
+    response_model=StandardResponse,
+    summary="Tipos de nodo válidos para la expansión semántica",
+)
+async def get_expansion_schema(
+    current_user: dict = Depends(get_current_user),
+    controller: ArticleGraphController = Depends(),
+):
+    """Devuelve los tipos de nodo permitidos y un máximo recomendado por tipo."""
+    return await controller.get_expansion_schema(current_user=current_user)
+
+
+@router.post(
+    "/expand",
+    response_model=StandardResponse,
+    summary="Iniciar expansión semántica del grafo",
+)
+async def start_expansion(
+    background_tasks: BackgroundTasks,
+    body: ExpansionRequest = ExpansionRequest(),
+    current_user: dict = Depends(get_current_user),
+    controller: ArticleGraphController = Depends(),
+):
+    """Lanza la expansión semántica del KG (LLM) en segundo plano.
+
+    Acepta opcionalmente un cuerpo JSON con ``type_limits`` para indicar el
+    número máximo de nodos de cada tipo que el LLM debe generar por artículo.
+    """
+    return await controller.start_expansion(
+        current_user=current_user,
+        background_tasks=background_tasks,
+        type_limits=body.type_limits,
+    )
+
+
+@router.get(
+    "/expand/status",
+    response_model=StandardResponse,
+    summary="Estado de la expansión semántica",
+)
+async def get_expansion_status(
+    current_user: dict = Depends(get_current_user),
+    controller: ArticleGraphController = Depends(),
+):
+    """Devuelve estado (idle/running/done/error) y progreso de la expansión."""
+    return await controller.get_expansion_status(current_user=current_user)
+
+
+@router.get(
+    "/expand/diagnose",
+    response_model=StandardResponse,
+    summary="Diagnóstico del pipeline de expansión semántica",
+)
+async def diagnose_expansion(
+    current_user: dict = Depends(get_current_user),
+    controller: ArticleGraphController = Depends(),
+):
+    """Verifica Neo4j (langchain), configuración del LLM y hace una extracción de prueba."""
+    return await controller.diagnose_expansion(current_user=current_user)
+

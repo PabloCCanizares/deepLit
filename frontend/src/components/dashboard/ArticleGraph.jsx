@@ -6,55 +6,94 @@ import { useArticlesEvents } from '../../hooks/useArticlesEvents.js'
 import ArticleNodeCard from './ArticleNodeCard.jsx'
 import '../../styles/dashboard/ArticleGraph.css'
 
-// ─── constantes visuales ───────────────────────────────────────────────────────
+const NODE_TYPES = [
+  'Artículo', 'Autor', 'PalabraClave', 'Categoría', 'Tipo',
+  'Organización', 'Problema', 'Concepto', 'Método', 'Modelo',
+  'Dataset', 'Métrica', 'Hallazgo', 'Limitación',
+]
 
-const NODE_TYPES = ['Article', 'Author', 'Keyword', 'Category', 'Type']
+const SEMANTIC_TYPES = new Set([
+  'Organización', 'Problema', 'Concepto', 'Método', 'Modelo',
+  'Dataset', 'Métrica', 'Hallazgo', 'Limitación',
+])
 
 const NODE_STYLES = {
-  Article:  { color: '#6366f1', radius: 48, label: 'Artículo' },
-  Author:   { color: '#10b981', radius: 38, label: 'Autor' },
-  Keyword:  { color: '#f59e0b', radius: 32, label: 'Palabra clave' },
-  Category: { color: '#ef4444', radius: 38, label: 'Categoría' },
-  Type:     { color: '#8b5cf6', radius: 38, label: 'Tipo' },
+  'Artículo':     { color: '#6366f1', radius: 48, label: 'Artículo' },
+  'Autor':        { color: '#10b981', radius: 38, label: 'Autor' },
+  'PalabraClave': { color: '#f59e0b', radius: 32, label: 'Palabra clave' },
+  'Categoría':    { color: '#ef4444', radius: 38, label: 'Categoría' },
+  'Tipo':         { color: '#8b5cf6', radius: 38, label: 'Tipo' },
+  'Organización': { color: '#ec4899', radius: 30, label: 'Organización' },
+  'Problema':     { color: '#dc2626', radius: 30, label: 'Problema' },
+  'Concepto':     { color: '#0ea5e9', radius: 30, label: 'Concepto' },
+  'Método':       { color: '#f97316', radius: 30, label: 'Método' },
+  'Modelo':       { color: '#7c3aed', radius: 30, label: 'Modelo' },
+  'Dataset':      { color: '#84cc16', radius: 28, label: 'Dataset' },
+  'Métrica':      { color: '#ca8a04', radius: 28, label: 'Métrica' },
+  'Hallazgo':     { color: '#a855f7', radius: 28, label: 'Hallazgo' },
+  'Limitación':   { color: '#64748b', radius: 28, label: 'Limitación' },
 }
 
 const EDGE_LABELS = {
-  WROTE:       'autor',
-  HAS_KEYWORD: 'keyword',
-  IN_CATEGORY: 'categoría',
-  OF_TYPE:     'tipo',
+  ESCRIBE:            'escribe',
+  TIENE_KEYWORD:      'keyword',
+  EN_CATEGORIA:       'categoría',
+  ES_TIPO:            'tipo',
+  MENCIONA:           'menciona',
+  ABORDA_PROBLEMA:    'aborda',
+  CUBRE_CONCEPTO:     'cubre',
+  USA_METODO:         'método',
+  PROPONE_MODELO:     'propone',
+  USA_DATASET:        'dataset',
+  EVALUA_CON:         'evalúa',
+  REPORTA_HALLAZGO:   'hallazgo',
+  REPORTA_LIMITACION: 'limitación',
+  RESUELVE:           'resuelve',
+  CONSTRUYE_SOBRE:    'construye',
+  USADO_PARA:         'usado para',
+  RELACIONADO_CON:    'relacionado',
+  APOYA:              'apoya',
+  CONTRADICE:         'contradice',
 }
 
-// Configuración por tipo de nodo para las consultas de similitud GDS
 const SIM_NODE_CONFIG = {
-  Article:  { node_id_prop: 'article_id', label_prop: 'title', getId: (n) => n.article_id },
-  Author:   { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
-  Keyword:  { node_id_prop: 'key_lower',  label_prop: 'key',   getId: (n) => n.label?.toLowerCase() },
-  Category: { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
-  Type:     { node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  // Grafo base — neo4j_label: etiqueta real en Neo4j
+  'Artículo':     { neo4j_label: 'Article',  node_id_prop: 'article_id', label_prop: 'title', getId: (n) => n.article_id },
+  'Autor':        { neo4j_label: 'Author',   node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  'PalabraClave': { neo4j_label: 'Keyword',  node_id_prop: 'key_lower',  label_prop: 'key',   getId: (n) => n.label?.toLowerCase() },
+  'Categoría':    { neo4j_label: 'Category', node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  'Tipo':         { neo4j_label: 'Type',     node_id_prop: 'name_lower', label_prop: 'name',  getId: (n) => n.label?.toLowerCase() },
+  // Tipos semánticos KG — todos usan la etiqueta :Entity en Neo4j
+  'Organización': { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Problema':     { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Concepto':     { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Método':       { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Modelo':       { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Dataset':      { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Métrica':      { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Hallazgo':     { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
+  'Limitación':   { neo4j_label: 'Entity', node_id_prop: 'entity_key', label_prop: 'name', getId: (n) => n.entity_key },
 }
 
-const WIDTH     = 1400
-const HEIGHT    = 820
-const FLOW_DUR  = 2.5  // segundos por recorrido completo del camino
+const WIDTH    = 1400
+const HEIGHT   = 820
+const FLOW_DUR = 2.5
 
-// ─── parámetros de simulación ─────────────────────────────────────────────────
+const SIM_ITERATIONS      = 300
+const COLLISION_PASSES    = 5
+const COLLISION_GAP       = 16
+const REPULSION_K         = 1.8
+const ATTRACTION          = 0.025
+const IDEAL_LENGTH        = 320
+const CENTER_FORCE        = 0.006
+const EDGE_AVOID_EXTRA    = 22
+const EDGE_AVOID_STRENGTH = 0.55
+const DAMPING             = 0.80
 
-const SIM_ITERATIONS        = 300
-const COLLISION_PASSES      = 5      // pasadas de resolución de colisiones/iter
-const COLLISION_GAP         = 16     // px mínimos entre bordes
-const REPULSION_K           = 1.8    // escala de la repulsión proporcional a radios
-const ATTRACTION            = 0.025  // rigidez del muelle entre nodos conectados
-const IDEAL_LENGTH          = 200    // dist ideal entre centros conectados (px)
-const CENTER_FORCE          = 0.006  // gravedad al centro global (suave)
-const EDGE_AVOID_EXTRA      = 22     // px de colchón extra alrededor del nodo
-const EDGE_AVOID_STRENGTH   = 0.55   // cuánto se empuja fuera de la arista
-const DAMPING               = 0.80
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
+const DEFAULT_NODE_STYLE = { color: '#94a3b8', radius: 32, label: '' }
 
 function getNodeStyle(type) {
-  return NODE_STYLES[type] || { color: '#94a3b8', radius: 32, label: type }
+  return NODE_STYLES[type] || { ...DEFAULT_NODE_STYLE, label: type }
 }
 
 function wrapLabel(text, radius) {
@@ -66,10 +105,7 @@ function wrapLabel(text, radius) {
   const mid        = Math.floor(text.length / 2)
   const spaceLeft  = text.lastIndexOf(' ', mid)
   const spaceRight = text.indexOf(' ', mid)
-  const cut =
-    spaceLeft >= 1   ? spaceLeft
-    : spaceRight > 0 ? spaceRight
-    : maxChars
+  const cut = spaceLeft >= 1 ? spaceLeft : spaceRight > 0 ? spaceRight : maxChars
 
   const line1 = text.slice(0, cut).trim()
   const rest  = text.slice(cut).trim()
@@ -77,13 +113,12 @@ function wrapLabel(text, radius) {
   return [line1, line2].filter(Boolean)
 }
 
-/** Endpoints de la arista sobre el borde de cada nodo (no en el centro). */
 function edgeEndpoints(src, tgt) {
-  const dx   = tgt.x - src.x
-  const dy   = tgt.y - src.y
+  const dx = tgt.x - src.x
+  const dy = tgt.y - src.y
   const dist = Math.sqrt(dx * dx + dy * dy) || 1
-  const ux   = dx / dist
-  const uy   = dy / dist
+  const ux = dx / dist
+  const uy = dy / dist
   return {
     x1: src.x + ux * getNodeStyle(src.type).radius,
     y1: src.y + uy * getNodeStyle(src.type).radius,
@@ -91,12 +126,6 @@ function edgeEndpoints(src, tgt) {
     y2: tgt.y - uy * (getNodeStyle(tgt.type).radius + 9),
   }
 }
-
-// ─── layout inicial: bipartito con minimización de cruces por baricentro ──────
-//
-// Artículos en anillo interior. El resto se distribuye en anillo exterior
-// ordenados por el ángulo medio (baricentro) de sus artículos conectados.
-// Esto minimiza cruces desde el primer frame sin imponer zonas por tipo.
 
 function buildInitialLayout(nodes, edges) {
   const nodeById  = new Map(nodes.map((n) => [n.id, n]))
@@ -106,10 +135,9 @@ function buildInitialLayout(nodes, edges) {
     neighbors.get(e.target)?.push(e.source)
   }
 
-  const articles = nodes.filter((n) => n.type === 'Article')
-  const others   = nodes.filter((n) => n.type !== 'Article')
+  const articles = nodes.filter((n) => n.type === 'Artículo')
+  const others   = nodes.filter((n) => n.type !== 'Artículo')
 
-  // Si no hay artículos, colocar todos en un círculo uniforme
   if (articles.length === 0) {
     return nodes.map((n, i) => {
       const angle = (i / nodes.length) * Math.PI * 2 - Math.PI / 2
@@ -118,29 +146,23 @@ function buildInitialLayout(nodes, edges) {
     })
   }
 
-  // Radio del anillo interior (artículos): crece con el número de artículos
-  const innerR = Math.max(60, Math.min(190, 40 + articles.length * 55))
-  // Radio del anillo exterior (resto): siempre más grande que el interior
-  const outerR = Math.max(300, innerR + 190)
+  const innerR = Math.max(80, Math.min(300, 60 + articles.length * 75))
+  const outerR = Math.max(450, innerR + 280)
 
-  // Ángulo de cada artículo en el anillo interior
   const artAngle = new Map()
   articles.forEach((n, i) => {
     artAngle.set(n.id, (i / articles.length) * Math.PI * 2 - Math.PI / 2)
   })
 
-  // Baricentro circular de cada nodo periférico: media de ángulos de sus artículos vecinos
   const withBarycenter = others.map((node) => {
     const connArt = (neighbors.get(node.id) || []).filter(
-      (nid) => nodeById.get(nid)?.type === 'Article',
+      (nid) => nodeById.get(nid)?.type === 'Artículo',
     )
     if (connArt.length === 0) return { node, angle: 0 }
     const sx = connArt.reduce((s, nid) => s + Math.cos(artAngle.get(nid) ?? 0), 0)
     const sy = connArt.reduce((s, nid) => s + Math.sin(artAngle.get(nid) ?? 0), 0)
     return { node, angle: Math.atan2(sy, sx) }
   })
-
-  // Ordenar por baricentro → minimiza cruces entre arista y anillo exterior
   withBarycenter.sort((a, b) => a.angle - b.angle)
 
   const outerAngle = new Map()
@@ -149,7 +171,7 @@ function buildInitialLayout(nodes, edges) {
   })
 
   return nodes.map((n) => {
-    if (n.type === 'Article') {
+    if (n.type === 'Artículo') {
       const a = artAngle.get(n.id) ?? 0
       return { ...n, x: WIDTH / 2 + innerR * Math.cos(a), y: HEIGHT / 2 + innerR * Math.sin(a), vx: 0, vy: 0 }
     }
@@ -158,15 +180,12 @@ function buildInitialLayout(nodes, edges) {
   })
 }
 
-// ─── simulación de fuerzas ────────────────────────────────────────────────────
-
 function runForceLayout(nodes, edges) {
   if (!nodes.length) return []
 
   const positioned = buildInitialLayout(nodes, edges)
-
-  const indexById = new Map(positioned.map((n, i) => [n.id, i]))
-  const adjacency = edges
+  const indexById  = new Map(positioned.map((n, i) => [n.id, i]))
+  const adjacency  = edges
     .map((e) => {
       const si = indexById.get(e.source)
       const ti = indexById.get(e.target)
@@ -175,8 +194,6 @@ function runForceLayout(nodes, edges) {
     .filter(Boolean)
 
   for (let iter = 0; iter < SIM_ITERATIONS; iter += 1) {
-
-    // ── 1. Repulsión nodo–nodo proporcional a la suma de radios ──
     for (let i = 0; i < positioned.length; i += 1) {
       const node = positioned[i]
       const rA   = getNodeStyle(node.type).radius
@@ -190,13 +207,12 @@ function runForceLayout(nodes, edges) {
         const dy    = node.y - other.y
         let dSq     = dx * dx + dy * dy
         if (dSq < 1) dSq = 1
-        const d     = Math.sqrt(dSq)
+        const d      = Math.sqrt(dSq)
         const minSep = rA + rB + COLLISION_GAP
         fx += ((dx / d) * REPULSION_K * minSep * minSep) / dSq
         fy += ((dy / d) * REPULSION_K * minSep * minSep) / dSq
       }
 
-      // Gravedad suave al centro global
       fx += (WIDTH  / 2 - node.x) * CENTER_FORCE
       fy += (HEIGHT / 2 - node.y) * CENTER_FORCE
 
@@ -204,7 +220,6 @@ function runForceLayout(nodes, edges) {
       node.vy = (node.vy + fy) * DAMPING
     }
 
-    // ── 2. Atracción por aristas (muelle) ──
     for (const { si, ti } of adjacency) {
       const a  = positioned[si]
       const b  = positioned[ti]
@@ -214,16 +229,15 @@ function runForceLayout(nodes, edges) {
       const delta = (d - IDEAL_LENGTH) * ATTRACTION
       const fx = (dx / d) * delta
       const fy = (dy / d) * delta
-      a.vx += fx;  a.vy += fy
-      b.vx -= fx;  b.vy -= fy
+      a.vx += fx; a.vy += fy
+      b.vx -= fx; b.vy -= fy
     }
 
-    // ── 3. Evitar que nodos no conectados queden sobre aristas ──
     for (const { si, ti } of adjacency) {
-      const a   = positioned[si]
-      const b   = positioned[ti]
-      const edX = b.x - a.x
-      const edY = b.y - a.y
+      const a       = positioned[si]
+      const b       = positioned[ti]
+      const edX     = b.x - a.x
+      const edY     = b.y - a.y
       const edLenSq = edX * edX + edY * edY
       if (edLenSq < 1) continue
 
@@ -231,7 +245,6 @@ function runForceLayout(nodes, edges) {
         if (k === si || k === ti) continue
         const p     = positioned[k]
         const avoid = getNodeStyle(p.type).radius + EDGE_AVOID_EXTRA
-        // Proyectar p sobre el segmento a-b
         const t  = Math.max(0, Math.min(1, ((p.x - a.x) * edX + (p.y - a.y) * edY) / edLenSq))
         const cx = a.x + t * edX
         const cy = a.y + t * edY
@@ -246,16 +259,11 @@ function runForceLayout(nodes, edges) {
       }
     }
 
-    // ── 4. Integrar posiciones ──
     for (const node of positioned) {
       node.x += node.vx
       node.y += node.vy
-      const r = getNodeStyle(node.type).radius + 2
-      node.x = Math.max(r, Math.min(WIDTH  - r, node.x))
-      node.y = Math.max(r, Math.min(HEIGHT - r, node.y))
     }
 
-    // ── 5. Resolución directa de colisiones ──
     for (let pass = 0; pass < COLLISION_PASSES; pass += 1) {
       for (let i = 0; i < positioned.length; i += 1) {
         for (let j = i + 1; j < positioned.length; j += 1) {
@@ -269,14 +277,8 @@ function runForceLayout(nodes, edges) {
             const push = (minD - d) / 2
             const ux   = dx / d
             const uy   = dy / d
-            a.x -= ux * push;  a.y -= uy * push
-            b.x += ux * push;  b.y += uy * push
-            const rA = getNodeStyle(a.type).radius + 2
-            const rB = getNodeStyle(b.type).radius + 2
-            a.x = Math.max(rA, Math.min(WIDTH  - rA, a.x))
-            a.y = Math.max(rA, Math.min(HEIGHT - rA, a.y))
-            b.x = Math.max(rB, Math.min(WIDTH  - rB, b.x))
-            b.y = Math.max(rB, Math.min(HEIGHT - rB, b.y))
+            a.x -= ux * push; a.y -= uy * push
+            b.x += ux * push; b.y += uy * push
           }
         }
       }
@@ -286,8 +288,6 @@ function runForceLayout(nodes, edges) {
   return positioned
 }
 
-// ── BFS camino más corto (dirigido) ─────────────────────────────────────────────
-
 function findShortestPath(edges, sourceId, targetId) {
   if (sourceId === targetId) return [sourceId]
   const queue   = [[sourceId]]
@@ -296,8 +296,10 @@ function findShortestPath(edges, sourceId, targetId) {
     const path    = queue.shift()
     const current = path[path.length - 1]
     for (const edge of edges) {
-      if (edge.source !== current) continue
-      const next = edge.target
+      const next = edge.source === current ? edge.target
+                 : edge.target === current ? edge.source
+                 : null
+      if (next === null) continue
       if (next === targetId) return [...path, next]
       if (!visited.has(next)) {
         visited.add(next)
@@ -308,57 +310,62 @@ function findShortestPath(edges, sourceId, targetId) {
   return null
 }
 
-// ── componente ─────────────────────────────────────────────────────────────────
-
 function ArticleGraph() {
-  const [activeTypes,   setActiveTypes]   = useState(() => new Set(NODE_TYPES))
-  const [hoveredNode,   setHoveredNode]   = useState(null)
-  const [isDragging,    setIsDragging]    = useState(false)
-  const [nodePositions, setNodePositions] = useState({})
-  const [showLegend,    setShowLegend]    = useState(false)
-  const [guideMode,     setGuideMode]     = useState(false)
-  const [pathOrigin,    setPathOrigin]    = useState(null)
-  const [pathDest,      setPathDest]      = useState(null)
-  const [shortestPath,  setShortestPath]  = useState(null)
-  const [viewport,      setViewport]      = useState({ x: 0, y: 0, scale: 1 })
-  const [isPanning,     setIsPanning]     = useState(false)
-  const [showSearch,       setShowSearch]       = useState(false)
-  const [searchQuery,      setSearchQuery]      = useState('')
-  const [searchTypes,      setSearchTypes]      = useState(() => new Set(NODE_TYPES))
-  const [showSearchFilter, setShowSearchFilter] = useState(false)
-  const [showSimilarity,   setShowSimilarity]   = useState(false)
-  const [simNode,          setSimNode]          = useState(null)
-  const [simOp,            setSimOp]            = useState('gte')
-  const [simThreshold,     setSimThreshold]     = useState(70)
-  const [simResultSet,     setSimResultSet]     = useState(null)   // Set<graphNodeId> | null
-  const [cardNode,         setCardNode]         = useState(null)   // nodo Article para el popup
-  const lastClickRef = useRef({ id: null, time: 0 })
-  const [simLoading,       setSimLoading]       = useState(false)
-  const containerRef = useRef(null)
-  const svgRef       = useRef(null)
-  const draggingRef  = useRef(null)
-  const legendRef    = useRef(null)
-  const viewportRef  = useRef({ x: 0, y: 0, scale: 1 })
-  const isPanningRef = useRef(null)
-  const queryClient  = useQueryClient()
+  const [activeTypes,       setActiveTypes]       = useState(() => new Set(NODE_TYPES))
+  const [hoveredNode,       setHoveredNode]       = useState(null)
+  const [isDragging,        setIsDragging]        = useState(false)
+  const [nodePositions,     setNodePositions]     = useState({})
+  const [showLegend,        setShowLegend]        = useState(false)
+  const [guideMode,         setGuideMode]         = useState(false)
+  const [pathOrigin,        setPathOrigin]        = useState(null)
+  const [pathDest,          setPathDest]          = useState(null)
+  const [shortestPath,      setShortestPath]      = useState(null)
+  const [viewport,          setViewport]          = useState({ x: 0, y: 0, scale: 1 })
+  const [isPanning,         setIsPanning]         = useState(false)
+  const [showSearch,        setShowSearch]        = useState(false)
+  const [searchQuery,       setSearchQuery]       = useState('')
+  const [searchTypes,       setSearchTypes]       = useState(() => new Set(NODE_TYPES))
+  const [showSearchFilter,  setShowSearchFilter]  = useState(false)
+  const [showSimilarity,    setShowSimilarity]    = useState(false)
+  const [simNode,           setSimNode]           = useState(null)
+  const [simOp,             setSimOp]             = useState('gte')
+  const [simThreshold,      setSimThreshold]      = useState(70)
+  const [simResultSet,      setSimResultSet]      = useState(null)
+  const [simLoading,        setSimLoading]        = useState(false)
+  const [cardNode,          setCardNode]          = useState(null)
+  const [isExpanding,       setIsExpanding]       = useState(false)
+  const [expansionError,    setExpansionError]    = useState(null)
+  const [expansionProgress, setExpansionProgress] = useState({ total: 0, current: 0, article: '' })
+  const [showExpandConfig,  setShowExpandConfig]  = useState(false)
+  const [expandSchema,      setExpandSchema]      = useState(null)
+  const [typeLimits,        setTypeLimits]        = useState({})
+  const [isFullscreen,      setIsFullscreen]      = useState(false)
 
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
+  const lastClickRef     = useRef({ id: null, time: 0 })
+  const expansionPollRef = useRef(null)
+  const containerRef     = useRef(null)
+  const graphWrapperRef  = useRef(null)
+  const svgRef           = useRef(null)
+  const draggingRef      = useRef(null)
+  const legendRef        = useRef(null)
+  const viewportRef      = useRef({ x: 0, y: 0, scale: 1 })
+  const isPanningRef     = useRef(null)
+  const queryClient      = useQueryClient()
+
+  const { data, isLoading, error } = useQuery({
     queryKey: ['article-graph'],
     queryFn: async () => {
       const response = await articleGraphAPI.getGraph({ limit: 300 })
       if (!response?.success) throw new Error(response?.message || 'No se pudo cargar el grafo')
       return response.data || {}
     },
-    staleTime:           0,
-    refetchOnMount:      true,
+    staleTime: 0,
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
 
-  // Recarga automática al terminar de procesar cualquier artículo (PDF o importado)
   useArticlesEvents({
-    onArticleReady: () => {
-      queryClient.invalidateQueries({ queryKey: ['article-graph'] })
-    },
+    onArticleReady: () => queryClient.invalidateQueries({ queryKey: ['article-graph'] }),
   })
 
   const enabled  = data?.enabled !== false
@@ -366,13 +373,104 @@ function ArticleGraph() {
   const allEdges = useMemo(() => data?.edges || [], [data])
   const stats    = data?.stats
 
-  // Layout calculado UNA SOLA VEZ sobre todos los nodos — no se recalcula al ocultar tipos
+  const presentTypes = useMemo(() => new Set(allNodes.map((n) => n.type)), [allNodes])
+  const isAlreadyExpanded = useMemo(
+    () => [...SEMANTIC_TYPES].some((t) => presentTypes.has(t)),
+    [presentTypes],
+  )
+
+  useEffect(() => {
+    if (presentTypes.size === 0) return
+    setActiveTypes((prev) => {
+      const next = new Set(prev)
+      for (const t of presentTypes) next.add(t)
+      return next
+    })
+    setSearchTypes((prev) => {
+      const next = new Set(prev)
+      for (const t of presentTypes) next.add(t)
+      return next
+    })
+  }, [presentTypes])
+
+  useEffect(() => {
+    if (!isExpanding) {
+      if (expansionPollRef.current) {
+        clearInterval(expansionPollRef.current)
+        expansionPollRef.current = null
+      }
+      return
+    }
+    expansionPollRef.current = setInterval(async () => {
+      try {
+        const res = await articleGraphAPI.getExpansionStatus()
+        if (!res?.success) return
+        const d = res.data || {}
+        setExpansionProgress({ total: d.total || 0, current: d.current || 0, article: d.article || '' })
+        if (d.status === 'done' || d.status === 'error') {
+          setIsExpanding(false)
+          if (d.status === 'error') {
+            setExpansionError('La expansión semántica encontró un error. Revisa los logs del servidor.')
+          }
+          await queryClient.refetchQueries({ queryKey: ['article-graph'] })
+        }
+      } catch { /* silencioso */ }
+    }, 2000)
+    return () => {
+      clearInterval(expansionPollRef.current)
+      expansionPollRef.current = null
+    }
+  }, [isExpanding, queryClient])
+
+  const handleOpenExpansionConfig = async () => {
+    setExpansionError(null)
+    setShowExpandConfig(true)
+    if (expandSchema) return
+    try {
+      const res = await articleGraphAPI.getExpansionSchema()
+      if (!res?.success) return
+      const schema = res.data || {}
+      setExpandSchema(schema)
+      const defaults = {}
+      for (const nodeType of schema.node_types || []) {
+        defaults[nodeType] = 1
+      }
+      setTypeLimits(defaults)
+    } catch (err) {
+      console.error('No se pudo cargar el esquema de expansión:', err)
+      setExpansionError('No se pudo cargar la configuración de expansión.')
+      setShowExpandConfig(false)
+    }
+  }
+
+  const handleTypeLimitChange = (nodeType, value) => {
+    const num = Number(value)
+    const safe = Number.isFinite(num) ? Math.max(0, Math.min(10, Math.round(num))) : 0
+    setTypeLimits((prev) => ({ ...prev, [nodeType]: safe }))
+  }
+
+  const handleConfirmExpansion = async () => {
+    setExpansionError(null)
+    try {
+      const res = await articleGraphAPI.startExpansion({ typeLimits })
+      if (res?.success) {
+        setShowExpandConfig(false)
+        setIsExpanding(true)
+        setExpansionProgress({ total: 0, current: 0, article: '' })
+      } else {
+        setExpansionError(res?.message || 'No se pudo iniciar la expansión.')
+      }
+    } catch (err) {
+      console.error('Error iniciando expansión:', err)
+      setExpansionError('Error de red al iniciar la expansión.')
+    }
+  }
+
   const positionedNodes = useMemo(
     () => runForceLayout(allNodes, allEdges),
     [allNodes, allEdges],
   )
 
-  // Inicializar/resetear posiciones cuando llegan nuevos datos del servidor
   useEffect(() => {
     if (positionedNodes.length === 0) return
     const map = {}
@@ -380,7 +478,6 @@ function ArticleGraph() {
     setNodePositions(map)
   }, [positionedNodes])
 
-  // Nodos con posiciones actualizadas por drag
   const displayNodes = useMemo(
     () => positionedNodes.map((n) => ({
       ...n,
@@ -396,7 +493,6 @@ function ArticleGraph() {
     return m
   }, [displayNodes])
 
-  // Solo para renderizado: nodos y aristas visibles según tipos activos
   const visibleNodes = useMemo(
     () => displayNodes.filter((n) => activeTypes.has(n.type)),
     [displayNodes, activeTypes],
@@ -407,20 +503,18 @@ function ArticleGraph() {
     return allEdges.filter((e) => ids.has(e.source) && ids.has(e.target))
   }, [allEdges, visibleNodes])
 
-  // Conjuntos para el camino más corto (guía)
   const shortestPathSet = useMemo(() => new Set(shortestPath || []), [shortestPath])
 
-  // Aristas que forman el camino (pares consecutivos)
   const shortestPathEdgeSet = useMemo(() => {
     if (!shortestPath || shortestPath.length < 2) return new Set()
     const s = new Set()
     for (let i = 0; i < shortestPath.length - 1; i++) {
       s.add(`${shortestPath[i]}|${shortestPath[i + 1]}`)
+      s.add(`${shortestPath[i + 1]}|${shortestPath[i]}`)
     }
     return s
   }, [shortestPath])
 
-  // Datos del flujo animado — path por bordes de nodos (no por centros)
   const flowPathD = useMemo(() => {
     if (!shortestPath || shortestPath.length < 2) return null
     let d = ''
@@ -434,28 +528,6 @@ function ArticleGraph() {
     return d.trim()
   }, [shortestPath, positionsById])
 
-  const nodeArrivalFractions = useMemo(() => {
-    if (!shortestPath || shortestPath.length < 2) return {}
-    let total = 0
-    const segs = []
-    for (let i = 0; i < shortestPath.length - 1; i++) {
-      const src = positionsById.get(shortestPath[i])
-      const tgt = positionsById.get(shortestPath[i + 1])
-      if (!src || !tgt) return {}
-      const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
-      const d = Math.hypot(x2 - x1, y2 - y1)
-      segs.push(d)
-      total += d
-    }
-    const fracs = { [shortestPath[0]]: 0 }
-    let cumul = 0
-    for (let i = 1; i < shortestPath.length; i++) {
-      cumul += segs[i - 1]
-      fracs[shortestPath[i]] = total > 0 ? cumul / total : 0
-    }
-    return fracs
-  }, [shortestPath, positionsById])
-
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return []
@@ -465,7 +537,6 @@ function ArticleGraph() {
   }, [searchQuery, searchTypes, displayNodes])
 
   const focusNode = (node) => {
-    // zoom para que el nodo ocupe ~la mitad del alto visible
     const style = getNodeStyle(node.type)
     const zoomScale = HEIGHT / (style.radius * 4)
     setViewport({
@@ -504,33 +575,38 @@ function ArticleGraph() {
 
   useEffect(() => { viewportRef.current = viewport }, [viewport])
 
+  // ── Fullscreen ──────────────────────────────────────────
   useEffect(() => {
-    const container = containerRef.current
-    const svg       = svgRef.current
-    if (!container || !svg) return
-
-    const onWheel = (e) => {
-      e.preventDefault()
-      const factor = e.deltaY < 0 ? 1.12 : 0.88
-      const pt = svg.createSVGPoint()
-      pt.x = e.clientX
-      pt.y = e.clientY
-      const svgCTM = svg.getScreenCTM()
-      if (!svgCTM) return
-      const sp = pt.matrixTransform(svgCTM.inverse())
-      setViewport((prev) => {
-        const newScale = Math.min(6, Math.max(0.2, prev.scale * factor))
-        const newX = sp.x - (sp.x - prev.x) * (prev.scale / newScale)
-        const newY = sp.y - (sp.y - prev.y) * (prev.scale / newScale)
-        return { x: newX, y: newY, scale: newScale }
-      })
-    }
-
-    container.addEventListener('wheel', onWheel, { passive: false })
-    return () => container.removeEventListener('wheel', onWheel)
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
   }, [])
 
-  // ── helpers de drag ─────────────────────────────────────────────────────────────────
+  const handleFullscreen = () => {
+    const el = graphWrapperRef.current
+    if (!el) return
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().catch(console.error)
+    } else {
+      document.exitFullscreen().catch(console.error)
+    }
+  }
+  // ─────────────────────────────────────────────────────────
+
+  const handleZoom = (factor) => {
+    setViewport((prev) => {
+      const newScale = Math.min(6, Math.max(0.2, prev.scale * factor))
+      const cx = prev.x + WIDTH  / (2 * prev.scale)
+      const cy = prev.y + HEIGHT / (2 * prev.scale)
+      return {
+        scale: newScale,
+        x: cx - WIDTH  / (2 * newScale),
+        y: cy - HEIGHT / (2 * newScale),
+      }
+    })
+  }
+
+  const handleZoomReset = () => setViewport({ x: 0, y: 0, scale: 1 })
 
   const getSVGCoords = (clientX, clientY) => {
     const svg = svgRef.current
@@ -547,12 +623,13 @@ function ArticleGraph() {
     if (!cfg) return
     const nodeIdValue = cfg.getId(simNode)
     if (!nodeIdValue) return
+
     setSimLoading(true)
     try {
       await articleGraphAPI.computeEmbeddings()
 
       const response = await articleGraphAPI.getSimilar({
-        node_label:     simNode.type,
+        node_label:     cfg.neo4j_label,      // etiqueta Neo4j real (no el tipo en español)
         node_id_prop:   cfg.node_id_prop,
         node_id_value:  nodeIdValue,
         label_prop:     cfg.label_prop,
@@ -560,19 +637,22 @@ function ArticleGraph() {
         top_k:          50,
       })
       if (!response?.success) { setSimResultSet(new Set()); return }
-      const results  = response.data?.results || []
+
       const thresh   = simThreshold / 100
-      const filtered = results.filter(({ similarity_score: s }) => {
+      const filtered = (response.data?.results || []).filter(({ similarity_score: s }) => {
         if (simOp === 'gte') return s >= thresh
         if (simOp === 'lte') return s <= thresh
         if (simOp === 'eq')  return Math.abs(s - thresh) <= 0.05
         return false
       })
+
+      const isEntityType = cfg.neo4j_label === 'Entity'
       const matchIds = new Set()
       for (const result of filtered) {
         const match = allNodes.find((n) => {
-          if (n.type !== simNode.type) return false
-          if (simNode.type === 'Article') return String(n.article_id) === String(result.node_id)
+          if (simNode.type === 'Artículo') return String(n.article_id) === String(result.node_id)
+          if (isEntityType)               return n.entity_key === result.node_id  // cross-type entity similarity
+          if (n.type !== simNode.type)    return false
           return n.label?.toLowerCase() === result.node_id
         })
         if (match) matchIds.add(match.id)
@@ -587,8 +667,7 @@ function ArticleGraph() {
   }
 
   const handleNodeClick = (node) => {
-    // Doble clic en artículo → abrir card de información
-    if (node.type === 'Article') {
+    if (node.type === 'Artículo') {
       const now = Date.now()
       if (lastClickRef.current.id === node.id && now - lastClickRef.current.time < 400) {
         lastClickRef.current = { id: null, time: 0 }
@@ -600,7 +679,7 @@ function ArticleGraph() {
 
     if (showSimilarity) {
       setSimNode(node)
-      setSimResultSet(null) 
+      setSimResultSet(null)
       return
     }
     if (!guideMode) return
@@ -660,20 +739,24 @@ function ArticleGraph() {
   const handleSVGMouseMove = (e) => {
     if (draggingRef.current) {
       applyDrag(e.clientX, e.clientY)
-    } else if (isPanningRef.current) {
-      const { clientX, clientY, vx, vy, scale } = isPanningRef.current
-      const svg = svgRef.current
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      const dx = (e.clientX - clientX) / rect.width  * (WIDTH  / scale)
-      const dy = (e.clientY - clientY) / rect.height * (HEIGHT / scale)
-      isPanningRef.current.hasMoved = true
-      setViewport((prev) => ({ ...prev, x: vx - dx, y: vy - dy }))
+      return
     }
+    if (!isPanningRef.current) return
+    const { clientX, clientY, vx, vy, scale } = isPanningRef.current
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const dx = (e.clientX - clientX) / rect.width  * (WIDTH  / scale)
+    const dy = (e.clientY - clientY) / rect.height * (HEIGHT / scale)
+    isPanningRef.current.hasMoved = true
+    setViewport((prev) => ({ ...prev, x: vx - dx, y: vy - dy }))
   }
 
-  const handleSVGTouchMove  = (e) => { if (e.touches.length === 1) applyDrag(e.touches[0].clientX, e.touches[0].clientY) }
-  const handleDragEnd       = (e)  => {
+  const handleSVGTouchMove = (e) => {
+    if (e.touches.length === 1) applyDrag(e.touches[0].clientX, e.touches[0].clientY)
+  }
+
+  const handleDragEnd = (e) => {
     if (draggingRef.current && !draggingRef.current.hasMoved) handleNodeClick(draggingRef.current.clickNode)
     if (e?.type === 'mouseup' && !draggingRef.current && !isPanningRef.current?.hasMoved) {
       setPathOrigin(null); setPathDest(null); setShortestPath(null)
@@ -709,22 +792,181 @@ function ArticleGraph() {
             { key: 'relationships', label: 'Relaciones', color: '#64748b' },
           ].map(({ key, label, color }) => (
             <div key={key} className="article-graph__kpi" style={{ '--kpi-color': color }}>
-              <span className="article-graph__kpi-value">
-                {stats[key] ?? 0}
-              </span>
+              <span className="article-graph__kpi-value">{stats[key] ?? 0}</span>
               <span className="article-graph__kpi-label">{label}</span>
             </div>
           ))}
         </div>
       )}
 
-      <div className="article-graph__canvas-wrapper">
+      <div className="article-graph__canvas-wrapper" ref={graphWrapperRef}>
+
+        {showExpandConfig && !isExpanding && (
+          <div className="article-graph__expand-overlay" role="dialog" aria-modal="true">
+            <div className="article-graph__expand-box article-graph__expand-box--config">
+              {!expandSchema && (
+                <span className="article-graph__expand-counter">Cargando esquema…</span>
+              )}
+
+              {expandSchema && (
+                <div className="article-graph__expand-grid">
+                  {(expandSchema.node_types || []).map((nodeType) => (
+                    <div key={nodeType} className="article-graph__expand-row">
+                      <span
+                        className="article-graph__expand-row-color"
+                        style={{ background: NODE_STYLES[nodeType]?.color ?? '#94a3b8' }}
+                      />
+                      <span className="article-graph__expand-row-label">{nodeType}</span>
+                      <div className="article-graph__expand-stepper">
+                        <button
+                          type="button"
+                          className="article-graph__expand-stepper-btn"
+                          onClick={() => handleTypeLimitChange(nodeType, (typeLimits[nodeType] ?? 1) - 1)}
+                          disabled={(typeLimits[nodeType] ?? 1) <= 0}
+                        >−</button>
+                        <span className="article-graph__expand-stepper-val">{typeLimits[nodeType] ?? 1}</span>
+                        <button
+                          type="button"
+                          className="article-graph__expand-stepper-btn"
+                          onClick={() => handleTypeLimitChange(nodeType, (typeLimits[nodeType] ?? 1) + 1)}
+                          disabled={(typeLimits[nodeType] ?? 1) >= 10}
+                        >+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <span className="article-graph__expand-subtitle">
+                Máximo de entidades que la IA extraerá por artículo para cada tipo semántico.
+              </span>
+
+              <div className="article-graph__expand-actions">
+                <button
+                  type="button"
+                  className="article-graph__expand-btn article-graph__expand-btn--ghost"
+                  onClick={() => setShowExpandConfig(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="article-graph__expand-btn article-graph__expand-btn--primary"
+                  onClick={handleConfirmExpansion}
+                  disabled={!expandSchema}
+                >
+                  <i className="fas fa-wand-magic-sparkles" />
+                  Expandir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isExpanding && (
+          <div className="article-graph__expand-overlay">
+            <div className="article-graph__expand-box">
+              <div className="article-graph__kgloader">
+                <svg viewBox="0 0 72 72" width="72" height="72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Static faint background edges */}
+                  <line x1="16" y1="16" x2="56" y2="16" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.2"/>
+                  <line x1="56" y1="16" x2="56" y2="56" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.2"/>
+                  <line x1="56" y1="56" x2="16" y2="56" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.2"/>
+                  <line x1="16" y1="56" x2="16" y2="16" stroke="#7c3aed" strokeWidth="1.5" strokeOpacity="0.2"/>
+                  {/* Cross connections */}
+                  <line x1="16" y1="16" x2="56" y2="56" stroke="#a855f7" strokeWidth="1" strokeOpacity="0.15"/>
+                  <line x1="56" y1="16" x2="16" y2="56" stroke="#a855f7" strokeWidth="1" strokeOpacity="0.15"/>
+                  {/* Traveling segment along perimeter */}
+                  <path d="M16,16 L56,16 L56,56 L16,56 Z"
+                        stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round"
+                        strokeDasharray="18 142" className="kgloader-traveler"/>
+                  {/* Corner nodes */}
+                  <circle cx="16" cy="16" r="5.5" fill="#7c3aed" className="kgloader-node" style={{animationDelay:'0s'}}/>
+                  <circle cx="56" cy="16" r="5.5" fill="#a855f7" className="kgloader-node" style={{animationDelay:'0.35s'}}/>
+                  <circle cx="56" cy="56" r="5.5" fill="#7c3aed" className="kgloader-node" style={{animationDelay:'0.7s'}}/>
+                  <circle cx="16" cy="56" r="5.5" fill="#a855f7" className="kgloader-node" style={{animationDelay:'1.05s'}}/>
+                </svg>
+              </div>
+              <span className="article-graph__expand-title">Expandiendo grafo semántico…</span>
+              {expansionProgress.article && (
+                <span className="article-graph__expand-article">{expansionProgress.article}</span>
+              )}
+              <div className="article-graph__expand-bar-track">
+                <div
+                  className="article-graph__expand-bar-fill"
+                  style={{
+                    width: expansionProgress.total > 0
+                      ? `${Math.round((expansionProgress.current / expansionProgress.total) * 100)}%`
+                      : '5%',
+                  }}
+                />
+              </div>
+              <span className="article-graph__expand-counter">
+                {expansionProgress.total > 0
+                  ? `${expansionProgress.current} / ${expansionProgress.total} artículos`
+                  : 'Iniciando…'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {expansionError && (
+          <div className="article-graph__expand-error" onClick={() => setExpansionError(null)} title="Click para cerrar">
+            <i className="fas fa-circle-exclamation" />
+            {expansionError}
+          </div>
+        )}
+
+        <div className="article-graph__zoom-controls">
+          <button type="button" className="article-graph__zoom-btn" title="Acercar" onClick={() => handleZoom(1.25)}>
+            <i className="fas fa-plus" />
+          </button>
+          <button type="button" className="article-graph__zoom-btn" title="Alejar" onClick={() => handleZoom(0.8)}>
+            <i className="fas fa-minus" />
+          </button>
+          <button type="button" className="article-graph__zoom-btn" title="Restablecer vista" onClick={handleZoomReset}>
+            <i className="fas fa-expand-arrows-alt" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="article-graph__fullscreen-btn"
+          title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          onClick={handleFullscreen}
+        >
+          <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`} />
+        </button>
+
         <div className="article-graph__legend" ref={legendRef}>
           <div className="article-graph__legend-controls">
             <button
               type="button"
-              className="article-graph__legend-trigger"
-              onClick={() => setShowLegend((v) => !v)}
+              className={`article-graph__legend-trigger article-graph__expand-btn${isAlreadyExpanded ? ' is-active' : ''}`}
+              title={isAlreadyExpanded
+                ? 'Grafo semántico expandido. Click para re-expandir con nuevos artículos.'
+                : 'Expandir grafo semántico usando IA'}
+              onClick={handleOpenExpansionConfig}
+              disabled={isExpanding || showExpandConfig || !enabled}
+              style={{ opacity: !enabled ? 0.4 : 1 }}
+            >
+              <i className={`fas ${isAlreadyExpanded ? 'fa-circle-check' : 'fa-wand-magic-sparkles'}`} />
+              {isAlreadyExpanded ? 'Expandido' : 'Expandir'}
+            </button>
+            <span className="article-graph__legend-separator" />
+            <button
+              type="button"
+              className={`article-graph__legend-trigger${showLegend ? ' is-active' : ''}`}
+              onClick={() => {
+                const next = !showLegend
+                setShowLegend(next)
+                if (next) {
+                  setGuideMode(false)
+                  setShowSimilarity(false); setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                  setShowSearch(false); setSearchQuery(''); setShowSearchFilter(false)
+                  setPathOrigin(null); setPathDest(null); setShortestPath(null)
+                }
+              }}
             >
               <i className="fas fa-eye" />
               Mostrar
@@ -739,8 +981,8 @@ function ArticleGraph() {
                 setGuideMode(next)
                 if (next) {
                   setShowLegend(false)
-                  setShowSimilarity(false)
-                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                  setShowSimilarity(false); setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                  setShowSearch(false); setSearchQuery(''); setShowSearchFilter(false)
                 }
                 setPathOrigin(null); setPathDest(null); setShortestPath(null)
               }}
@@ -757,13 +999,11 @@ function ArticleGraph() {
                 const next = !showSimilarity
                 setShowSimilarity(next)
                 if (next) {
-                  setShowLegend(false); setShowSearch(false); setSearchQuery(''); setShowSearchFilter(false)
-                  setGuideMode(false)
-                  setPathOrigin(null); setPathDest(null); setShortestPath(null)
-                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
-                } else {
-                  setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                  setShowLegend(false)
+                  setGuideMode(false); setPathOrigin(null); setPathDest(null); setShortestPath(null)
+                  setShowSearch(false); setSearchQuery(''); setShowSearchFilter(false)
                 }
+                setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
               }}
             >
               <i className="fas fa-share-nodes" />
@@ -777,8 +1017,13 @@ function ArticleGraph() {
               onClick={() => {
                 const next = !showSearch
                 setShowSearch(next)
-                if (next) { setShowLegend(false); setShowSimilarity(false) }
-                else { setSearchQuery(''); setShowSearchFilter(false) }
+                if (next) {
+                  setShowLegend(false)
+                  setGuideMode(false); setPathOrigin(null); setPathDest(null); setShortestPath(null)
+                  setShowSimilarity(false); setSimNode(null); setSimResultSet(null); setSimThreshold(0); setSimOp('gte')
+                } else {
+                  setSearchQuery(''); setShowSearchFilter(false)
+                }
               }}
             >
               <i className="fas fa-search" />
@@ -787,8 +1032,12 @@ function ArticleGraph() {
           </div>
 
           {showLegend && (
-            <div className="article-graph__legend-dropdown">
-              {NODE_TYPES.map((type, idx) => {
+            <div
+              className="article-graph__legend-dropdown"
+              style={{ maxHeight: isAlreadyExpanded ? '5.4rem' : '2.8rem' }}
+              onWheel={(e) => { e.stopPropagation(); e.currentTarget.scrollTop += e.deltaY }}
+            >
+              {NODE_TYPES.filter((type) => presentTypes.has(type)).map((type, idx) => {
                 const style    = getNodeStyle(type)
                 const isActive = activeTypes.has(type)
                 return (
@@ -894,7 +1143,10 @@ function ArticleGraph() {
                 className="article-graph__legend-item is-active"
                 onClick={handleSimSearch}
                 disabled={!simNode || simLoading}
-                style={{ opacity: (!simNode || simLoading) ? 0.45 : 1, cursor: (!simNode || simLoading) ? 'not-allowed' : 'pointer' }}
+                style={{
+                  opacity: (!simNode || simLoading) ? 0.45 : 1,
+                  cursor:  (!simNode || simLoading) ? 'not-allowed' : 'pointer',
+                }}
                 title="Buscar nodos similares"
               >
                 {simLoading
@@ -919,7 +1171,6 @@ function ArticleGraph() {
 
           {showSearch && (
             <div className="article-graph__search-panel">
-              {/* Fila: icono + input + botón filtro */}
               <div className="article-graph__legend-item is-active" style={{ cursor: 'default' }}>
                 <i className="fas fa-search" style={{ color: '#94a3b8', fontSize: '0.72rem', flexShrink: 0 }} />
                 <input
@@ -939,12 +1190,11 @@ function ArticleGraph() {
                 </button>
               </div>
 
-              {/* Filtro de tipos */}
               {showSearchFilter && (
                 <>
                   <div className="article-graph__search-divider" />
                   <div className="article-graph__search-type-row">
-                    {NODE_TYPES.map((type, idx) => {
+                    {NODE_TYPES.filter((type) => presentTypes.has(type)).map((type, idx) => {
                       const style  = getNodeStyle(type)
                       const active = searchTypes.has(type)
                       return (
@@ -969,7 +1219,6 @@ function ArticleGraph() {
                 </>
               )}
 
-              {/* Resultados */}
               {searchQuery.trim() && (
                 <>
                   <div className="article-graph__search-divider" />
@@ -998,6 +1247,7 @@ function ArticleGraph() {
             </div>
           )}
         </div>
+
         {isLoading ? (
           <div className="article-graph__placeholder">
             <i className="fas fa-spinner fa-spin"></i>
@@ -1032,42 +1282,30 @@ function ArticleGraph() {
             onTouchMove={handleSVGTouchMove}
             onTouchEnd={handleDragEnd}
           >
-            <defs>
-              <marker id="ag-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-              </marker>
-              <marker id="ag-arrow-path" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
-              </marker>
-            </defs>
-
-            {/* ── Aristas (detrás de los nodos) ── */}
             <g>
               {visibleEdges.map((edge, idx) => {
                 const src = positionsById.get(edge.source)
                 const tgt = positionsById.get(edge.target)
                 if (!src || !tgt) return null
 
-                const isPathEdge = false  // flujo ahora lo lleva el viajero animado
-                const dimmedEdge = (!!shortestPath && !shortestPathEdgeSet.has(`${edge.source}|${edge.target}`))
-                                 || (simResultSet !== null && !simResultSet.has(edge.source) && !simResultSet.has(edge.target) && edge.source !== simNode?.id && edge.target !== simNode?.id)
+                const dimmedEdge =
+                  (!!shortestPath && !shortestPathEdgeSet.has(`${edge.source}|${edge.target}`)) ||
+                  (simResultSet !== null
+                    && !simResultSet.has(edge.source) && !simResultSet.has(edge.target)
+                    && edge.source !== simNode?.id && edge.target !== simNode?.id)
+
                 const { x1, y1, x2, y2 } = edgeEndpoints(src, tgt)
                 const mx  = (x1 + x2) / 2
                 const my  = (y1 + y2) / 2
                 const lbl = EDGE_LABELS[edge.type] || edge.type
-                // Mostrar etiqueta solo si la arista tiene longitud suficiente
-                const edgeLen  = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                const showLbl  = edgeLen > 45
-                const bgW      = lbl.length * 5.2 + 12
-                const bgH      = 15
+                const edgeLen = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                const showLbl = edgeLen > 45
+                const bgW = lbl.length * 5.2 + 12
+                const bgH = 15
 
                 return (
                   <g key={`e-${edge.source}-${edge.target}-${idx}`} opacity={dimmedEdge ? 0.08 : 1}>
-                    <line
-                      x1={x1} y1={y1} x2={x2} y2={y2}
-                      className="article-graph__edge"
-                      markerEnd="url(#ag-arrow)"
-                    />
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} className="article-graph__edge" />
                     {showLbl && (
                       <>
                         <rect
@@ -1091,19 +1329,16 @@ function ArticleGraph() {
               })}
             </g>
 
-            {/* ── Nodos (encima de las aristas) ── */}
             <g>
               {visibleNodes.map((node) => {
-                const style       = getNodeStyle(node.type)
-                const isHovered   = hoveredNode?.id === node.id
-                const isOrigin    = pathOrigin?.id === node.id
-                const isDest      = pathDest?.id   === node.id
-                const isOnPath    = !isOrigin && !isDest && shortestPathSet.has(node.id)
-                const dimmedNode  = (!!shortestPath && !shortestPathSet.has(node.id))
-                                 || (simResultSet !== null && !simResultSet.has(node.id) && node.id !== simNode?.id)
-                const lines       = wrapLabel(node.label, style.radius)
-                const lineH       = 13
-                const startY      = lines.length === 1 ? 0 : -(lineH / 2)
+                const style      = getNodeStyle(node.type)
+                const isHovered  = hoveredNode?.id === node.id
+                const dimmedNode =
+                  (!!shortestPath && !shortestPathSet.has(node.id)) ||
+                  (simResultSet !== null && !simResultSet.has(node.id) && node.id !== simNode?.id)
+                const lines  = wrapLabel(node.label, style.radius)
+                const lineH  = 13
+                const startY = lines.length === 1 ? 0 : -(lineH / 2)
 
                 return (
                   <g
@@ -1119,16 +1354,13 @@ function ArticleGraph() {
                     tabIndex={0}
                     className={`article-graph__node${isHovered ? ' is-hovered' : ''}${guideMode || showSimilarity ? ' guide-mode' : ''}`}
                   >
-                    {/* Sombra */}
                     <circle r={style.radius + 3} fill="rgba(0,0,0,0.09)" cy={2} />
-                    {/* Círculo principal */}
                     <circle
                       r={style.radius}
                       fill={style.color}
                       stroke="#ffffff"
                       strokeWidth={isHovered ? 4 : 2}
                     />
-                    {/* Texto dentro */}
                     {lines.map((line, i) => (
                       <text
                         key={i}
@@ -1146,12 +1378,9 @@ function ArticleGraph() {
               })}
             </g>
 
-            {/* ── Viajero animado (encima de todo) ── */}
             {flowPathD && (
               <>
                 <path id="ag-flow-path" d={flowPathD} fill="none" stroke="none" />
-                {/* rotate="auto" orienta el grupo en la dirección del recorrido;
-                    los cx negativos quedan siempre detrás del cabezal → estela */}
                 <g className="article-graph__traveler">
                   <circle cx={-32} cy={0} r={1}   fill="#fbbf24" opacity={0.08} />
                   <circle cx={-24} cy={0} r={1.5} fill="#fbbf24" opacity={0.18} />

@@ -8,7 +8,6 @@ from .articles_controller import ArticlesController
 from .stats_controller import StatsController
 from .openalex_controller import OpenAlexController
 from .ai_assistant_controller import AiAssistantController
-from .knowledge_graph_controller import KnowledgeGraphController
 from .screening_controller import ScreeningController
 from .collection_synthesis_controller import CollectionSynthesisController
 from .evidence_extraction_controller import EvidenceExtractionController
@@ -26,7 +25,6 @@ __all__ = [
     "StatsController",
     "OpenAlexController",
     "AiAssistantController",
-    "KnowledgeGraphController",
     "ScreeningController",
     "CollectionSynthesisController",
     "EvidenceExtractionController",

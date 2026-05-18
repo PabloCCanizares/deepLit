@@ -1,17 +1,11 @@
-"""
-Modelos del grafo de artículos.
-
-Estos modelos son únicamente para tipar las respuestas del endpoint del
-grafo (no para validar input). Se mantienen ligeros porque la respuesta
-real se serializa dentro del ``StandardResponse``.
-"""
+"""Modelos del grafo de artículos para tipar las respuestas del endpoint."""
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class ArticleGraphNode(BaseModel):
-    """Nodo del grafo (Article, Author, Keyword, Category, Type)."""
+    """Nodo del grafo (Article, Author, Keyword, Category, Type, Entity)."""
     id: str = Field(..., description="Identificador único del nodo en Neo4j")
     type: str = Field(..., description="Etiqueta principal del nodo")
     label: str = Field(..., description="Texto legible del nodo")
@@ -20,7 +14,7 @@ class ArticleGraphNode(BaseModel):
 
 
 class ArticleGraphEdge(BaseModel):
-    """Relación dirigida entre dos nodos del grafo."""
+    """Arista entre dos nodos del grafo (interpretada como no dirigida)."""
     source: str = Field(..., description="ID del nodo origen")
     target: str = Field(..., description="ID del nodo destino")
     type: str = Field(..., description="Tipo de relación (WROTE, HAS_KEYWORD, ...)")

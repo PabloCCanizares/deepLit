@@ -95,11 +95,6 @@ from app.models.ai_assistant import (
     ChatRequest
 )
 
-# Knowledge Graph models
-from app.models.knowledge_graph import (
-    KnowledgeGraphBackfillRequest
-)
-
 # Article Graph models (visualizacion en dashboard)
 from app.models.article_graph import (
     ArticleGraphNode,
@@ -163,9 +158,6 @@ __all__ = [
 
     # AI Assistant
     "ChatRequest",
-
-    # Knowledge Graph
-    "KnowledgeGraphBackfillRequest",
 
     # Article Graph
     "ArticleGraphNode",

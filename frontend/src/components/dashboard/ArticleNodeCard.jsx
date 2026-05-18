@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { articlesAPI } from '../../api/index.js'
-import { articleGraphAPI } from '../../api/index.js'
+import { articlesAPI, articleGraphAPI } from '../../api/index.js'
 
 const NODE_COLORS = {
   Article:  '#6366f1',
@@ -21,7 +20,7 @@ function Section({ title, icon, count, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div className="anc-section">
-      <button className="anc-section-hdr" onClick={() => setOpen(v => !v)}>
+      <button className="anc-section-hdr" onClick={() => setOpen((v) => !v)}>
         <i className={`fas ${icon}`} />
         <span>{title}{count !== undefined ? ` (${count})` : ''}</span>
         <i className={`fas fa-chevron-${open ? 'up' : 'down'} anc-chevron`} />
@@ -41,9 +40,24 @@ function Field({ label, value }) {
   )
 }
 
+function authorsToText(authors) {
+  if (Array.isArray(authors)) return authors.join(', ')
+  return authors || ''
+}
+
+function keywordsToText(keywords) {
+  if (Array.isArray(keywords)) {
+    return keywords
+      .map((k) => (typeof k === 'string' ? k : (k?.key || k?.display_name || '')))
+      .filter(Boolean)
+      .join(', ')
+  }
+  return typeof keywords === 'string' ? keywords : ''
+}
+
 export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
   const cardRef = useRef(null)
-  const [article, setArticle]     = useState(null)
+  const [article,    setArticle]    = useState(null)
   const [artLoading, setArtLoading] = useState(true)
   const [simResults, setSimResults] = useState([])
   const [simLoading, setSimLoading] = useState(true)
@@ -62,7 +76,7 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
     setArticle(null)
     setArtLoading(true)
     articlesAPI.getById(node.article_id)
-      .then(r => setArticle(r?.data ?? null))
+      .then((r) => setArticle(r?.data ?? null))
       .catch(() => setArticle(null))
       .finally(() => setArtLoading(false))
 
@@ -76,7 +90,7 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
       min_similarity: 0,
       top_k:          50,
     })
-      .then(r => {
+      .then((r) => {
         const results = r?.data?.results ?? []
         results.sort((a, b) => b.similarity_score - a.similarity_score)
         setSimResults(results)
@@ -90,10 +104,10 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
     const out = []
     for (const edge of allEdges) {
       if (edge.source === node.id) {
-        const n = allNodes.find(n2 => n2.id === edge.target)
+        const n = allNodes.find((n2) => n2.id === edge.target)
         if (n) out.push({ neighbor: n, relType: edge.type })
       } else if (edge.target === node.id) {
-        const n = allNodes.find(n2 => n2.id === edge.source)
+        const n = allNodes.find((n2) => n2.id === edge.source)
         if (n) out.push({ neighbor: n, relType: edge.type })
       }
     }
@@ -102,20 +116,11 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
 
   if (!node) return null
 
-  const authorsText = Array.isArray(article?.authors)
-    ? article.authors.join(', ')
-    : (article?.authors || '')
-
-  const keywordsText = Array.isArray(article?.keywords)
-    ? article.keywords
-        .map(k => (typeof k === 'string' ? k : (k?.key || k?.display_name || '')))
-        .filter(Boolean)
-        .join(', ')
-    : (typeof article?.keywords === 'string' ? article.keywords : '')
+  const authorsText  = authorsToText(article?.authors)
+  const keywordsText = keywordsToText(article?.keywords)
 
   return (
     <div className="article-node-card" ref={cardRef}>
-      {/* ── Cabecera ── */}
       <div className="anc-header">
         <div className="anc-header-badge">
           <span className="anc-header-dot" style={{ background: NODE_COLORS.Article }} />
@@ -129,7 +134,6 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
 
       <div className="anc-sections">
 
-        {/* ── 1) Información ── */}
         <Section title="Información" icon="fa-file-alt" defaultOpen>
           {artLoading ? (
             <div className="anc-loading"><i className="fas fa-circle-notch fa-spin" /></div>
@@ -137,17 +141,17 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
             <p className="anc-empty">No se pudo cargar el artículo</p>
           ) : (
             <div className="anc-fields">
-              <Field label="Autores"    value={authorsText} />
-              <Field label="Año"        value={article.year} />
-              <Field label="Categoría"  value={article.category} />
-              <Field label="Tipo"       value={article.type} />
-              <Field label="Páginas"    value={article.pages} />
-              <Field label="Citas"      value={article.citations} />
+              <Field label="Autores"   value={authorsText} />
+              <Field label="Año"       value={article.year} />
+              <Field label="Categoría" value={article.category} />
+              <Field label="Tipo"      value={article.type} />
+              <Field label="Páginas"   value={article.pages} />
+              <Field label="Citas"     value={article.citations} />
               {article.relevance_score !== null && article.relevance_score !== undefined && (
                 <Field label="Relevancia" value={String(article.relevance_score)} />
               )}
-              <Field label="DOI"        value={article.doi} />
-              <Field label="Estado"     value={article.status} />
+              <Field label="DOI"    value={article.doi} />
+              <Field label="Estado" value={article.status} />
               {keywordsText && <Field label="Keywords" value={keywordsText} />}
               {article.abstract && (
                 <div className="anc-abstract">
@@ -159,7 +163,6 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
           )}
         </Section>
 
-        {/* ── 2) Relaciones ── */}
         <Section title="Relaciones en el grafo" icon="fa-project-diagram" count={neighbors.length}>
           {neighbors.length === 0 ? (
             <p className="anc-empty">Sin relaciones visibles</p>
@@ -183,7 +186,6 @@ export default function ArticleNodeCard({ node, allNodes, allEdges, onClose }) {
           )}
         </Section>
 
-        {/* ── 3) Similitud ── */}
         <Section title="Similitud con artículos" icon="fa-chart-bar">
           {simLoading ? (
             <div className="anc-loading"><i className="fas fa-circle-notch fa-spin" /></div>

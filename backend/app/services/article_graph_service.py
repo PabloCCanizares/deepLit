@@ -1,54 +1,44 @@
-"""
-Servicio del grafo de artículos (Neo4j).
+"""Servicio del grafo de artículos (Neo4j).
 
-Construye un grafo simple a partir de los metadatos de cada artículo:
+Construye y consulta un grafo por usuario en Neo4j a partir de los
+metadatos de cada artículo (Article, Author, Keyword, Category, Type) y
+opcionalmente un KG semántico (Entity) generado mediante LLM. Las
+operaciones de escritura son idempotentes (``MERGE``) y las de lectura
+tratan las aristas como **no dirigidas** para que el enrutador del
+frontend no dependa del sentido de la relación.
 
-- Cada artículo se representa con un nodo ``Article``.
-- Cada autor se representa con un nodo ``Author`` y queda conectado al
-  artículo mediante la relación ``WROTE``.
-- Cada palabra clave se representa con un nodo ``Keyword`` enlazado al
-  artículo con la relación ``HAS_KEYWORD``.
-- La categoría se representa con un nodo ``Category`` (relación
-  ``IN_CATEGORY``) y el tipo con un nodo ``Type`` (relación ``OF_TYPE``).
-
-Las operaciones se realizan con ``MERGE`` para evitar duplicar nodos o
-relaciones cuando se ingieren artículos repetidos.
-
-Si Neo4j no está configurado el servicio se comporta como no-op para no
-romper el flujo principal de la aplicación.
-
-Al arrancar la API se ejecuta una sincronización MongoDB → Neo4j para
-recuperar artículos añadidos antes de existir esta integración (MERGE
-idempotente).
+Si Neo4j no está configurado, el servicio se comporta como no-op para
+no romper el flujo principal de la aplicación.
 """
 import asyncio
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.repositories.article_graph_repository import ArticleGraphRepository
 from app.repositories.article_repository import ArticleRepository
 
 logger = logging.getLogger(__name__)
 
+_EXPANSION_PROGRESS: Dict[str, Dict[str, Any]] = {}
+_EMPTY_STATS: Dict[str, int] = {
+    "articles": 0, "authors": 0, "keywords": 0,
+    "categories": 0, "types": 0, "relationships": 0,
+}
+
 
 class ArticleGraphService:
+    """Capa de servicio para el grafo de artículos."""
 
     def __init__(self):
         self.repo = ArticleGraphRepository()
 
-    # ------------------------------------------------------------------
-    # API pública
-    # ------------------------------------------------------------------
     def is_available(self) -> bool:
         """Indica si Neo4j está disponible."""
         return self.repo.is_available()
 
     def ingest_article(self, article: Dict[str, Any], user_id: Optional[str] = None) -> bool:
-        """
-        Incorpora un artículo al grafo. Tolera errores y nunca lanza
-        excepciones para no afectar al flujo principal.
-        """
+        """Incorpora un artículo al grafo, tolerando errores silenciosamente."""
         if not article:
             return False
 
@@ -73,223 +63,160 @@ class ArticleGraphService:
                 abstract=article.get("abstract") or "",
             )
         except Exception as exc:
-            logger.warning(
-                "No se pudo ingerir el articulo %s en el grafo: %s",
-                article_id,
-                exc,
-            )
+            logger.warning("No se pudo ingerir el articulo %s en el grafo: %s", article_id, exc)
             return False
 
     def remove_article(self, article_id: str, user_id: str) -> bool:
-        """Elimina un artículo y sus huérfanos del grafo."""
+        """Elimina un artículo y sus nodos huérfanos del grafo."""
         if not article_id or not user_id:
             return False
-
         try:
             return self.repo.delete_article(user_id=str(user_id), article_id=str(article_id))
         except Exception as exc:
-            logger.warning(
-                "No se pudo eliminar el articulo %s del grafo: %s",
-                article_id,
-                exc,
-            )
+            logger.warning("No se pudo eliminar el articulo %s del grafo: %s", article_id, exc)
             return False
 
     def get_user_graph(self, user_id: str, limit: int = 250) -> Dict[str, Any]:
-        """Devuelve el grafo del usuario para visualización."""
+        """Devuelve el grafo del usuario unificando el grafo base y el KG semántico."""
         if not user_id:
             return self._empty_graph()
-
         if not self.repo.is_available():
             return self._empty_graph(message="Neo4j no configurado")
 
         try:
             graph = self.repo.get_user_graph(user_id=str(user_id), limit=limit)
             stats = self.repo.get_user_graph_stats(user_id=str(user_id))
+            kg = self.repo.get_kg_nodes_and_edges(user_id=str(user_id), limit=limit)
+
+            existing_ids = {n["id"] for n in graph.get("nodes", [])}
+            new_kg_nodes = [n for n in kg.get("nodes", []) if n["id"] not in existing_ids]
+
             return {
                 "enabled": True,
-                "nodes": graph.get("nodes", []),
-                "edges": graph.get("edges", []),
+                "nodes": graph.get("nodes", []) + new_kg_nodes,
+                "edges": graph.get("edges", []) + kg.get("edges", []),
                 "stats": stats,
             }
         except Exception as exc:
             logger.warning("No se pudo recuperar el grafo del usuario %s: %s", user_id, exc)
             return self._empty_graph(message="Error consultando el grafo")
 
-    def build_user_graph_text(self, user_id: str, max_chars: int = 6000) -> str:
-        """
-        Devuelve el grafo del usuario como texto plano orientado a
-        **relaciones cruzadas** entre artículos.
-
-        El objetivo es dar al agente de IA un contexto que permita razonar
-        en términos de "estos artículos comparten autor / categoría /
-        keyword", no un simple listado de metadatos por artículo.
-
-        Estructura del texto:
-          1. Listado breve de artículos.
-          2. Conexiones cruzadas: entidades (autor, categoría, keyword, tipo)
-             que enlazan 2+ artículos, con los títulos a los que conectan.
-          3. Atributos completos por artículo (autores, categoría, etc.).
-
-        Devuelve cadena vacía si Neo4j no está disponible o no hay datos.
-        El texto se trunca a ``max_chars`` caracteres.
-        """
-        if not user_id or not self.repo.is_available():
-            return ""
-
-        try:
-            graph = self.repo.get_user_graph(user_id=str(user_id), limit=500)
-        except Exception as exc:
-            logger.warning("No se pudo construir texto del grafo para user %s: %s", user_id, exc)
-            return ""
-
-        nodes = graph.get("nodes") or []
-        edges = graph.get("edges") or []
-        if not nodes:
-            return ""
-
-        nodes_by_id = {n["id"]: n for n in nodes}
-        articles = [n for n in nodes if n.get("type") == "Article"]
-        if not articles:
-            return ""
-
-        # Título legible por artículo
-        def article_title(node: Dict[str, Any]) -> str:
-            title = (node.get("label") or "Sin título").strip()
-            year = node.get("year")
-            return f'"{title}"' + (f" ({year})" if year else "")
-
-        # ── Construcción de adyacencias ─────────────────────────────────
-        # per_article[article_id] = {WROTE, HAS_KEYWORD, IN_CATEGORY, OF_TYPE}
-        per_article: Dict[str, Dict[str, List[str]]] = {
-            n["id"]: {"WROTE": [], "HAS_KEYWORD": [], "IN_CATEGORY": [], "OF_TYPE": []}
-            for n in articles
-        }
-        # entity_to_articles[(rel_type, entity_label)] = [article_id, ...]
-        entity_to_articles: Dict[tuple, List[str]] = {}
-
-        def register(rel_type: str, entity_label: str, article_id: str):
-            if not entity_label:
-                return
-            per_article.setdefault(
-                article_id,
-                {"WROTE": [], "HAS_KEYWORD": [], "IN_CATEGORY": [], "OF_TYPE": []},
-            )
-            per_article[article_id][rel_type].append(entity_label)
-            key = (rel_type, entity_label)
-            bucket = entity_to_articles.setdefault(key, [])
-            if article_id not in bucket:
-                bucket.append(article_id)
-
-        for edge in edges:
-            src = nodes_by_id.get(edge.get("source"))
-            tgt = nodes_by_id.get(edge.get("target"))
-            rel = edge.get("type")
-            if not src or not tgt or not rel:
-                continue
-
-            if rel == "WROTE" and tgt.get("type") == "Article":
-                register("WROTE", str(src.get("label") or "").strip(), tgt["id"])
-            elif src.get("type") == "Article" and rel in ("HAS_KEYWORD", "IN_CATEGORY", "OF_TYPE"):
-                register(rel, str(tgt.get("label") or "").strip(), src["id"])
-
-        # ── 1. Listado breve de artículos ───────────────────────────────
-        lines: List[str] = ["GRAFO DE CONOCIMIENTO DEL USUARIO (Neo4j):", ""]
-        lines.append(f"ARTÍCULOS ({len(articles)} en total):")
-        for article in articles:
-            lines.append(f"- {article_title(article)}")
-
-        # ── 2. Conexiones cruzadas: entidades compartidas por 2+ artículos ──
-        rel_section_titles = {
-            "WROTE":       "Artículos que comparten autor",
-            "IN_CATEGORY": "Artículos que comparten categoría",
-            "OF_TYPE":     "Artículos que comparten tipo",
-            "HAS_KEYWORD": "Artículos que comparten keyword",
-        }
-
-        any_shared = False
-        connection_blocks: List[str] = []
-        for rel_type, section_title in rel_section_titles.items():
-            shared_items = [
-                (label, article_ids)
-                for (r, label), article_ids in entity_to_articles.items()
-                if r == rel_type and len(article_ids) >= 2
-            ]
-            if not shared_items:
-                continue
-            any_shared = True
-            shared_items.sort(key=lambda item: (-len(item[1]), item[0].lower()))
-            block_lines = [f"{section_title}:"]
-            for label, article_ids in shared_items:
-                titles = [article_title(nodes_by_id[aid]) for aid in article_ids if aid in nodes_by_id]
-                block_lines.append(f"- «{label}» → {', '.join(titles)}")
-            connection_blocks.append("\n".join(block_lines))
-
-        if any_shared:
-            lines.append("")
-            lines.append("CONEXIONES CRUZADAS (entidades compartidas entre varios artículos):")
-            lines.append("")
-            lines.append("\n\n".join(connection_blocks))
-        else:
-            lines.append("")
-            lines.append("CONEXIONES CRUZADAS: no se han detectado entidades compartidas entre artículos.")
-
-        # ── 3. Atributos completos por artículo ─────────────────────────
-        lines.append("")
-        lines.append("ATRIBUTOS POR ARTÍCULO:")
-        for article in articles:
-            relations = per_article.get(article["id"], {})
-            authors    = sorted({a for a in relations.get("WROTE", []) if a})
-            keywords   = sorted({k for k in relations.get("HAS_KEYWORD", []) if k})
-            categories = sorted({c for c in relations.get("IN_CATEGORY", []) if c})
-            types      = sorted({t for t in relations.get("OF_TYPE", []) if t})
-
-            attrs = []
-            if authors:    attrs.append(f"Autores: {', '.join(authors)}")
-            if categories: attrs.append(f"Categoría: {', '.join(categories)}")
-            if types:      attrs.append(f"Tipo: {', '.join(types)}")
-            if keywords:   attrs.append(f"Keywords: {', '.join(keywords)}")
-            attrs_text = " | ".join(attrs) if attrs else "(sin metadatos)"
-            lines.append(f"- {article_title(article)} — {attrs_text}")
-
-        text = "\n".join(lines)
-        if len(text) > max_chars:
-            text = text[:max_chars].rsplit("\n", 1)[0] + "\n[... grafo truncado ...]"
-        return text
-
     def get_user_graph_stats(self, user_id: str) -> Dict[str, Any]:
-        """Devuelve el resumen del grafo del usuario."""
+        """Devuelve un resumen del grafo del usuario."""
         if not user_id:
-            return {"enabled": False, "stats": self._empty_stats()}
-
+            return {"enabled": False, "stats": dict(_EMPTY_STATS)}
         if not self.repo.is_available():
-            return {"enabled": False, "stats": self._empty_stats(), "message": "Neo4j no configurado"}
+            return {"enabled": False, "stats": dict(_EMPTY_STATS), "message": "Neo4j no configurado"}
 
         try:
-            stats = self.repo.get_user_graph_stats(user_id=str(user_id))
-            return {"enabled": True, "stats": stats}
+            return {"enabled": True, "stats": self.repo.get_user_graph_stats(user_id=str(user_id))}
         except Exception as exc:
             logger.warning("No se pudieron leer stats del grafo: %s", exc)
-            return {"enabled": False, "stats": self._empty_stats(), "message": "Error consultando el grafo"}
+            return {"enabled": False, "stats": dict(_EMPTY_STATS), "message": "Error consultando el grafo"}
+
+    def expand_articles(
+        self,
+        user_id: str,
+        type_limits: Optional[Dict[str, int]] = None,
+    ) -> None:
+        """Expande el KG semántico para todos los artículos del usuario aún no expandidos.
+
+        ``type_limits`` (opcional) restringe cuántos nodos de cada tipo puede
+        generar el LLM por artículo. Si es ``None`` o ``{}`` no se aplica límite.
+        """
+        from app.services.knowledge_graph_service import KnowledgeGraphService
+        from pymongo import MongoClient
+        from app.config import settings as _settings
+
+        uid = str(user_id)
+        _EXPANSION_PROGRESS[uid] = {
+            "status": "running", "total": 0, "current": 0, "article": "",
+            "type_limits": dict(type_limits or {}),
+        }
+
+        kg_service = KnowledgeGraphService()
+        mongo = MongoClient(_settings.MONGODB_URL)
+        try:
+            try:
+                removed = self.repo.cleanup_naked_papers(user_id=uid)
+                if removed:
+                    logger.info("[KG] Limpiados %d Paper sin entidades antes de expandir (uid=%s)", removed, uid)
+            except Exception as exc:
+                logger.warning("[KG] No se pudieron limpiar Paper huérfanos (uid=%s): %s", uid, exc)
+
+            db = mongo[_settings.DATABASE_NAME]
+            articles = list(
+                db["articles"].find(
+                    {"id_user": uid},
+                    {
+                        "_id": 1, "title": 1, "id_pdf": 1, "source": 1,
+                        "collection_ids": 1,
+                    },
+                )
+            )
+            expanded_ids = self.repo.get_expanded_article_ids(user_id=uid)
+            pending = [a for a in articles if str(a["_id"]) not in expanded_ids]
+            total = len(pending)
+            _EXPANSION_PROGRESS[uid]["total"] = total
+
+            if total == 0:
+                _EXPANSION_PROGRESS[uid] = {
+                    "status": "done", "total": 0, "current": 0, "article": "",
+                    "ok": 0, "failed": 0, "skipped": 0,
+                }
+                return
+
+            ok_count = 0
+            fail_count = 0
+            skipped_count = 0
+            for index, article in enumerate(pending):
+                _EXPANSION_PROGRESS[uid]["current"] = index
+                _EXPANSION_PROGRESS[uid]["article"] = (article.get("title") or "")[:60]
+                article["_id"] = str(article["_id"])
+                try:
+                    result = kg_service.ingest_article_record(
+                        article=article, user_id=uid, type_limits=type_limits,
+                    )
+                    if result.get("skipped"):
+                        skipped_count += 1
+                        logger.info("[KG] Artículo %s omitido: %s",
+                                    article["_id"], result.get("message", "sin razón"))
+                    elif result.get("enabled", True):
+                        ok_count += 1
+                        logger.info("[KG] Artículo %s expandido: %d nodos, %d relaciones",
+                                    article["_id"], result.get("nodes", 0), result.get("relations", 0))
+                    else:
+                        fail_count += 1
+                        logger.warning("[KG] Artículo %s NO expandido: %s",
+                                       article["_id"], result.get("message", "desconocido"))
+                except Exception as exc:
+                    fail_count += 1
+                    logger.warning("Error expandiendo artículo %s: %s", article["_id"], exc)
+
+            _EXPANSION_PROGRESS[uid] = {
+                "status": "done", "total": total, "current": total, "article": "",
+                "ok": ok_count, "failed": fail_count, "skipped": skipped_count,
+            }
+        except Exception as exc:
+            logger.error("Expansión fallida para usuario %s: %s", user_id, exc)
+            _EXPANSION_PROGRESS[uid] = {"status": "error", "total": 0, "current": 0, "article": ""}
+        finally:
+            mongo.close()
+            kg_service.close()
+
+    def get_expansion_status(self, user_id: str) -> Dict[str, Any]:
+        """Devuelve el estado actual de expansión del usuario."""
+        default = {
+            "status": "idle", "total": 0, "current": 0, "article": "",
+            "ok": 0, "failed": 0, "skipped": 0,
+        }
+        return dict(_EXPANSION_PROGRESS.get(str(user_id), default))
 
     async def sync_all_from_mongo(self) -> Dict[str, Any]:
-        """
-        Lee todos los artículos elegibles en MongoDB y los vuelca al grafo
-        con MERGE (no duplica; cubre artículos antiguos sin pasar por el hook).
-
-        Pensado para ejecutarse una vez al iniciar el servidor.
-        """
+        """Vuelca todos los artículos de MongoDB al grafo con MERGE (idempotente)."""
         if not self.is_available():
-            logger.info(
-                "Sincronización grafo-artículos omitida: Neo4j no configurado o no accesible",
-            )
-            return {
-                "ran": False,
-                "reason": "neo4j_unavailable",
-                "total": 0,
-                "ingested_ok": 0,
-                "failed": 0,
-            }
+            logger.info("Sincronización grafo-artículos omitida: Neo4j no configurado o no accesible")
+            return {"ran": False, "reason": "neo4j_unavailable", "total": 0, "ingested_ok": 0, "failed": 0}
 
         article_repo = ArticleRepository()
         try:
@@ -297,12 +224,8 @@ class ArticleGraphService:
         except Exception as exc:
             logger.warning("No se pudo leer artículos para sincronizar el grafo: %s", exc)
             return {
-                "ran": False,
-                "reason": "mongo_error",
-                "error": str(exc),
-                "total": 0,
-                "ingested_ok": 0,
-                "failed": 0,
+                "ran": False, "reason": "mongo_error", "error": str(exc),
+                "total": 0, "ingested_ok": 0, "failed": 0,
             }
 
         ingested_ok = 0
@@ -317,73 +240,24 @@ class ArticleGraphService:
             except Exception as exc:
                 failed += 1
                 logger.warning(
-                    "Fallo al sincronizar articulo %s en Neo4j: %s",
-                    article.get("_id"),
-                    exc,
+                    "Fallo al sincronizar articulo %s en Neo4j: %s", article.get("_id"), exc,
                 )
 
         logger.info(
-            "Sincronización grafo-artículos completada: %s documentos MongoDB, %s ingestados en Neo4j, %s fallidos",
-            len(articles),
-            ingested_ok,
-            failed,
+            "Sincronización grafo-artículos completada: %s documentos, %s ingestados, %s fallidos",
+            len(articles), ingested_ok, failed,
         )
-
-        return {
-            "ran": True,
-            "total": len(articles),
-            "ingested_ok": ingested_ok,
-            "failed": failed,
-        }
-
-    def _empty_graph(self, message: Optional[str] = None) -> Dict[str, Any]:
-        payload: Dict[str, Any] = {
-            "enabled": False,
-            "nodes": [],
-            "edges": [],
-            "stats": self._empty_stats(),
-        }
-        if message:
-            payload["message"] = message
-        return payload
-
-    def _empty_stats(self) -> Dict[str, int]:
-        return {
-            "articles": 0,
-            "authors": 0,
-            "keywords": 0,
-            "categories": 0,
-            "types": 0,
-            "relationships": 0,
-        }
+        return {"ran": True, "total": len(articles), "ingested_ok": ingested_ok, "failed": failed}
 
     def compute_embeddings(self, user_id: str) -> Dict[str, Any]:
-        """
-        Proyecta el grafo del usuario, ejecuta FastRP (write mode) y
-        limpia la proyección en memoria.
-
-        Los embeddings quedan persistidos en Neo4j como propiedad de cada
-        nodo. Pueden reutilizarse en llamadas sucesivas a find_similar_nodes
-        sin necesidad de recomputar, hasta que se llame a clear_embeddings.
-        """
+        """Calcula embeddings estructurales (FastRP) y semánticos (texto) en Neo4j."""
         if not self.repo.is_available():
             return {"success": False, "reason": "Neo4j no disponible"}
 
         if not self.repo.has_gds_support():
-            try:
-                nodes = self.repo.get_nodes_needing_embeddings(user_id=str(user_id))
-                if nodes:
-                    from app.ai_assistant.config import get_embeddings as get_emb_model
-                    embedding_model = get_emb_model()
-                    texts = [n["text"].strip() or "(sin texto)" for n in nodes]
-                    vectors = embedding_model.embed_documents(texts)
-                    pairs = [{"id": n["neo4j_id"], "vec": v} for n, v in zip(nodes, vectors)]
-                    self.repo.write_node_embeddings(pairs)
-            except Exception as exc:
-                logger.error("Error computando embeddings de nodos para usuario %s: %s", user_id, exc)
-
-            text_written = self._compute_article_text_embeddings(str(user_id))
-            return {"success": True, "mode": "text", "embeddings_written": text_written}
+            self._compute_node_text_embeddings(str(user_id))
+            written = self._compute_article_text_embeddings(str(user_id))
+            return {"success": True, "mode": "text", "embeddings_written": written}
 
         try:
             result = self.repo.gds_compute_embeddings(user_id=str(user_id))
@@ -398,43 +272,110 @@ class ArticleGraphService:
         text_written = self._compute_article_text_embeddings(str(user_id))
         return {"success": True, **result, "text_embeddings_written": text_written}
 
+    def _compute_node_text_embeddings(self, user_id: str) -> None:
+        """Genera y persiste embeddings de texto para los nodos sin embedding FastRP."""
+        try:
+            nodes = self.repo.get_nodes_needing_embeddings(user_id=user_id)
+            if not nodes:
+                return
+            from app.ai_assistant.config import get_embeddings
+
+            embedding_model = get_embeddings()
+            texts = [(n["text"] or "").strip() or "(sin texto)" for n in nodes]
+            vectors = embedding_model.embed_documents(texts)
+            pairs = [{"id": n["neo4j_id"], "vec": v} for n, v in zip(nodes, vectors)]
+            self.repo.write_node_embeddings(pairs)
+        except Exception as exc:
+            logger.error("Error computando embeddings de nodos para usuario %s: %s", user_id, exc)
+
     def _compute_article_text_embeddings(self, user_id: str) -> int:
-        """
-        Calcula embeddings semánticos de texto (título + abstract + keywords)
-        para artículos que todavía no tienen text_embedding en Neo4j.
-        Devuelve el número de artículos procesados.
-        """
+        """Calcula embeddings semánticos para artículos sin ``text_embedding`` en Neo4j."""
         try:
             articles = self.repo.get_articles_needing_text_embeddings(user_id)
             if not articles:
                 return 0
 
-            from app.ai_assistant.config import get_embeddings as get_emb_model
-            embedding_model = get_emb_model()
+            from app.services.storage_service import StorageService
 
-            texts = []
-            for a in articles:
-                parts = [a["title"]]
-                if a["abstract"]:
-                    parts.append(a["abstract"][:600])
-                if a["keywords"]:
-                    parts.append(", ".join(a["keywords"][:15]))
-                texts.append(" | ".join(filter(None, parts)) or "(sin texto)")
+            storage = StorageService()
+            faiss_base = storage.get_directory("faiss_indexes") / str(user_id)
 
-            vectors = embedding_model.embed_documents(texts)
-            pairs = [{"id": a["neo4j_id"], "vec": v} for a, v in zip(articles, vectors)]
+            pairs, articles_needing_text = self._compute_faiss_based_embeddings(
+                articles=articles, faiss_base=faiss_base,
+            )
+
+            if articles_needing_text:
+                pairs.extend(self._compute_pure_text_embeddings(articles_needing_text))
+
+            if not pairs:
+                return 0
+
             count = self.repo.write_article_text_embeddings(pairs)
             logger.info(
-                "text_embedding calculado para %s artículos del usuario %s",
+                "text_embedding calculado para %s artículos del usuario %s "
+                "(%s desde FAISS, %s desde texto)",
                 count, user_id,
+                count - len(articles_needing_text),
+                len(articles_needing_text),
             )
             return count
         except Exception as exc:
-            logger.warning(
-                "No se pudieron calcular text_embeddings para usuario %s: %s",
-                user_id, exc,
-            )
+            logger.warning("No se pudieron calcular text_embeddings para usuario %s: %s", user_id, exc)
             return 0
+
+    @staticmethod
+    def _compute_faiss_based_embeddings(
+        articles: List[Dict[str, Any]],
+        faiss_base,
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Promedia los vectores FAISS por artículo cuando existen en disco."""
+        import faiss as faiss_lib
+        import numpy as np
+
+        pairs: List[Dict[str, Any]] = []
+        pending: List[Dict[str, Any]] = []
+
+        for article in articles:
+            faiss_file = faiss_base / article["article_id"] / "index.faiss"
+            if not faiss_file.exists():
+                pending.append(article)
+                continue
+            try:
+                index = faiss_lib.read_index(str(faiss_file))
+                if index.ntotal <= 0:
+                    pending.append(article)
+                    continue
+                vectors = index.reconstruct_n(0, index.ntotal)
+                mean_vec = vectors.mean(axis=0).astype(np.float32)
+                norm = float(np.linalg.norm(mean_vec))
+                if norm > 1e-9:
+                    mean_vec = mean_vec / norm
+                pairs.append({"id": article["neo4j_id"], "vec": mean_vec.tolist()})
+            except Exception as exc:
+                logger.warning(
+                    "No se pudo leer FAISS para artículo %s, usando fallback: %s",
+                    article["article_id"], exc,
+                )
+                pending.append(article)
+
+        return pairs, pending
+
+    @staticmethod
+    def _compute_pure_text_embeddings(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Genera embeddings a partir de título, abstract y keywords."""
+        from app.ai_assistant.config import get_embeddings
+
+        embedding_model = get_embeddings()
+        texts = []
+        for article in articles:
+            parts = [article["title"]]
+            if article["abstract"]:
+                parts.append(article["abstract"][:600])
+            if article["keywords"]:
+                parts.append(", ".join(article["keywords"][:15]))
+            texts.append(" | ".join(filter(None, parts)) or "(sin texto)")
+        vectors = embedding_model.embed_documents(texts)
+        return [{"id": a["neo4j_id"], "vec": v} for a, v in zip(articles, vectors)]
 
     def find_similar_nodes(
         self,
@@ -446,11 +387,7 @@ class ArticleGraphService:
         min_similarity: float = 0.7,
         top_k: int = 10,
     ) -> Dict[str, Any]:
-        """
-        Devuelve nodos similares (por embedding coseno) al nodo dado.
-        Genérico: funciona con cualquier etiqueta Neo4j del grafo.
-        Requiere que los embeddings estén ya computados
-        """
+        """Devuelve nodos similares (coseno) al nodo dado para cualquier label del grafo."""
         if not self.repo.is_available():
             return {"success": False, "reason": "Neo4j no disponible", "results": []}
 
@@ -486,50 +423,31 @@ class ArticleGraphService:
         min_similarity: float = 0.50,
         max_total_articles: int = 12,
     ) -> Dict[str, Any]:
-        """
-        Búsqueda híbrida: expande los artículos semilla (del RAG vectorial FAISS)
-        usando el grafo Neo4j para obtener:
-          - Vecindario estructural (autores, keywords, categorías, tipos).
-          - Artículos semánticamente similares por embeddings coseno.
-        """
-        fallback: Dict[str, Any] = {
-            "formatted_context": "",
-            "similarity_pairs": [],
-        }
-
+        """Devuelve contexto del grafo (vecindario + similitudes) para los artículos semilla."""
+        fallback: Dict[str, Any] = {"formatted_context": "", "similarity_pairs": []}
         if not user_id or not seed_article_ids or not self.repo.is_available():
             return fallback
 
         try:
             neighborhood = self._safe_get_neighborhood(user_id, seed_article_ids)
-
-            similarity_pairs, _ = self._compute_similar_articles(
+            similarity_pairs = self._compute_similar_articles(
                 user_id=user_id,
                 seed_ids=seed_article_ids,
                 top_k_per_seed=top_similar_per_seed,
                 min_score=min_similarity,
             )
-
-            formatted = self._format_graph_context(
-                neighborhood=neighborhood,
-                similarity_pairs=similarity_pairs,
-            )
-
-            return {
-                "formatted_context": formatted,
-                "similarity_pairs": similarity_pairs,
-            }
-
+            formatted = self._format_graph_context(neighborhood, similarity_pairs)
+            return {"formatted_context": formatted, "similarity_pairs": similarity_pairs}
         except Exception as exc:
             logger.warning(
-                "get_hybrid_graph_context falló para user_id=%s: %s", user_id, exc, exc_info=True
+                "get_hybrid_graph_context falló para user_id=%s: %s", user_id, exc, exc_info=True,
             )
             return fallback
 
     def _safe_get_neighborhood(
-        self, user_id: str, article_ids: List[str]
+        self, user_id: str, article_ids: List[str],
     ) -> List[Dict[str, Any]]:
-        """Obtiene el vecindario estructural de los artículos dados, tolerando errores."""
+        """Devuelve el vecindario estructural de los artículos, tolerando errores."""
         if not article_ids:
             return []
         try:
@@ -544,48 +462,77 @@ class ArticleGraphService:
         seed_ids: List[str],
         top_k_per_seed: int,
         min_score: float,
-    ) -> tuple:
-        """
-        Calcula similitud coseno ENTRE los artículos semilla (los del RAG)
-        usando los embeddings almacenados en Neo4j.
-        """
+    ) -> List[Dict[str, Any]]:
+        """Similitud entre artículos semilla: 80% texto completo + 20% estructura de grafo."""
         import numpy as np
+
+        W_TEXT   = 0.80
+        W_STRUCT = 0.20
 
         try:
             all_embeddings = self.repo.get_all_article_embeddings(user_id)
         except Exception as exc:
             logger.warning("No se pudieron cargar embeddings para GraphRAG: %s", exc)
-            return [], []
+            return []
 
         if len(all_embeddings) < 2:
-            return [], []
+            return []
+
+        def _unit(v: List[float]) -> Any:
+            arr = np.array(v, dtype=np.float32)
+            norm = float(np.linalg.norm(arr))
+            return arr / norm if norm > 1e-9 else arr
 
         seed_set = set(seed_ids)
-        # Filtrar solo los artículos que son semillas y tienen embedding
-        id_list: List[str] = []
-        vec_list: List[Any] = []
-        meta: Dict[str, Dict[str, Any]] = {}
-        for ae in all_embeddings:
-            aid = str(ae.get("article_id") or "")
+        id_list:     List[str]           = []
+        text_vecs:   Dict[str, Any]      = {}
+        struct_vecs: Dict[str, Any]      = {}
+        meta:        Dict[str, Dict[str, Any]] = {}
+
+        for entry in all_embeddings:
+            aid = str(entry.get("article_id") or "")
             if not aid or aid not in seed_set:
                 continue
-            v = np.array(ae["embedding"], dtype=np.float32)
-            norm = float(np.linalg.norm(v))
-            vec_list.append(v / norm if norm > 1e-9 else v)
+            tv = entry.get("text_embedding")
+            sv = entry.get("fastrp_embedding")
+            if tv is None and sv is None:
+                continue
             id_list.append(aid)
-            meta[aid] = ae
+            meta[aid] = entry
+            if tv is not None:
+                text_vecs[aid]   = _unit(tv)
+            if sv is not None:
+                struct_vecs[aid] = _unit(sv)
 
         if len(id_list) < 2:
-            return [], []
+            return []
 
         pairs: List[Dict[str, Any]] = []
-
         for i in range(len(id_list)):
             for j in range(i + 1, len(id_list)):
-                score = float(np.dot(vec_list[i], vec_list[j]))
+                aid_i, aid_j = id_list[i], id_list[j]
+
+                t_score = (
+                    float(np.dot(text_vecs[aid_i], text_vecs[aid_j]))
+                    if aid_i in text_vecs and aid_j in text_vecs else None
+                )
+                s_score = (
+                    float(np.dot(struct_vecs[aid_i], struct_vecs[aid_j]))
+                    if aid_i in struct_vecs and aid_j in struct_vecs else None
+                )
+
+                if t_score is not None and s_score is not None:
+                    score = W_TEXT * t_score + W_STRUCT * s_score
+                elif t_score is not None:
+                    score = t_score          # solo texto disponible
+                elif s_score is not None:
+                    score = s_score          # solo estructura disponible
+                else:
+                    continue
+
                 if score < min_score:
                     continue
-                aid_i, aid_j = id_list[i], id_list[j]
+
                 da, db = meta[aid_i], meta[aid_j]
                 pairs.append({
                     "article_id_a": aid_i,
@@ -599,16 +546,14 @@ class ArticleGraphService:
 
         pairs.sort(key=lambda p: -p["score"])
         max_pairs = top_k_per_seed * max(1, len(seed_set))
-        return pairs[:max_pairs], []
+        return pairs[:max_pairs]
 
     @staticmethod
     def _format_graph_context(
         neighborhood: List[Dict[str, Any]],
         similarity_pairs: List[Dict[str, Any]],
     ) -> str:
-        """
-        Serializa el subgrafo en un bloque de texto estructurado para el LLM.
-        """
+        """Serializa el subgrafo en un bloque de texto estructurado para el LLM."""
         if not neighborhood and not similarity_pairs:
             return ""
 
@@ -628,10 +573,10 @@ class ArticleGraphService:
                 year = item.get("year")
                 year_str = f" ({year})" if year else ""
                 lines.append(f'  "{title}"{year_str}')
-                authors: List[str] = item.get("authors") or []
-                keywords: List[str] = item.get("keywords") or []
-                categories: List[str] = item.get("categories") or []
-                types: List[str] = item.get("types") or []
+                authors = item.get("authors") or []
+                keywords = item.get("keywords") or []
+                categories = item.get("categories") or []
+                types = item.get("types") or []
                 if authors:
                     lines.append(f"    Autores   : {', '.join(authors)}")
                 if categories:
@@ -643,6 +588,37 @@ class ArticleGraphService:
                     if len(keywords) > 10:
                         kw_str += f" (+{len(keywords) - 10} más)"
                     lines.append(f"    Keywords  : {kw_str}")
+                # Entidades semánticas del KG (si el grafo fue expandido)
+                entities = item.get("entities") or []
+                if entities:
+                    by_type: Dict[str, List[str]] = {}
+                    for ent in entities:
+                        etype = ent.get("type") or "Entidad"
+                        name  = ent.get("name") or "?"
+                        by_type.setdefault(etype, []).append(name)
+                    for etype in sorted(by_type):
+                        names = by_type[etype]
+                        names_str = ", ".join(names[:8])
+                        if len(names) > 8:
+                            names_str += f" (+{len(names) - 8} más)"
+                        lines.append(f"    {etype:<12}: {names_str}")
+                # Relaciones semánticas entre entidades
+                _REL_LABEL = {
+                    "RESUELVE":        "resuelve",
+                    "CONSTRUYE_SOBRE": "construye sobre",
+                    "USADO_PARA":      "usado para",
+                    "RELACIONADO_CON": "relacionado con",
+                    "APOYA":           "apoya",
+                    "CONTRADICE":      "contradice",
+                }
+                relations = item.get("relations") or []
+                if relations:
+                    lines.append("    Relaciones   :")
+                    for rel in relations[:15]:
+                        verb = _REL_LABEL.get(rel["rel"], rel["rel"].lower())
+                        lines.append(f"      · {rel['source']} {verb} {rel['target']}")
+                    if len(relations) > 15:
+                        lines.append(f"      … (+{len(relations) - 15} más)")
                 lines.append("")
 
         if similarity_pairs:
@@ -662,23 +638,19 @@ class ArticleGraphService:
         return "\n".join(lines)
 
     def get_embedding_status(self, user_id: str) -> Dict[str, Any]:
+        """Devuelve cuántos nodos del usuario tienen embedding calculado."""
         if not self.repo.is_available():
             return {"available": False}
-
         try:
-            status = self.repo.get_embedding_status(user_id=str(user_id))
-            return {"available": True, **status}
+            return {"available": True, **self.repo.get_embedding_status(user_id=str(user_id))}
         except Exception as exc:
             logger.error("Error obteniendo estado de embeddings: %s", exc)
             return {"available": False, "reason": str(exc)}
 
     def clear_embeddings(self, user_id: str) -> Dict[str, Any]:
-        """
-        Elimina los embeddings de todos los nodos del usuario.
-        """
+        """Elimina los embeddings de todos los nodos del usuario."""
         if not self.repo.is_available():
             return {"success": False, "reason": "Neo4j no disponible"}
-
         try:
             self.repo.gds_drop_graph(str(user_id))
             cleared = self.repo.clear_embeddings(user_id=str(user_id))
@@ -687,28 +659,41 @@ class ArticleGraphService:
             logger.error("Error limpiando embeddings para usuario %s: %s", user_id, exc)
             return {"success": False, "reason": str(exc)}
 
-    def _extract_string(self, value: Any) -> Optional[str]:
-        if value is None:
-            return None
+    @staticmethod
+    def _empty_graph(message: Optional[str] = None) -> Dict[str, Any]:
+        """Construye una respuesta vacía estándar para el grafo."""
+        payload: Dict[str, Any] = {
+            "enabled": False,
+            "nodes": [],
+            "edges": [],
+            "stats": dict(_EMPTY_STATS),
+        }
+        if message:
+            payload["message"] = message
+        return payload
+
+    @staticmethod
+    def _extract_string(value: Any) -> Optional[str]:
+        """Devuelve la cadena saneada o ``None``."""
         if isinstance(value, str):
             text = value.strip()
             return text or None
         return None
 
-    def _extract_year(self, value: Any) -> Optional[int]:
-        if value is None:
-            return None
+    @staticmethod
+    def _extract_year(value: Any) -> Optional[int]:
+        """Parsea un año válido (1000–9999) o devuelve ``None``."""
         if isinstance(value, int):
             return value if 1000 <= value <= 9999 else None
         if isinstance(value, str):
             stripped = value.strip()
-            if not stripped:
-                return None
             if stripped[:4].isdigit():
                 return int(stripped[:4])
         return None
 
-    def _extract_authors(self, value: Any) -> List[str]:
+    @staticmethod
+    def _extract_authors(value: Any) -> List[str]:
+        """Normaliza autores desde string, lista de strings o lista de dicts."""
         if value is None:
             return []
         if isinstance(value, str):
@@ -718,19 +703,15 @@ class ArticleGraphService:
 
         authors: List[str] = []
         for item in value:
-            if item is None:
-                continue
             if isinstance(item, str):
                 text = item.strip()
                 if text:
                     authors.append(text)
                 continue
             if isinstance(item, dict):
-                raw = (
-                    item.get("display_name")
-                    or item.get("name")
-                    or item.get("author")
-                )
+                raw = item.get("display_name") or item.get("name") or item.get("author")
+                if isinstance(raw, dict):
+                    raw = raw.get("display_name") or raw.get("name")
                 if raw is None:
                     nested = item.get("author")
                     if isinstance(nested, dict):
@@ -741,7 +722,9 @@ class ArticleGraphService:
                         authors.append(text)
         return authors
 
-    def _extract_keywords(self, value: Any) -> List[str]:
+    @staticmethod
+    def _extract_keywords(value: Any) -> List[str]:
+        """Normaliza keywords desde string, lista de strings o lista de dicts (sin duplicados)."""
         if value is None:
             return []
         if isinstance(value, str):
@@ -752,8 +735,6 @@ class ArticleGraphService:
 
         keywords: List[str] = []
         for item in value:
-            if item is None:
-                continue
             if isinstance(item, str):
                 text = item.strip()
                 if text:
@@ -768,10 +749,10 @@ class ArticleGraphService:
                     keywords.append(text)
 
         seen = set()
-        unique_keywords: List[str] = []
+        unique: List[str] = []
         for kw in keywords:
             lowered = kw.lower()
             if lowered not in seen:
                 seen.add(lowered)
-                unique_keywords.append(kw)
-        return unique_keywords
+                unique.append(kw)
+        return unique

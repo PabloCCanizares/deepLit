@@ -19,7 +19,7 @@ function KnowledgeGraph() {
   })
 
   return (
-    <div className="dashboardContainer">
+    <div className="dashboardContainer knowledge-graph-page">
       <div className="header">
         <h1 className="dashboard-main-title">Grafo de Conocimiento</h1>
         <button
