@@ -366,7 +366,6 @@ class JobWorker:
                 user_message=prompt,
                 user_id=user_id,
                 collection_id=collection_id,
-                fail_on_timeout=True,
             )
 
             await self.job_service.mark_completed(job_id)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Optional
 
@@ -326,7 +327,9 @@ class RedactionService:
         )
 
         prompt_final = llm_agent.create_prompt(message=user_prompt)
-        raw_output = llm_agent.invoke(prompt_final, structured_output=True)
+        raw_output = await asyncio.to_thread(
+            llm_agent.invoke, prompt_final, structured_output=True
+        )
         llm_result = RedactionLLMResult.model_validate(raw_output)
 
         return RedactionResult(

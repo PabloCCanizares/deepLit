@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import List, Tuple
 
@@ -231,9 +232,10 @@ class CollectionScreeningService:
                         source_type=source_type,
                     )
                 )
-                result = ScreeningDecisionLLMResult.model_validate(
-                    llm_agent.invoke(prompt, structured_output=True)
+                raw_output = await asyncio.to_thread(
+                    llm_agent.invoke, prompt, structured_output=True
                 )
+                result = ScreeningDecisionLLMResult.model_validate(raw_output)
             except Exception as exc:
                 logger.warning(
                     "Fallo analizando screening para article_id=%s: %s",

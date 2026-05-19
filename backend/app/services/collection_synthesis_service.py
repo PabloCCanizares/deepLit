@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+import asyncio
 import logging
 import re
 from typing import Optional
@@ -56,7 +56,6 @@ REGLAS:
   REFERENCIAS CITADAS
 - En ese modo paper, las referencias deben nombrar los articulos citados cuando sea posible.
 """.strip()
-_LLM_TIMEOUT_SECONDS = 45
 _PAPER_SECTIONS = (
     "TITULO",
     "RESUMEN",
@@ -225,7 +224,6 @@ class CollectionSynthesisService:
         user_message: str,
         user_id: Optional[str],
         collection_id: Optional[str],
-        fail_on_timeout: bool = False,
     ) -> dict:
         if not user_id:
             return {
@@ -277,16 +275,7 @@ class CollectionSynthesisService:
             ) + rag_context
         )
 
-        try:
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(llm_agent.invoke, prompt_final)
-                output = future.result(timeout=_LLM_TIMEOUT_SECONDS)
-        except FuturesTimeoutError as exc:
-            logger.warning("Timeout en collection_synthesis para user_id=%s", user_id)
-            timeout_message = "La sintesis de la coleccion tarda demasiado. Intenta acotar mas la consulta."
-            if fail_on_timeout:
-                raise RuntimeError(timeout_message) from exc
-            output = timeout_message
+        output = await asyncio.to_thread(llm_agent.invoke, prompt_final)
 
         output = self._normalize_output(output)
         llm_agent.print_agent_execution(
@@ -316,7 +305,6 @@ class CollectionSynthesisService:
             ),
             user_id=user_id,
             collection_id=collection_id,
-            fail_on_timeout=True,
         )
         paper_response = result["reply"]
         return {

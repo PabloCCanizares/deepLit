@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from typing import Tuple
@@ -523,7 +524,7 @@ class EvidenceExtractionService:
             f"Contexto disponible:\n{context}"
         )
 
-    def _invoke_structured(
+    async def _invoke_structured(
         self,
         *,
         llm_agent: BaseAgent,
@@ -542,7 +543,10 @@ class EvidenceExtractionService:
                     source_type=source_type,
                 )
             )
-            return schema.model_validate(llm_agent.invoke(prompt, structured_output=True))
+            raw_output = await asyncio.to_thread(
+                llm_agent.invoke, prompt, structured_output=True
+            )
+            return schema.model_validate(raw_output)
         except Exception as exc:
             logger.warning(
                 "Fallo extrayendo bloque %s para article_id=%s: %s",
@@ -597,7 +601,7 @@ class EvidenceExtractionService:
             )
 
             try:
-                objective_result = self._invoke_structured(
+                objective_result = await self._invoke_structured(
                     llm_agent=extraction_agents["objective"],
                     schema=EvidenceExtractionObjectiveResult,
                     prompt_builder=self._build_objective_prompt,
@@ -607,7 +611,7 @@ class EvidenceExtractionService:
                     task_name="objective",
                 )
 
-                methods_result = self._invoke_structured(
+                methods_result = await self._invoke_structured(
                     llm_agent=extraction_agents["methods"],
                     schema=EvidenceExtractionMethodsResult,
                     prompt_builder=self._build_methods_prompt,
@@ -617,7 +621,7 @@ class EvidenceExtractionService:
                     task_name="methods",
                 )
 
-                findings_result = self._invoke_structured(
+                findings_result = await self._invoke_structured(
                     llm_agent=extraction_agents["findings"],
                     schema=EvidenceExtractionFindingsResult,
                     prompt_builder=self._build_findings_prompt,
