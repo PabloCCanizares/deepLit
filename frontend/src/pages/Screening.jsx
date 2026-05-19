@@ -188,7 +188,7 @@ function Screening() {
         setSelectedRunId(null)
       }
     } catch (err) {
-      setRunsError(err.message || 'Error al cargar screenings')
+      setRunsError(err.message || 'Error al cargar cribados')
     } finally {
       setLoadingRuns(false)
     }
@@ -204,7 +204,7 @@ function Screening() {
       setSelectedRun(response?.data?.run || null)
       setResults(response?.data?.results || [])
     } catch (err) {
-      setResultsError(err.message || 'Error al cargar resultados del screening')
+      setResultsError(err.message || 'Error al cargar resultados del cribado')
     } finally {
       setLoadingResults(false)
     }
@@ -213,7 +213,7 @@ function Screening() {
   useArticlesEvents({
     onScreeningReady: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification('Screening completado correctamente')
+      setNotification('Cribado completado correctamente')
       await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
       if (data.run_id) {
         await loadRunResults(data.run_id)
@@ -221,7 +221,7 @@ function Screening() {
     },
     onScreeningError: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification(`Error en screening: ${data.error_message || 'Error desconocido'}`)
+      setNotification(`Error en cribado: ${data.error_message || 'Error desconocido'}`)
       await loadRuns({ preserveSelection: true, preferredRunId: data.run_id })
       if (data.run_id) {
         await loadRunResults(data.run_id)
@@ -257,7 +257,7 @@ function Screening() {
       const response = await screeningAPI.runCollection(selectedCollectionId, payload)
       const runId = response?.data?.run_id
 
-      setNotification('Screening encolado correctamente')
+      setNotification('Cribado encolado correctamente')
       setShowCreateForm(false)
       setFormData({
         researchQuestion: '',
@@ -270,7 +270,7 @@ function Screening() {
         await loadRunResults(runId)
       }
     } catch (err) {
-      setNotification(err.message || 'Error al lanzar el screening')
+      setNotification(err.message || 'Error al lanzar el cribado')
     } finally {
       setSubmitting(false)
     }
@@ -299,7 +299,7 @@ function Screening() {
 
     setCollectionFormData({
       name: newCollectionName,
-      description: `Coleccion generada desde el screening "${selectedRun.research_question}" con articulos ${decisionSuffix}.`,
+      description: `Coleccion generada desde el cribado "${selectedRun.research_question}" con articulos ${decisionSuffix}.`,
     })
     setShowCreateCollectionModal(true)
   }
@@ -370,9 +370,9 @@ function Screening() {
       }
 
       await loadRuns({ preserveSelection: !deletingSelectedRun })
-      setNotification('Screening eliminado correctamente')
+      setNotification('Cribado eliminado correctamente')
     } catch (err) {
-      setNotification(err.message || 'Error al eliminar el screening')
+      setNotification(err.message || 'Error al eliminar el cribado')
     } finally {
       setDeletingRun(false)
     }
@@ -387,8 +387,8 @@ function Screening() {
         decision: nextDecision,
         reason:
           nextDecision === 'include'
-            ? 'Decision ajustada manualmente a incluido desde Screening.'
-            : 'Decision ajustada manualmente a excluido desde Screening.',
+            ? 'Decision ajustada manualmente a incluido desde Cribado.'
+            : 'Decision ajustada manualmente a excluido desde Cribado.',
       })
 
       const updatedRun = response?.data?.run || null
@@ -431,7 +431,7 @@ function Screening() {
             <i className="fas fa-folder-open"></i>
           </div>
           <h1>Selecciona una colección</h1>
-          <p>Screening trabaja sobre una colección concreta. Elige una en la barra superior para empezar.</p>
+          <p>Cribado trabaja sobre una colección concreta. Elige una en la barra superior para empezar.</p>
         </div>
       </div>
     )
@@ -486,7 +486,7 @@ function Screening() {
               onClick={() => setShowCreateForm((prev) => !prev)}
             >
               <i className="fas fa-plus"></i>
-              <span>{showCreateForm ? 'Ocultar formulario' : 'Nuevo screening'}</span>
+              <span>{showCreateForm ? 'Ocultar formulario' : 'Nuevo cribado'}</span>
             </button>
           </div>
         </section>
@@ -494,7 +494,7 @@ function Screening() {
         {showCreateForm && (
           <section className="screening-create-card">
             <div className="screening-create-header">
-              <h3>Nuevo screening</h3>
+              <h3>Nuevo cribado</h3>
               <p>La pregunta define el foco del cribado. Los criterios son opcionales y se escriben una línea por criterio.</p>
             </div>
 
@@ -546,7 +546,7 @@ function Screening() {
                 disabled={submitting || !formData.researchQuestion.trim()}
               >
                 <i className="fas fa-play"></i>
-                <span>{submitting ? 'Encolando...' : 'Lanzar screening'}</span>
+                <span>{submitting ? 'Encolando...' : 'Lanzar cribado'}</span>
               </button>
             </div>
           </section>
@@ -566,7 +566,7 @@ function Screening() {
             {!runsError && runs.length === 0 && !loadingRuns && (
               <div className="screening-panel-empty">
                 <i className="fas fa-layer-group"></i>
-                <p>No hay screenings todavía para esta colección.</p>
+                <p>No hay cribados todavía para esta colección.</p>
               </div>
             )}
 
@@ -598,8 +598,8 @@ function Screening() {
                           setShowDeleteRunModal(true)
                         }}
                         disabled={deletingRun}
-                        aria-label={`Eliminar screening ${run.research_question}`}
-                        title="Eliminar screening"
+                        aria-label={`Eliminar cribado ${run.research_question}`}
+                        title="Eliminar cribado"
                       >
                         <i className={`fas ${deletingRun && runToDeleteId === run._id ? 'fa-spinner fa-spin' : 'fa-trash'}`}></i>
                       </button>
@@ -620,7 +620,7 @@ function Screening() {
             {!selectedRun && !loadingResults && (
               <div className="screening-detail-empty">
                 <i className="fas fa-magnifying-glass-chart"></i>
-                <h3>Selecciona un screening</h3>
+                <h3>Selecciona un cribado</h3>
                 <p>Aquí verás la pregunta, el estado del run y la lista de artículos clasificados.</p>
               </div>
             )}
@@ -698,7 +698,7 @@ function Screening() {
                 {loadingResults && (
                   <div className="screening-detail-empty">
                     <div className="spinner"></div>
-                    <p>Cargando resultados del screening...</p>
+                    <p>Cargando resultados del cribado...</p>
                   </div>
                 )}
 
@@ -707,7 +707,7 @@ function Screening() {
                     <i className="fas fa-file-circle-question"></i>
                     <p>
                       {['queued', 'processing'].includes(selectedRun.status)
-                        ? 'El screening sigue en marcha. Los resultados aparecerán aquí en cuanto termine.'
+                        ? 'El cribado sigue en marcha. Los resultados aparecerán aquí en cuanto termine.'
                         : 'No hay artículos para este filtro todavía.'}
                     </p>
                   </div>
@@ -804,11 +804,11 @@ function Screening() {
               <div className="modal-header">
                 <h2>
                   <i className="fas fa-exclamation-triangle" style={{ color: 'var(--color-danger)' }}></i>
-                  {' '}Eliminar screening
+                  {' '}Eliminar cribado
                 </h2>
               </div>
               <div className="modal-body">
-                <p>¿Seguro que quieres eliminar este screening y todos sus resultados guardados?</p>
+                <p>¿Seguro que quieres eliminar este cribado y todos sus resultados guardados?</p>
               </div>
               <div className="modal-footer">
                 <button

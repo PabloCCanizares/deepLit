@@ -161,7 +161,6 @@ class JobService:
         text_type: str,
         synthesis_run_id: str | None = None,
         evidence_extraction_run_id: str | None = None,
-        parent_run_id: str | None = None,
     ) -> str:
         return await self.enqueue(
             job_type=JOB_GENERATE_REDACTION,
@@ -174,7 +173,6 @@ class JobService:
                 "text_type": text_type,
                 "synthesis_run_id": synthesis_run_id,
                 "evidence_extraction_run_id": evidence_extraction_run_id,
-                "parent_run_id": parent_run_id,
             },
         )
 

@@ -3,8 +3,6 @@ import logging
 import re
 from typing import Optional
 
-from fastapi import Depends
-
 from app.ai_assistant.agents.base_agents.base_agent import BaseAgent
 from app.ai_assistant.agents.base_agents.rag_engine import RagEngine
 from app.ai_assistant.config import (
@@ -84,11 +82,15 @@ def rag_has_context(rag_context: Optional[str]) -> bool:
 class CollectionSynthesisService:
     def __init__(
         self,
-        article_repository: ArticleRepository = Depends(ArticleRepository),
-        storage_service: StorageService = Depends(StorageService),
+        article_repository: ArticleRepository | None = None,
+        storage_service: StorageService | None = None,
     ):
-        self.article_repository = article_repository
-        self.storage_service = storage_service
+        self.article_repository = (
+            article_repository if article_repository is not None else ArticleRepository()
+        )
+        self.storage_service = (
+            storage_service if storage_service is not None else StorageService()
+        )
 
     async def ensure_collection_has_processed_pdfs(
         self,

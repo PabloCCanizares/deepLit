@@ -20,7 +20,6 @@ from app.repositories import (
     ArticleRepository,
     CollectionSynthesisRepository,
     EvidenceExtractionRunRepository,
-    RedactionRunRepository,
 )
 from app.services.storage_service import StorageService
 
@@ -33,9 +32,6 @@ REDACTION_NO_PDF_MESSAGE = (
     "Esta colección no contiene ningún artículo con PDF procesado. "
     "La redacción asistida necesita al menos un PDF para producir un resultado con apoyo documental. "
     "Procesa al menos un PDF de los artículos de esta colección antes de continuar."
-)
-REDACTION_PARENT_NOT_FOUND_MESSAGE = (
-    "El borrador anterior referenciado no existe o no pertenece al usuario."
 )
 REDACTION_SYNTHESIS_NOT_FOUND_MESSAGE = (
     "La síntesis referenciada no existe, no pertenece al usuario o no se completó con éxito."
@@ -132,7 +128,6 @@ class RedactionService:
         collection_synthesis_repo: CollectionSynthesisRepository | None = None,
         evidence_extraction_run_repo: EvidenceExtractionRunRepository | None = None,
         article_extraction_repo: ArticleExtractionRepository | None = None,
-        redaction_run_repo: RedactionRunRepository | None = None,
     ):
         self.article_repository = (
             article_repository if article_repository is not None else ArticleRepository()
@@ -154,9 +149,6 @@ class RedactionService:
             article_extraction_repo
             if article_extraction_repo is not None
             else ArticleExtractionRepository()
-        )
-        self.redaction_run_repo = (
-            redaction_run_repo if redaction_run_repo is not None else RedactionRunRepository()
         )
 
     async def ensure_collection_has_processed_pdfs(
@@ -199,11 +191,6 @@ class RedactionService:
             if not run or run.get("id_user") != user_id or run.get("status") != "completed":
                 raise ValidationError(REDACTION_EVIDENCE_NOT_FOUND_MESSAGE)
 
-        if request.parent_run_id:
-            run = await self.redaction_run_repo.find_by_id(request.parent_run_id)
-            if not run or run.get("id_user") != user_id or run.get("status") != "completed":
-                raise ValidationError(REDACTION_PARENT_NOT_FOUND_MESSAGE)
-
     async def _load_synthesis_content(
         self,
         *,
@@ -231,21 +218,6 @@ class RedactionService:
             run_id=evidence_extraction_run_id,
         )
 
-    async def _load_parent_draft_text(
-        self,
-        *,
-        user_id: str,
-        parent_run_id: Optional[str],
-    ) -> Optional[str]:
-        if not parent_run_id:
-            return None
-        run = await self.redaction_run_repo.find_by_id(parent_run_id)
-        if not run or run.get("id_user") != user_id:
-            return None
-        result = run.get("result") or {}
-        draft_text = result.get("draft_text")
-        return draft_text if draft_text else None
-
     def _build_user_prompt(
         self,
         *,
@@ -253,7 +225,6 @@ class RedactionService:
         text_type: RedactionTextType,
         synthesis_content: Optional[str],
         evidence_extractions: list[dict],
-        parent_draft_text: Optional[str],
         rag_context: str,
     ) -> str:
         blocks: list[str] = []
@@ -271,14 +242,6 @@ class RedactionService:
         else:
             blocks.append(
                 "### EVIDENCIA UTILIZADA\nNo se ha proporcionado evidence extraction previa."
-            )
-
-        if parent_draft_text:
-            blocks.append(
-                "### BORRADOR ANTERIOR (REVISION)\n"
-                "El siguiente texto es el borrador previo. Produce una revision que incorpore "
-                "la nueva aportacion del usuario manteniendo el tono y estructura academica.\n\n"
-                + parent_draft_text.strip()
             )
 
         blocks.append("### CONTEXTO DE LOS DOCUMENTOS\n" + rag_context.strip())
@@ -342,10 +305,6 @@ class RedactionService:
             user_id=user_id,
             evidence_extraction_run_id=request.evidence_extraction_run_id,
         )
-        parent_draft_text = await self._load_parent_draft_text(
-            user_id=user_id,
-            parent_run_id=request.parent_run_id,
-        )
 
         llm_agent, rag_engine = self._build_agents()
         await load_faiss_indexes(
@@ -363,7 +322,6 @@ class RedactionService:
             text_type=request.text_type,
             synthesis_content=synthesis_content,
             evidence_extractions=evidence_extractions,
-            parent_draft_text=parent_draft_text,
             rag_context=rag_context,
         )
 

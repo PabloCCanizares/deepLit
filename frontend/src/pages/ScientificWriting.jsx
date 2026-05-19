@@ -5,7 +5,7 @@ import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
 import { useIntervalPolling } from '../hooks/useIntervalPolling'
-import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfExport'
+import { createPaperPdfBlob, downloadPdfBlob } from '../utils/pdfExport'
 
 import '../styles/App.css'
 import '../styles/workspace/ScientificWriting.css'
@@ -135,7 +135,7 @@ function resolveRunSelection(runs, currentId, preferredId) {
 function formatEvidenceMode(value) {
   const labels = {
     all: 'Toda la coleccion',
-    screening_include: 'Incluidos de screening',
+    screening_include: 'Incluidos de cribado',
     screening_include_review: 'Incluidos + revision',
   }
   return labels[value] || value || 'Sin modo'
@@ -178,9 +178,7 @@ function ScientificWriting({ embedded = false }) {
   const [loadingEvidenceRuns, setLoadingEvidenceRuns] = useState(false)
   const [loadingEvidenceResults, setLoadingEvidenceResults] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isRequestingRevision, setIsRequestingRevision] = useState(false)
   const [notification, setNotification] = useState('')
-  const [revisionInstruction, setRevisionInstruction] = useState('')
 
   const activeCollectionIdRef = useRef(selectedCollectionId)
   const selectedDraftRunIdRef = useRef(selectedDraftRunId)
@@ -256,10 +254,6 @@ function ScientificWriting({ embedded = false }) {
     const timer = setTimeout(() => setNotification(''), 4500)
     return () => clearTimeout(timer)
   }, [notification])
-
-  useEffect(() => {
-    setRevisionInstruction('')
-  }, [selectedDraftRunId])
 
   const loadSynthesisRuns = useCallback(async (collectionId, options = {}) => {
     const { preserveSelection = true } = options
@@ -466,7 +460,6 @@ function ScientificWriting({ embedded = false }) {
         text_type: textType,
         synthesis_run_id: selectedSynthesisRunId || null,
         evidence_extraction_run_id: selectedEvidenceRunId || null,
-        parent_run_id: null,
       })
       const createdRunId = response?.data?.run_id || null
 
@@ -477,42 +470,6 @@ function ScientificWriting({ embedded = false }) {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleCopyDraft = async () => {
-    const text = cleanAssistantText(selectedDraftText)
-    if (!text) return
-
-    try {
-      await navigator.clipboard.writeText(text)
-      setNotification('Borrador copiado al portapapeles')
-    } catch {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.setAttribute('readonly', '')
-      textarea.style.position = 'absolute'
-      textarea.style.left = '-9999px'
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-      setNotification('Borrador copiado al portapapeles')
-    }
-  }
-
-  const handleOpenDraftPdf = () => {
-    const sections = getDraftPdfSections(selectedDraftText)
-    if (sections.length === 0) {
-      setNotification('El borrador no tiene contenido suficiente para generar PDF')
-      return
-    }
-
-    const blob = createPaperPdfBlob({
-      title: getDraftTitle(selectedDraftRun),
-      collectionName,
-      sections,
-    })
-    openPdfBlob(blob)
   }
 
   const handleDownloadDraftPdf = () => {
@@ -528,35 +485,6 @@ function ScientificWriting({ embedded = false }) {
       sections,
     })
     downloadPdfBlob(blob, buildPdfFilename(collectionName, selectedDraftRun))
-  }
-
-  const handleRequestDraftRevision = async () => {
-    const instruction = revisionInstruction.trim()
-
-    if (!selectedCollectionId || !selectedDraftRun || isRequestingRevision) return
-    if (!instruction) {
-      setNotification('Escribe que quieres cambiar antes de pedir una revision')
-      return
-    }
-
-    try {
-      setIsRequestingRevision(true)
-      const response = await redactionAPI.createRun(selectedCollectionId, {
-        user_idea: instruction,
-        text_type: textType,
-        synthesis_run_id: selectedSynthesisRunId || null,
-        evidence_extraction_run_id: selectedEvidenceRunId || null,
-        parent_run_id: selectedDraftRun._id,
-      })
-      const createdRunId = response?.data?.run_id || null
-      setRevisionInstruction('')
-      setNotification('Revision con agente encolada correctamente')
-      await loadRedactionRuns(selectedCollectionId, createdRunId)
-    } catch (error) {
-      setNotification(error.message || 'Error al pedir cambios al agente')
-    } finally {
-      setIsRequestingRevision(false)
-    }
   }
 
   const pageClassName = embedded
@@ -849,43 +777,10 @@ function ScientificWriting({ embedded = false }) {
 
             {selectedDraftText ? (
               <div className="scientific-writing-result-footer">
-                <button type="button" className="btn-secondary" onClick={handleCopyDraft}>
-                  <i className="fas fa-copy"></i>
-                  <span>Copiar al portapapeles</span>
-                </button>
-                <button type="button" className="btn-secondary" onClick={handleOpenDraftPdf}>
-                  <i className="fas fa-eye"></i>
-                  <span>Ver PDF</span>
-                </button>
                 <button type="button" className="btn-primary" onClick={handleDownloadDraftPdf}>
                   <i className="fas fa-file-pdf"></i>
                   <span>Descargar PDF</span>
                 </button>
-              </div>
-            ) : null}
-
-            {selectedDraftRun?.status === 'completed' && selectedDraftText ? (
-              <div className="scientific-writing-revision-panel">
-                <span className="scientific-writing-kicker">Pedir revision</span>
-                <h3>¿Que quieres cambiar?</h3>
-                <textarea
-                  value={revisionInstruction}
-                  onChange={(event) => setRevisionInstruction(event.target.value)}
-                  placeholder="Ejemplo: refuerza la discusion teorica, reduce repeticiones y aclara que las citas deben revisarse."
-                  rows={6}
-                />
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleRequestDraftRevision}
-                  disabled={isRequestingRevision || !revisionInstruction.trim()}
-                >
-                  <i className={`fas ${isRequestingRevision ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'}`}></i>
-                  <span>{isRequestingRevision ? 'Pidiendo revision...' : 'Pedir revision'}</span>
-                </button>
-                <p>
-                  Se generara un nuevo borrador en el historial encadenado al actual mediante <code>parent_run_id</code>.
-                </p>
               </div>
             ) : null}
           </section>

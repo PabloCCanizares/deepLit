@@ -11,7 +11,6 @@ import {
 } from '../api/index.js'
 import EmptyStepState from '../components/reviewWorkflow/EmptyStepState'
 import RunStatusBadge from '../components/reviewWorkflow/RunStatusBadge'
-import WorkflowProgressSummary from '../components/reviewWorkflow/WorkflowProgressSummary'
 import WorkflowStepSidebar from '../components/reviewWorkflow/WorkflowStepSidebar'
 import { FieldBlock, ListBlock, SupportBlock } from '../components/reviewWorkflow/EvidenceFieldBlocks'
 import NotificationToast from '../components/common/NotificationToast'
@@ -35,7 +34,7 @@ const STEP_DEFINITIONS = {
     icon: 'fa-folder-open',
   },
   screening: {
-    title: 'Screening',
+    title: 'Cribado',
     subtitle: 'Cribado por pregunta y criterios',
     icon: 'fa-filter',
   },
@@ -91,7 +90,7 @@ const SELECTION_MODE_OPTIONS = [
   {
     value: 'screening_include',
     title: 'Solo incluidos',
-    description: 'Usa un screening previo y trabaja con articulos marcados como include.',
+    description: 'Usa un cribado previo y trabaja con articulos marcados como include.',
     icon: 'fa-check-double',
   },
   {
@@ -119,7 +118,7 @@ const CLUSTER_MODE_OPTIONS = [
 
 const SELECTION_MODE_LABELS = {
   all: 'Toda la coleccion',
-  screening_include: 'Incluidos de screening',
+  screening_include: 'Incluidos de cribado',
   screening_include_review: 'Incluidos + revision',
 }
 
@@ -755,13 +754,13 @@ function ReviewWorkflow() {
   useArticlesEvents({
     onScreeningReady: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification('Screening completado correctamente')
+      setNotification('Cribado completado correctamente')
       await loadScreeningRuns({ preserveSelection: true, preferredRunId: data.run_id })
       if (data.run_id) await loadScreeningResults(data.run_id)
     },
     onScreeningError: async (data) => {
       if (data.collection_id !== selectedCollectionId) return
-      setNotification(`Error en screening: ${data.error_message || 'Error desconocido'}`)
+      setNotification(`Error en cribado: ${data.error_message || 'Error desconocido'}`)
       await loadScreeningRuns({ preserveSelection: true, preferredRunId: data.run_id })
       if (data.run_id) await loadScreeningResults(data.run_id)
     },
@@ -856,11 +855,11 @@ function ReviewWorkflow() {
         inclusionCriteria: '',
         exclusionCriteria: '',
       })
-      setNotification('Screening encolado correctamente')
+      setNotification('Cribado encolado correctamente')
       await loadScreeningRuns({ preserveSelection: true, preferredRunId: runId })
       if (runId) await loadScreeningResults(runId)
     } catch (error) {
-      setNotification(error.message || 'Error al lanzar el screening')
+      setNotification(error.message || 'Error al lanzar el cribado')
     } finally {
       setCreatingScreening(false)
     }
@@ -911,7 +910,7 @@ function ReviewWorkflow() {
     if (!selectedCollectionId || creatingEvidence) return
 
     if (evidenceForm.selectionMode !== 'all' && !evidenceForm.screeningRunId) {
-      setNotification('Selecciona un screening completado para este modo')
+      setNotification('Selecciona un cribado completado para este modo')
       return
     }
 
@@ -1030,23 +1029,10 @@ function ReviewWorkflow() {
       <div className="workflow-guidance-card">
         <h3>Orden recomendado</h3>
         <p>
-          Puedes empezar por screening, saltar directamente a extraccion sobre toda la coleccion,
-          agrupar evidencia solo si aporta claridad y cerrar con una sintesis de coleccion.
+          El flujo sugerido es realizar cribado, extraer evidencia sobre los articulos relevantes,
+          agruparlos opcionalmente, sintetizar la coleccion y, si procede, redactar a partir de las
+          sintesis y evidencias generadas.
         </p>
-        <div className="workflow-guidance-actions">
-          <button type="button" className="btn-primary" onClick={() => changeStep('screening')}>
-            <i className="fas fa-filter"></i>
-            <span>Empezar screening</span>
-          </button>
-          <button type="button" className="btn-secondary" onClick={() => changeStep('evidence')}>
-            <i className="fas fa-microscope"></i>
-            <span>Ir a extraccion</span>
-          </button>
-          <button type="button" className="btn-secondary" onClick={() => changeStep('synthesis')}>
-            <i className="fas fa-diagram-project"></i>
-            <span>Ir a sintesis</span>
-          </button>
-        </div>
       </div>
     </section>
   )
@@ -1056,7 +1042,7 @@ function ReviewWorkflow() {
       <div className="workflow-step-header">
         <div>
           <span className="workflow-kicker">Etapa 1</span>
-          <h2>Screening de articulos</h2>
+          <h2>Cribado de articulos</h2>
           <p>Lanza una pregunta de investigacion y revisa decisiones include, review o exclude.</p>
         </div>
         <button type="button" className="btn-secondary" onClick={() => loadScreeningRuns({ preserveSelection: true })}>
@@ -1112,7 +1098,7 @@ function ReviewWorkflow() {
             disabled={creatingScreening || !screeningForm.researchQuestion.trim()}
           >
             <i className={`fas ${creatingScreening ? 'fa-spinner fa-spin' : 'fa-play'}`}></i>
-            <span>{creatingScreening ? 'Encolando...' : 'Ejecutar screening'}</span>
+            <span>{creatingScreening ? 'Encolando...' : 'Ejecutar cribado'}</span>
           </button>
           <button type="button" className="btn-secondary" onClick={() => changeStep('evidence')}>
             Saltar por ahora
@@ -1126,7 +1112,7 @@ function ReviewWorkflow() {
       <div className="workflow-step-results-grid">
         <aside className="workflow-runs-panel">
           <div className="workflow-panel-heading">
-            <h3>Runs de screening</h3>
+            <h3>Runs de cribado</h3>
             <span>{screeningRuns.length}</span>
           </div>
 
@@ -1135,7 +1121,7 @@ function ReviewWorkflow() {
           {!screeningRunsError && !loadingScreeningRuns && screeningRuns.length === 0 ? (
             <EmptyStepState
               icon="fa-layer-group"
-              title="Sin screenings"
+              title="Sin cribados"
               message="Los runs que lances para esta coleccion apareceran aqui."
             />
           ) : null}
@@ -1165,7 +1151,7 @@ function ReviewWorkflow() {
           {!selectedScreeningRun && !loadingScreeningResults ? (
             <EmptyStepState
               icon="fa-magnifying-glass-chart"
-              title="Selecciona un screening"
+              title="Selecciona un cribado"
               message="Aqui veras resultados y podras ajustar manualmente los articulos en revision."
             />
           ) : null}
@@ -1204,7 +1190,7 @@ function ReviewWorkflow() {
               </div>
 
               {loadingScreeningResults ? (
-                <EmptyStepState icon="fa-spinner fa-spin" message="Cargando resultados del screening..." />
+                <EmptyStepState icon="fa-spinner fa-spin" message="Cargando resultados del cribado..." />
               ) : null}
 
               {!loadingScreeningResults && filteredScreeningResults.length === 0 ? (
@@ -1212,7 +1198,7 @@ function ReviewWorkflow() {
                   icon="fa-file-circle-question"
                   message={
                     isActiveRunStatus(selectedScreeningRun.status)
-                      ? 'El screening sigue en marcha. Los resultados apareceran al finalizar.'
+                      ? 'El cribado sigue en marcha. Los resultados apareceran al finalizar.'
                       : 'No hay articulos para este filtro.'
                   }
                 />
@@ -1340,7 +1326,7 @@ function ReviewWorkflow() {
             {completedScreeningRuns.length === 0 ? (
               <div className="workflow-inline-warning">
                 <i className="fas fa-circle-info"></i>
-                <span>No hay screenings completados. Puedes extraer sobre toda la coleccion o ejecutar screening primero.</span>
+                <span>No hay cribados completados. Puedes extraer sobre toda la coleccion o ejecutar cribado primero.</span>
               </div>
             ) : (
               <div className="workflow-picker-list">
@@ -1379,12 +1365,6 @@ function ReviewWorkflow() {
             <i className={`fas ${creatingEvidence ? 'fa-spinner fa-spin' : 'fa-play'}`}></i>
             <span>{creatingEvidence ? 'Encolando...' : 'Ejecutar este paso'}</span>
           </button>
-          <button type="button" className="btn-secondary" onClick={() => changeStep('clustering')}>
-            Continuar con clustering
-          </button>
-          <button type="button" className="btn-secondary" onClick={() => changeStep('synthesis')}>
-            Saltar clustering
-          </button>
         </div>
       </div>
 
@@ -1401,7 +1381,7 @@ function ReviewWorkflow() {
             <EmptyStepState
               icon="fa-microscope"
               title="Sin extracciones"
-              message="Puedes ejecutar esta etapa sin screening usando toda la coleccion."
+              message="Puedes ejecutar esta etapa sin cribado usando toda la coleccion."
             />
           ) : null}
 
@@ -1496,7 +1476,6 @@ function ReviewWorkflow() {
                       <div className="evidence-result-top">
                         <h3>{item.article_title || formatArticleFallback(item.article_id)}</h3>
                         <div className="evidence-result-meta">
-                          <span className="evidence-source-pill">{formatSourceType(item.source_type)}</span>
                           <span className="evidence-confidence-pill">Confianza {formatConfidence(item.confidence)}</span>
                         </div>
                       </div>
@@ -1721,7 +1700,7 @@ function ReviewWorkflow() {
                 <div className="workflow-mini-metrics three">
                   <span><strong>{selectedClusteringRun.selected_cluster_count || 0}</strong> Clusters</span>
                   <span><strong>{selectedClusteringRun.processed_articles || 0}</strong> Articulos</span>
-                  <span><strong>{formatSilhouette(selectedClusteringRun.silhouette_score)}</strong> Silhouette</span>
+                  <span title="Silhouette: medida de cohesion de los clusters. Rango de -1 a 1; valores cercanos a 1 indican agrupaciones mas nitidas."><strong>{formatSilhouette(selectedClusteringRun.silhouette_score)}</strong> Silhouette</span>
                 </div>
               </div>
 
@@ -1996,15 +1975,6 @@ function ReviewWorkflow() {
             </div>
           </div>
         </div>
-
-        <WorkflowProgressSummary
-          collectionName={collectionName}
-          summary={collectionSummary}
-          loading={loadingSummary}
-          completedSteps={completedSteps}
-          totalSteps={STEP_IDS.length - 1}
-          activeRuns={activeRuns}
-        />
 
         {summaryError ? <div className="workflow-error">{summaryError}</div> : null}
 

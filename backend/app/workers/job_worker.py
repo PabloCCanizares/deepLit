@@ -453,7 +453,6 @@ class JobWorker:
                 text_type=payload.get("text_type"),
                 synthesis_run_id=payload.get("synthesis_run_id"),
                 evidence_extraction_run_id=payload.get("evidence_extraction_run_id"),
-                parent_run_id=payload.get("parent_run_id"),
             )
             result = await self.redaction_service.generate_redaction(
                 user_id=user_id,

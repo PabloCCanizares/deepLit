@@ -50,7 +50,6 @@ class RedactionController:
             user_id=user_id,
             run_data=RedactionRunData(
                 collection_id=collection_id,
-                parent_run_id=payload.parent_run_id,
                 user_idea=payload.user_idea,
                 text_type=payload.text_type,
                 source_synthesis_run_id=payload.synthesis_run_id,
@@ -67,7 +66,6 @@ class RedactionController:
                 text_type=payload.text_type,
                 synthesis_run_id=payload.synthesis_run_id,
                 evidence_extraction_run_id=payload.evidence_extraction_run_id,
-                parent_run_id=payload.parent_run_id,
             )
             run = await self.redaction_run_service.attach_job(
                 run_id=run["_id"],

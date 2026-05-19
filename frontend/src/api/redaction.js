@@ -6,15 +6,9 @@ export const redactionAPI = {
     body: JSON.stringify(payload),
   }),
 
-  listRuns: async (collectionId, { parent_run_id } = {}) => {
-    const params = new URLSearchParams()
-    if (parent_run_id) params.set('parent_run_id', parent_run_id)
-    const query = params.toString()
-    const path = `/redaction/collections/${collectionId}/runs${query ? `?${query}` : ''}`
-    return apiFetch(path, {
-      method: 'GET',
-    })
-  },
+  listRuns: async (collectionId) => apiFetch(`/redaction/collections/${collectionId}/runs`, {
+    method: 'GET',
+  }),
 
   getRun: async (runId) => apiFetch(`/redaction/runs/${runId}`, {
     method: 'GET',

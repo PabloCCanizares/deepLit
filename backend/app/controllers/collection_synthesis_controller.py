@@ -15,14 +15,13 @@ class CollectionSynthesisController:
     def __init__(
         self,
         collection_service: CollectionService = Depends(),
-        collection_synthesis_service: CollectionSynthesisService = Depends(),
         collection_synthesis_run_service: CollectionSynthesisRunService = Depends(),
         job_service: JobService = Depends(),
     ):
         self.collection_service = collection_service
-        self.collection_synthesis_service = collection_synthesis_service
         self.collection_synthesis_run_service = collection_synthesis_run_service
         self.job_service = job_service
+        self.collection_synthesis_service = CollectionSynthesisService()
 
     async def run_synthesis(
         self,

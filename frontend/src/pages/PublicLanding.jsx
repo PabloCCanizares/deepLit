@@ -51,7 +51,7 @@ const workflowSteps = [
   {
     number: '05',
     title: 'Revisa los resultados',
-    text: 'Obtiene screening, evidencias, sintesis y borradores que puedes corregir.',
+    text: 'Obtiene cribado, evidencias, sintesis y borradores que puedes corregir.',
   },
 ]
 
@@ -69,7 +69,7 @@ const capabilityGroups = [
   {
     icon: 'fa-list-check',
     title: 'Revision de articulos',
-    items: ['Screening con criterios', 'Decisiones include/review/exclude', 'Fichas de evidencia', 'Fragmentos de apoyo', 'Agrupacion de trabajos'],
+    items: ['Cribado con criterios', 'Decisiones include/review/exclude', 'Fichas de evidencia', 'Fragmentos de apoyo', 'Agrupacion de trabajos'],
   },
   {
     icon: 'fa-pen-nib',
@@ -101,7 +101,7 @@ const traceabilityItems = [
   },
   {
     title: 'Historial de ejecuciones',
-    text: 'Los resultados de screening, evidencia y sintesis se pueden consultar despues.',
+    text: 'Los resultados de cribado, evidencia y sintesis se pueden consultar despues.',
   },
   {
     title: 'Texto editable',
@@ -115,7 +115,7 @@ const architectureStages = [
   { label: 'Contexto', title: 'Coleccion activa', text: 'El grupo de articulos sobre el que trabaja la IA.' },
   { label: 'Preparacion', title: 'Texto + embeddings', text: 'Documentos listos para busqueda semantica.' },
   { label: 'Consulta', title: 'FAISS + RAG', text: 'Recuperacion de contexto antes de responder.' },
-  { label: 'Salida', title: 'Resultados revisables', text: 'Screening, evidencia, sintesis y borrador.' },
+  { label: 'Salida', title: 'Resultados revisables', text: 'Cribado, evidencia, sintesis y borrador.' },
 ]
 
 const moduleCards = [
@@ -124,7 +124,7 @@ const moduleCards = [
   ['fa-file-pdf', 'PDF pipeline', 'Prepara los PDFs para que DeepLIT pueda buscar dentro de ellos.'],
   ['fa-folder-tree', 'Colecciones', 'Agrupa articulos por tema, trabajo o pregunta de investigacion.'],
   ['fa-comments', 'Asistente RAG', 'Pregunta sobre una coleccion usando informacion de tus documentos.'],
-  ['fa-filter', 'Screening', 'Aplica criterios y clasifica articulos como include, review o exclude.'],
+  ['fa-filter', 'Cribado', 'Aplica criterios y clasifica articulos como include, review o exclude.'],
   ['fa-microscope', 'Evidence extraction', 'Extrae objetivos, metodo, datos, hallazgos y limitaciones.'],
   ['fa-object-group', 'Clustering', 'Agrupa trabajos parecidos para explorar temas dentro del corpus.'],
   ['fa-diagram-project', 'Collection synthesis', 'Resume acuerdos, diferencias y vacios de una coleccion.'],
@@ -219,7 +219,7 @@ function ProductPreview() {
             <section className="landingPreviewPanel decisionPanel">
               <div className="landingPanelTitle">
                 <i className="fas fa-list-check" aria-hidden="true"></i>
-                Screening
+                Cribado
               </div>
               <div className="decisionLine include">
                 <span>include</span>

@@ -12,7 +12,7 @@ import '../styles/workspace/EvidenceExtraction.css'
 
 const SELECTION_MODE_LABELS = {
   all: 'Toda la colección',
-  screening_include: 'Incluidos de screening',
+  screening_include: 'Incluidos de cribado',
   screening_include_review: 'Incluidos + revisión',
 }
 
@@ -26,7 +26,7 @@ const SELECTION_MODE_OPTIONS = [
   {
     value: 'screening_include',
     title: 'Solo artículos incluidos',
-    description: 'Usa un screening previo y trabaja solo con los artículos marcados como include.',
+    description: 'Usa un cribado previo y trabaja solo con los artículos marcados como include.',
     icon: 'fa-check-double',
   },
   {
@@ -421,7 +421,7 @@ function EvidenceExtraction() {
     if (!selectedCollectionId || submitting) return
 
     if (formData.selectionMode !== 'all' && !formData.screeningRunId) {
-      setNotification('Debes seleccionar un screening completado para este modo')
+      setNotification('Debes seleccionar un cribado completado para este modo')
       return
     }
 
@@ -575,7 +575,7 @@ function EvidenceExtraction() {
           <section className="evidence-create-card">
             <div className="evidence-create-header">
               <h3>Nueva extracción de evidencia</h3>
-              <p>Elige si quieres trabajar sobre toda la colección o solo sobre artículos ya seleccionados en un screening.</p>
+              <p>Elige si quieres trabajar sobre toda la colección o solo sobre artículos ya seleccionados en un cribado.</p>
             </div>
 
             <div className="evidence-form-grid">
@@ -614,8 +614,8 @@ function EvidenceExtraction() {
 
               {formData.selectionMode !== 'all' && (
                 <div className="evidence-field evidence-field-full">
-                  <span>Screening base</span>
-                  <div className="evidence-screening-picker" role="radiogroup" aria-label="Screening base">
+                  <span>Cribado base</span>
+                  <div className="evidence-screening-picker" role="radiogroup" aria-label="Cribado base">
                     {activeCompletedScreenings.map((run) => {
                       const isActive = formData.screeningRunId === run._id
                       return (
@@ -648,7 +648,7 @@ function EvidenceExtraction() {
                   )}
                   {!screeningRunsError && !loadingScreenings && activeCompletedScreenings.length === 0 && (
                     <small className="evidence-inline-hint">
-                      No hay screenings completados disponibles para esta colección.
+                      No hay cribados completados disponibles para esta colección.
                     </small>
                   )}
                 </div>
@@ -777,7 +777,7 @@ function EvidenceExtraction() {
                     <h2>{formatSelectionMode(selectedRun.selection_mode)}</h2>
                     <p>
                       {selectedScreeningRun
-                        ? `Basado en screening: ${selectedScreeningRun.research_question}`
+                        ? `Basado en cribado: ${selectedScreeningRun.research_question}`
                         : 'Trabajando sobre toda la colección activa'}
                     </p>
                   </div>

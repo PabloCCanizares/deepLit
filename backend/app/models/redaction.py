@@ -30,10 +30,6 @@ class RedactionRunRequest(BaseModel):
         None,
         description="Run de evidence extraction previo que se usa como insumo.",
     )
-    parent_run_id: Optional[str] = Field(
-        None,
-        description="Run de redaccion anterior cuando se trata de una revision encadenada.",
-    )
 
 
 class SectionMarker(BaseModel):

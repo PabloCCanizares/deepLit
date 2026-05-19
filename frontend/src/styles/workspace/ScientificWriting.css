@@ -385,6 +385,77 @@
   border-top: 1px solid var(--border-color);
 }
 
+.scientific-writing-draft-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-top: 1rem;
+}
+
+.scientific-writing-draft-readonly p {
+  color: var(--text-color, #1f2937);
+  line-height: 1.6;
+  margin: 0 0 0.65rem 0;
+}
+
+.scientific-writing-draft-section h3 {
+  font-size: 1.05rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-color, #1f2937);
+}
+
+.scientific-writing-draft-references h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem 0;
+  color: var(--text-color, #1f2937);
+}
+
+.scientific-writing-draft-references ul {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.scientific-writing-draft-references li {
+  color: var(--text-color, #1f2937);
+  margin-bottom: 0.35rem;
+}
+
+.scientific-writing-review-points {
+  margin-top: 1.25rem;
+  padding: 0.95rem 1rem 0.95rem 1.1rem;
+  border-left: 4px solid var(--main_color, #6366f1);
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: 0 6px 6px 0;
+}
+
+.scientific-writing-review-points h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin: 0 0 0.6rem 0;
+  color: var(--text-color, #1f2937);
+}
+
+.scientific-writing-review-points h3 i {
+  color: var(--main_color, #6366f1);
+}
+
+.scientific-writing-review-points ul {
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.scientific-writing-review-points li {
+  color: var(--text-color, #1f2937);
+  line-height: 1.5;
+  margin-bottom: 0.4rem;
+}
+
+.scientific-writing-review-points li:last-child {
+  margin-bottom: 0;
+}
+
 .scientific-writing-empty,
 .scientific-writing-empty-result,
 .scientific-writing-mini-empty {
