@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { clusteringAPI, evidenceExtractionAPI } from '../api/index.js'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
-import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 
@@ -354,20 +353,6 @@ function Clustering() {
       }
     },
   }, Boolean(selectedCollectionId))
-
-  useIntervalPolling(() => {
-    loadRuns({
-      collectionId: selectedCollectionId,
-      preserveSelection: true,
-      preferredRunId: selectedRunId,
-    })
-    if (selectedRunId) {
-      loadRunResults(selectedRunId, selectedCollectionId)
-    }
-  }, {
-    enabled: Boolean(selectedCollectionId && selectedRun && isActiveRunStatus(selectedRun.status)),
-    intervalMs: 4000,
-  })
 
   const handleCreateRun = async () => {
     if (!selectedCollectionId || submitting || !formData.evidenceRunId) return

@@ -16,7 +16,6 @@ import { FieldBlock, ListBlock, SupportBlock } from '../components/reviewWorkflo
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
-import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import ScientificWriting from './ScientificWriting'
 
 import '../styles/App.css'
@@ -809,21 +808,6 @@ function ReviewWorkflow() {
       await loadRedactionRuns()
     },
   }, Boolean(selectedCollectionId))
-
-  useIntervalPolling(() => {
-    loadCollectionSummary()
-    loadScreeningRuns({ preserveSelection: true, preferredRunId: selectedScreeningRunId })
-    loadEvidenceRuns({ preserveSelection: true, preferredRunId: selectedEvidenceRunId })
-    loadClusteringRuns({ preserveSelection: true, preferredRunId: selectedClusteringRunId })
-    loadSynthesisRuns({ preserveSelection: true, preferredRunId: selectedSynthesisRunId })
-    loadRedactionRuns()
-    if (selectedScreeningRunId) loadScreeningResults(selectedScreeningRunId)
-    if (selectedEvidenceRunId) loadEvidenceResults(selectedEvidenceRunId)
-    if (selectedClusteringRunId) loadClusteringResults(selectedClusteringRunId)
-  }, {
-    enabled: Boolean(selectedCollectionId && activeRuns > 0),
-    intervalMs: 4000,
-  })
 
   const refreshAll = () => {
     loadCollectionSummary()

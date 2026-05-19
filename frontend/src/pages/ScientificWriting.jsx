@@ -4,7 +4,6 @@ import { collectionSynthesisAPI, evidenceExtractionAPI, redactionAPI } from '../
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
-import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import { createPaperPdfBlob, downloadPdfBlob } from '../utils/pdfExport'
 
 import '../styles/App.css'
@@ -232,11 +231,6 @@ function ScientificWriting({ embedded = false }) {
     const points = selectedDraftRun.result?.review_points
     return Array.isArray(points) ? points.filter((item) => typeof item === 'string' && item.trim()) : []
   }, [selectedDraftRun])
-  const activeDraftRuns = useMemo(
-    () => draftRuns.filter((run) => isActiveRunStatus(run.status)).length,
-    [draftRuns]
-  )
-
   useEffect(() => {
     selectedDraftRunIdRef.current = selectedDraftRunId
   }, [selectedDraftRunId])
@@ -435,14 +429,6 @@ function ScientificWriting({ embedded = false }) {
       }
     },
   }, Boolean(selectedCollectionId))
-
-  useIntervalPolling(() => {
-    if (!selectedCollectionId) return
-    loadRedactionRuns(selectedCollectionId, selectedDraftRunIdRef.current)
-  }, {
-    enabled: Boolean(selectedCollectionId && activeDraftRuns > 0),
-    intervalMs: 4000,
-  })
 
   const handleGenerateDraft = async () => {
     const trimmedIdeas = userIdeas.trim()

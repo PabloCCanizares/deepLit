@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { collectionSynthesisAPI } from '../api/index.js'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
-import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
 import { createPaperPdfBlob, downloadPdfBlob, openPdfBlob } from '../utils/pdfExport'
@@ -309,13 +308,6 @@ function CollectionSynthesis() {
       await loadRuns(selectedCollectionId, data.run_id)
     },
   }, Boolean(selectedCollectionId))
-
-  useIntervalPolling(() => {
-    loadRuns(selectedCollectionId, selectedRun?._id)
-  }, {
-    enabled: Boolean(selectedCollectionId && selectedRun && ['queued', 'processing'].includes(selectedRun.status)),
-    intervalMs: 4000,
-  })
 
   const handleSubmit = async () => {
     const trimmedPrompt = prompt.trim()

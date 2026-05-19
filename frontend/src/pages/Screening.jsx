@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { collectionsAPI, screeningAPI } from '../api/index.js'
 import { useArticlesEvents } from '../hooks/useArticlesEvents'
-import { useIntervalPolling } from '../hooks/useIntervalPolling'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
 import NotificationToast from '../components/common/NotificationToast'
 import { useCollection } from '../context/CollectionContext'
@@ -228,16 +227,6 @@ function Screening() {
       }
     },
   }, Boolean(selectedCollectionId))
-
-  useIntervalPolling(() => {
-    loadRuns({ preserveSelection: true, preferredRunId: selectedRunId })
-    if (selectedRunId) {
-      loadRunResults(selectedRunId)
-    }
-  }, {
-    enabled: Boolean(selectedCollectionId && selectedRun && ['queued', 'processing'].includes(selectedRun.status)),
-    intervalMs: 4000,
-  })
 
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
