@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     # True -> modelos locales (Ollama)
     # False -> proveedor remoto (Gemini)
     OFFLINE: bool = False
-    GOOGLE_API_KEY: Optional[str] = "AIzaSyDdk4kLqKjgr5iAY2CRRa4Twb7ddsb2RFk"
+    GOOGLE_API_KEY: Optional[str] = None
 
     # WEB SEARCH (agente web)
     WEB_SEARCH_PROVIDER: str = "duckduckgo"  # duckduckgo | hackernews

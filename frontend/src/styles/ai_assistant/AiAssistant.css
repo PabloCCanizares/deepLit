@@ -60,6 +60,9 @@
   display: inline-block;
   width: fit-content;
   max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* MENSAJES DEL BOT*/

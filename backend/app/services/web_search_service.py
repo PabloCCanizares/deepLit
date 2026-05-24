@@ -1,23 +1,14 @@
 import hashlib
-import json
+import html
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
-from urllib.parse import urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from pymongo import MongoClient
 
 from app.config import settings
-
-RUMOR_MARKERS = {
-    "rumor",
-    "rumour",
-    "unconfirmed",
-    "leak",
-    "speculation",
-    "sin confirmar",
-    "no verificado",
-}
 
 
 class WebSearchService:
@@ -25,18 +16,13 @@ class WebSearchService:
         self.mongo = MongoClient(settings.MONGODB_URL)
         self.db = self.mongo[settings.DATABASE_NAME]
         self.cache = self.db["web_search_cache"]
-        self._trusted_domains = self._parse_domains(settings.WEB_TRUSTED_DOMAINS)
+        self.articles = self.db["articles"]
 
     @staticmethod
-    def _parse_domains(raw: str) -> List[str]:
-        return [domain.strip().lower() for domain in (raw or "").split(",") if domain.strip()]
-
-    @staticmethod
-    def _http_json(url: str, headers: Optional[Dict] = None, timeout: int = 12) -> Dict:
-        req = Request(url, headers=headers or {"User-Agent": "deepLit-web-search/1.0"})
+    def _http_text(url: str, timeout: int = 15) -> str:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0 deepLit-web-researcher/1.0"})
         with urlopen(req, timeout=timeout) as response:
-            payload = response.read().decode("utf-8", errors="replace")
-            return json.loads(payload)
+            return response.read().decode("utf-8", errors="replace")
 
     @staticmethod
     def _extract_domain(url: str) -> str:
@@ -45,40 +31,20 @@ class WebSearchService:
         except Exception:
             return ""
 
-    def _is_trusted_domain(self, domain: str) -> bool:
-        if not domain:
-            return False
-        return any(domain == d or domain.endswith(f".{d}") for d in self._trusted_domains)
-
-    def _is_rumor_like(self, text: str) -> bool:
-        text_low = (text or "").lower()
-        return any(marker in text_low for marker in RUMOR_MARKERS)
-
-    def _score_result(self, item: Dict) -> float:
-        score = 0.0
-        if item.get("is_trusted_source"):
-            score += 2.0
-        if item.get("published_at"):
-            score += 0.6
-        if not item.get("rumor_flag"):
-            score += 0.5
-        snippet_len = len(item.get("snippet", ""))
-        score += min(snippet_len / 600.0, 0.5)
-        return score
-
-    def _cache_key(self, query: str, provider: str, locale: str = "es") -> str:
-        raw = f"{provider}|{locale}|{query.strip().lower()}"
+    @staticmethod
+    def _cache_key(query: str, provider: str) -> str:
+        raw = f"{provider}|{query.strip().lower()}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     def _get_cached(self, cache_key: str) -> Optional[List[Dict]]:
-        now = datetime.now(timezone.utc)
-        cached = self.cache.find_one({"cache_key": cache_key, "expires_at": {"$gt": now}})
+        cached = self.cache.find_one(
+            {"cache_key": cache_key, "expires_at": {"$gt": datetime.now(timezone.utc)}}
+        )
         return cached.get("results") if cached else None
 
     def _set_cached(self, cache_key: str, query: str, provider: str, results: List[Dict]) -> None:
-        ttl_minutes = max(1, int(settings.WEB_SEARCH_CACHE_TTL_MINUTES))
         now = datetime.now(timezone.utc)
-        expires_at = now + timedelta(minutes=ttl_minutes)
+        expires_at = now + timedelta(minutes=max(1, int(settings.WEB_SEARCH_CACHE_TTL_MINUTES)))
         self.cache.update_one(
             {"cache_key": cache_key},
             {
@@ -94,83 +60,91 @@ class WebSearchService:
             upsert=True,
         )
 
-    def _search_duckduckgo(self, query: str) -> List[Dict]:
-        endpoint = "https://api.duckduckgo.com/?" + urlencode(
-            {
-                "q": query,
-                "format": "json",
-                "no_redirect": "1",
-                "no_html": "1",
-                "skip_disambig": "1",
-            }
+    def get_collection_context(self, user_id: Optional[str], collection_id: Optional[str], limit: int = 8) -> str:
+        if not user_id:
+            return "Usuario no autenticado."
+
+        filter_query = {
+            "id_user": user_id,
+            "status": {"$nin": ["processing", "error"]},
+        }
+        if collection_id:
+            filter_query["collection_ids"] = {"$in": [collection_id]}
+
+        projection = {"title": 1, "authors": 1, "keywords": 1, "year": 1}
+        articles = list(self.articles.find(filter_query, projection).limit(limit))
+        if not articles:
+            return "No hay articulos disponibles en la coleccion activa."
+
+        lines = []
+        for article in articles:
+            title = str(article.get("title") or "Sin titulo").strip()
+            authors = ", ".join(article.get("authors") or []) or "Sin autores"
+            year = article.get("year") or "s/f"
+            keywords = []
+            for item in article.get("keywords") or []:
+                if isinstance(item, dict):
+                    value = item.get("key") or item.get("display_name") or item.get("name")
+                else:
+                    value = item
+                text = str(value or "").strip()
+                if text:
+                    keywords.append(text)
+            keywords_text = ", ".join(keywords[:3]) or "Sin keywords"
+            lines.append(f'- "{title}" | {authors} | {year} | {keywords_text}')
+        return "\n".join(lines)
+
+    @staticmethod
+    def _decode_duckduckgo_url(raw_url: str) -> str:
+        if not raw_url:
+            return ""
+        cleaned = html.unescape(raw_url).replace("&amp;", "&")
+        if cleaned.startswith("//"):
+            cleaned = f"https:{cleaned}"
+        params = parse_qs(urlparse(cleaned).query or "")
+        if "uddg" in params and params["uddg"]:
+            return params["uddg"][0]
+        return cleaned
+
+    @classmethod
+    def _parse_duckduckgo_html(cls, page_html: str) -> List[Dict]:
+        results = []
+        seen = set()
+        link_pattern = re.compile(r'(?s)<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>(.*?)</a>')
+        snippet_pattern = re.compile(
+            r'(?s)<a[^>]+class="[^"]*result__snippet[^"]*"[^>]*>(.*?)</a>|<div[^>]+class="[^"]*result__snippet[^"]*"[^>]*>(.*?)</div>'
         )
-        payload = self._http_json(endpoint)
 
-        results: List[Dict] = []
-        fetched_at = datetime.now(timezone.utc).date().isoformat()
-
-        if payload.get("AbstractURL") and payload.get("AbstractText"):
-            url = payload["AbstractURL"]
-            domain = self._extract_domain(url)
-            results.append(
-                {
-                    "title": payload.get("Heading") or payload.get("AbstractSource") or domain,
-                    "url": url,
-                    "domain": domain,
-                    "snippet": payload.get("AbstractText", ""),
-                    "published_at": None,
-                    "fetched_at": fetched_at,
-                }
-            )
-
-        def add_related(topics: List[Dict]) -> None:
-            for topic in topics or []:
-                if "Topics" in topic:
-                    add_related(topic.get("Topics") or [])
-                    continue
-                text = topic.get("Text") or ""
-                url = topic.get("FirstURL") or ""
-                if not text or not url:
-                    continue
-                domain = self._extract_domain(url)
-                title = text.split(" - ")[0].strip()
-                results.append(
-                    {
-                        "title": title or domain,
-                        "url": url,
-                        "domain": domain,
-                        "snippet": text,
-                        "published_at": None,
-                        "fetched_at": fetched_at,
-                    }
-                )
-
-        add_related(payload.get("RelatedTopics") or [])
-        return results
-
-    def _search_hackernews(self, query: str) -> List[Dict]:
-        endpoint = "https://hn.algolia.com/api/v1/search?" + urlencode({"query": query, "tags": "story"})
-        payload = self._http_json(endpoint)
-        fetched_at = datetime.now(timezone.utc).date().isoformat()
-        results: List[Dict] = []
-        for hit in payload.get("hits", []) or []:
-            url = hit.get("url")
-            title = hit.get("title") or hit.get("story_title")
-            if not url or not title:
+        for link_match in link_pattern.finditer(page_html):
+            url = cls._decode_duckduckgo_url(link_match.group(1))
+            title = html.unescape(re.sub(r"<.*?>", "", link_match.group(2))).strip()
+            if not url or not title or url in seen:
                 continue
-            domain = self._extract_domain(url)
-            published = (hit.get("created_at") or "")[:10] or None
+            seen.add(url)
+
+            nearby_html = page_html[link_match.end(): link_match.end() + 800]
+            snippet_match = snippet_pattern.search(nearby_html)
+            snippet_html = ""
+            if snippet_match:
+                snippet_html = snippet_match.group(1) or snippet_match.group(2) or ""
+            snippet = html.unescape(re.sub(r"<.*?>", "", snippet_html)).strip()
+
             results.append(
                 {
                     "title": title,
                     "url": url,
-                    "domain": domain,
-                    "snippet": hit.get("story_text") or hit.get("comment_text") or "",
-                    "published_at": published,
-                    "fetched_at": fetched_at,
+                    "domain": cls._extract_domain(url),
+                    "snippet": snippet,
+                    "published_at": None,
+                    "fetched_at": datetime.now(timezone.utc).date().isoformat(),
                 }
             )
+
         return results
+
+    def _search_duckduckgo(self, query: str) -> List[Dict]:
+        url = "https://html.duckduckgo.com/html/?" + urlencode({"q": query})
+        return self._parse_duckduckgo_html(self._http_text(url))
 
     def search(
         self,
@@ -186,8 +160,8 @@ class WebSearchService:
         elif mode == "online":
             offline = False
 
-        selected_provider = (provider or settings.WEB_SEARCH_PROVIDER or "duckduckgo").strip().lower()
-        if selected_provider not in {"duckduckgo", "hackernews"}:
+        selected_provider = (provider or "duckduckgo").strip().lower()
+        if selected_provider != "duckduckgo":
             selected_provider = "duckduckgo"
 
         if offline:
@@ -195,87 +169,51 @@ class WebSearchService:
                 "mode": "offline",
                 "provider": selected_provider,
                 "results": [],
-                "summary": "Modo offline activo: no se realizaron búsquedas web.",
                 "from_cache": False,
             }
 
-        cache_key = self._cache_key(query=query, provider=selected_provider)
+        cache_key = self._cache_key(query, selected_provider)
         cached = self._get_cached(cache_key)
         if cached is not None:
             return {
                 "mode": "online",
                 "provider": selected_provider,
                 "results": cached,
-                "summary": "Resultados recuperados de caché.",
                 "from_cache": True,
             }
 
-        if selected_provider == "hackernews":
-            raw_results = self._search_hackernews(query)
-        else:
-            raw_results = self._search_duckduckgo(query)
-
-        curated: List[Dict] = []
-        dedupe = set()
-        for item in raw_results:
-            url = item.get("url") or ""
-            if not url or url in dedupe:
-                continue
-            dedupe.add(url)
-
-            combined_text = f"{item.get('title', '')} {item.get('snippet', '')}"
-            item["rumor_flag"] = self._is_rumor_like(combined_text)
-            item["is_trusted_source"] = self._is_trusted_domain(item.get("domain", ""))
-            item["score"] = self._score_result(item)
-            curated.append(item)
-
-        curated.sort(key=lambda entry: entry.get("score", 0.0), reverse=True)
-        max_results = max(1, int(settings.WEB_SEARCH_MAX_RESULTS))
-
-        if settings.WEB_SEARCH_REQUIRE_TRUSTED_SOURCES:
-            trusted = [item for item in curated if item.get("is_trusted_source")]
-            minimum = max(1, int(settings.WEB_SEARCH_MIN_TRUSTED_SOURCES))
-            if len(trusted) >= minimum:
-                curated = trusted
-
-        curated = curated[:max_results]
-        self._set_cached(cache_key=cache_key, query=query, provider=selected_provider, results=curated)
+        results = self._search_duckduckgo(query)[: max(1, int(settings.WEB_SEARCH_MAX_RESULTS))]
+        self._set_cached(cache_key, query, selected_provider, results)
         return {
             "mode": "online",
             "provider": selected_provider,
-            "results": curated,
-            "summary": f"Resultados obtenidos con proveedor {selected_provider}.",
+            "results": results,
             "from_cache": False,
         }
 
     @staticmethod
-    def build_cited_response(query: str, results: List[Dict], provider: str, from_cache: bool) -> str:
+    def build_cited_response(
+        user_query: str,
+        effective_query: str,
+        results: List[Dict],
+        provider: str,
+        from_cache: bool,
+    ) -> str:
         if not results:
-            return (
-                "No he encontrado suficientes fuentes confiables para responder de forma segura.\n"
-                "Intenta con una consulta más específica o verifica manualmente en fuentes oficiales."
-            )
+            return "No encontre resultados web utiles para esa busqueda. Prueba con mas contexto o con el titulo del articulo."
 
-        lines = [
-            f"Resultados web para: {query}",
-            f"Proveedor: {provider}" + (" (cache)" if from_cache else ""),
-            "",
-            "Fuentes verificadas:",
-        ]
+        lines = ["He encontrado estos resultados:"]
+        if effective_query.strip() and effective_query.strip() != user_query.strip():
+            lines.append(f"Busqueda: {effective_query}")
+        if from_cache:
+            lines.append("Resultados recuperados de cache.")
+        lines.append("")
+
         for idx, item in enumerate(results, start=1):
-            date_value = item.get("published_at") or item.get("fetched_at") or "fecha no disponible"
-            lines.append(
-                f"[{idx}] {item.get('title', 'Sin título')} "
-                f"(Fuente: {item.get('domain', 'desconocida')}, Fecha: {date_value})"
-            )
+            lines.append(f"{idx}. {item.get('title', 'Sin titulo')}")
             if item.get("snippet"):
-                lines.append(f"    - {item['snippet'][:260]}")
-            lines.append(f"    - URL: {item.get('url')}")
+                lines.append(f"    - {item['snippet'][:240]}")
+            if item.get("url"):
+                lines.append(f"    - Enlace: {item['url']}")
 
-        lines.extend(
-            [
-                "",
-                "Nota anti-rumor: se priorizaron dominios confiables y se penalizaron resultados con señales de rumor.",
-            ]
-        )
         return "\n".join(lines)
