@@ -1,492 +1,220 @@
-# 🚀 deepLit Backend - FastAPI
+# deepLit Backend - API REST (FastAPI)
+
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-NoSQL-47A248.svg?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com)
+[![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-008CC1.svg?style=flat-square&logo=neo4j&logoColor=white)](https://neo4j.com)
+
+El backend de deepLit provee una API REST robusta construida con FastAPI. Ofrece una arquitectura en capas limpia, procesamiento asíncrono para ingesta de documentos, integración con base de datos NoSQL para almacenamiento persistente de metadatos y usuarios, y base de datos orientada a grafos para analizar relaciones de literatura. Además, integra agentes de inteligencia artificial y flujos de RAG (Retrieval-Augmented Generation).
 
 ---
 
-## 📋 Características
+## Características Clave
 
-- ✅ **FastAPI** - Framework moderno y rápido
-- ✅ **MongoDB** - Base de datos NoSQL con Motor (async)
-- ✅ **JWT Authentication** - Autenticación con tokens seguros
-- ✅ **Arquitectura en Capas** - Clean Architecture (Router → Controller → Service → Repository)
-- ✅ **Manejo Centralizado de Errores** - Todas las respuestas siguen el mismo formato
-- ✅ **Validación con Pydantic** - Validación automática de datos
-- ✅ **Configuración con Pydantic Settings** - Variables de entorno tipadas
-- ✅ **Documentación Automática** - Swagger UI en `/docs`
-- ✅ **Grafo de Artículos en Neo4j** - Cada artículo crea automáticamente nodos
-  (`Article`, `Author`, `Keyword`, `Category`, `Type`) y relaciones (`WROTE`,
-  `HAS_KEYWORD`, `IN_CATEGORY`, `OF_TYPE`) reutilizables por los agentes RAG
+- **Clean Architecture:** Diseño ordenado en capas bien definidas: Router → Controller → Service → Repository → Database.
+- **Procesamiento de Documentos:** Extracción y parsing OCR de PDFs con PyMuPDF y RapidOCR.
+- **Grafo de Artículos (Neo4j):** Ingesta automatizada y mapeo de relaciones entre artículos, autores, palabras clave y categorías.
+- **Flujos RAG y Agentes (LangChain & LangGraph):**
+  - **Screening:** Filtrado y clasificación sistemática.
+  - **Clustering:** Agrupamiento temático de artículos mediante embeddings.
+  - **Evidence Extraction:** Extracción inteligente de evidencias específicas de los documentos.
+  - **Collection Synthesis:** Síntesis y análisis de resúmenes de colecciones completas.
+  - **Asistente de Redacción (Redaction):** Apoyo interactivo para escribir literatura científica.
+- **Autenticación JWT:** Gestión de usuarios, sesiones y seguridad con cifrado bcrypt.
+- **Manejo Centralizado de Errores:** Respuestas formateadas y estandarizadas con StandardResponse.
+- **Documentación Interactiva:** Autogenerada en `/docs` (Swagger) y `/redoc` (ReDoc).
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura de Capas
 
 ```
-Cliente → Router → Controller → Service → Repository → MongoDB
-          (HTTP)   (formato)    (lógica)   (queries)
+Cliente HTTP → Routers → Controllers → Services → Repositories → MongoDB/Neo4j
+               (HTTP)    (Formateo)    (Lógica)    (CRUD/Query)   (Persistencia)
 ```
 
-### **Capas:**
-- **Routers** (`/routers`) → Definen endpoints HTTP
-- **Controllers** (`/controllers`) → Formatean respuestas
-- **Services** (`/services`) → Lógica de negocio
-- **Repositories** (`/repositories`) → Operaciones CRUD con MongoDB
-- **Models** (`/models`) → Validación de datos con Pydantic
-- **Core** (`/core`) → Funcionalidades transversales (auth, exceptions, responses)
-
-**Ver más:** [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **Routers** (`app/routers/`): Definen los endpoints HTTP, validan parámetros y controlan la autorización mediante dependencias.
+- **Controllers** (`app/controllers/`): Orquestan la lógica y preparan las respuestas estandarizadas.
+- **Services** (`app/services/`): Contienen la lógica de negocio, invocaciones a modelos de lenguaje (LLM), agentes e integraciones externas.
+- **Repositories** (`app/repositories/`): Realizan las consultas de lectura/escritura a la base de datos MongoDB.
+- **Models** (`app/models/`): Esquemas Pydantic para validación estricta de requests y responses.
+- **Core** (`app/core/`): Utilidades transversales como seguridad, autenticación, excepciones personalizadas y estructura de respuestas.
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Directorio
 
 ```
 backend/
 ├── app/
-│   ├── main.py              # 🚀 Aplicación principal FastAPI
-│   ├── config.py            # ⚙️ Configuración (Pydantic Settings)
-│   ├── database.py          # 🗄️ Conexión a MongoDB
+│   ├── main.py              # Aplicación principal FastAPI y arranque
+│   ├── config.py            # Configuración cargada desde variables de entorno
+│   ├── database.py          # Clientes de MongoDB y funciones de conexión
 │   │
-│   ├── core/                # ⭐ Núcleo
-│   │   ├── auth.py          # JWT, hashing, get_current_user
-│   │   ├── exceptions.py    # Excepciones personalizadas y handlers
-│   │   └── responses.py     # StandardResponse
+│   ├── core/                # Funcionalidades transversales y utilidades
+│   │   ├── auth.py          # Autenticación, JWT y Hashing
+│   │   ├── exceptions.py    # Manejador global de excepciones
+│   │   └── responses.py     # Modelo estandarizado StandardResponse
 │   │
-│   ├── models/              # 📋 Modelos Pydantic
-│   │   ├── auth.py          # UserRegister, UserLogin, UserResponse
-│   │   ├── user.py          # User, UserProfile
-│   │   ├── article.py       # Article, ArticleCreate, ArticleUpdate
-│   │   └── pdf.py           # PDF upload models
+│   ├── models/              # Modelos Pydantic para validación de datos
+│   │   ├── auth.py          # Peticiones de Login/Registro
+│   │   ├── user.py          # Estructura del Perfil de Usuario
+│   │   ├── article.py       # Estructura de Artículos y metadatos
+│   │   ├── collection.py    # Modelos de Colecciones
+│   │   └── screening.py     # Modelos de Cribado/Screening
 │   │
-│   ├── repositories/        # 💾 Acceso a datos
-│   │   ├── user_repository.py      # CRUD usuarios
-│   │   ├── article_repository.py   # CRUD artículos
-│   │   └── pdf_repository.py       # Manejo de archivos PDF
+│   ├── repositories/        # Consultas directas a Base de Datos (MongoDB)
+│   │   ├── user_repository.py
+│   │   ├── article_repository.py
+│   │   └── collection_repository.py
 │   │
-│   ├── services/            # 🧠 Lógica de negocio
-│   │   ├── auth_service.py         # Autenticación y autorización
-│   │   ├── user_service.py         # Gestión de usuarios
+│   ├── services/            # Lógica de negocio y agentes IA (RAG)
+│   │   ├── auth_service.py         # Control de tokens y accesos
 │   │   ├── article_service.py      # Gestión de artículos
-│   │   ├── pdf_service.py          # Procesamiento de PDFs
-│   │   ├── extraction_service.py   # Extracción de metadatos
-│   │   ├── openalex_service.py     # Integración OpenAlex
-│   │   └── storage_service.py      # Almacenamiento de archivos
+│   │   ├── article_graph_service.py# Ingesta y consultas en Neo4j
+│   │   ├── openalex_service.py     # Integración externa con OpenAlex
+│   │   ├── pdf_service.py          # Parsing de PDFs y metadatos
+│   │   ├── excel_service.py        # Importación masiva desde archivos XLSX
+│   │   ├── ai_assistant_service.py # Lógica de chat RAG general
+│   │   └── extraction_service.py   # Extracción de entidades por LLM
 │   │
-│   ├── controllers/         # 🎛️ Formateo
-│   │   ├── auth_controller.py      # Endpoints de autenticación
-│   │   ├── user_controller.py      # Endpoints de usuarios
-│   │   ├── articles_controller.py  # Endpoints de artículos
-│   │   ├── pdfs_controller.py      # Endpoints de PDFs
-│   │   ├── stats_controller.py     # Endpoints de estadísticas
-│   │   └── openalex_controller.py  # Endpoints de OpenAlex
+│   ├── controllers/         # Adaptación y formateo de respuestas de negocio
 │   │
-│   └── routers/             # 🛣️ Endpoints
-│       ├── auth.py          # /auth/* - Autenticación
-│       ├── health.py        # / - Health check
-│       ├── articles.py      # /articles/* - Gestión de artículos
-│       ├── pdfs.py          # /pdfs/* - Subida y gestión de PDFs
-│       ├── stats.py         # /stats/* - Estadísticas del dashboard
-│       ├── user.py          # /user/* - Perfil y configuración de usuario
-│       └── openalex.py      # /openalex/* - Integración con OpenAlex
+│   ├── routers/             # Rutas expuestas de la API
+│   │   ├── auth.py          # Registro y Login
+│   │   ├── articles.py      # Gestión de literatura local
+│   │   ├── article_graph.py # Endpoints para consultar el grafo Neo4j
+│   │   ├── collections.py   # Agrupamiento de artículos por colecciones
+│   │   ├── screening.py     # Flujo de revisión sistemática
+│   │   ├── openalex.py      # Búsqueda en catálogo OpenAlex
+│   │   ├── ai_assistant.py  # Interacción con asistente de IA
+│   │   └── redaction.py     # Copiloto de redacción científica
+│   │
+│   └── workers/             # Procesamiento asíncrono en background
+│       └── job_worker.py    # Worker para tareas de larga duración (OCR, RAG)
 │
-├── .env                     # 🔐 Variables de entorno (NO subir a git)
-├── requirements.txt         # 📦 Dependencias
-├── README.md               # 📖 Este archivo
-└── ARCHITECTURE.md         # 📚 Documentación de arquitectura
+├── storage/                 # Almacenamiento local de PDFs subidos (ignorado en git)
+├── tests/                   # Suite de pruebas automatizadas
+├── .env.example             # Plantilla de variables de entorno
+├── requirements.txt         # Dependencias de librerías Python
+└── README.md                # Este documento
 ```
 
 ---
 
-## 🚀 Instalación y Uso
+## Instalación y Uso
 
-### **Requisitos previos:**
-- **Python 3.12.11** (versión específica usada en desarrollo)
-- **MongoDB** instalado y corriendo en `localhost:27017`
+### Requisitos Previos
+- Python 3.12.x
+- MongoDB (ejecutándose localmente en `mongodb://localhost:27017`)
+- Neo4j (opcional, por defecto en `bolt://localhost:7687`)
 
----
+### Pasos de Instalación
 
-### **1️⃣ Instalar Python 3.12.11**
+1. **Crear y activar entorno virtual:**
+   ```bash
+   # Windows
+   py -3.12 -m venv venv
+   venv\Scripts\activate
 
-**Verificar si ya tienes Python 3.12.11:**
-```bash
-python3.12 --version
-# o
-/opt/homebrew/bin/python3.12 --version  # macOS con Homebrew
-```
+   # macOS/Linux
+   python3.12 -m venv venv
+   source venv/bin/activate
+   ```
 
-**Si NO tienes Python 3.12.11, instálalo:**
+2. **Instalar dependencias:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-#### **🍎 macOS (Homebrew)**
+3. **Configurar el archivo `.env`:**
+   Copia la plantilla de variables de entorno y define tu clave secreta:
+   ```bash
+   cp .env.example .env
+   ```
+   Genera una clave para `SECRET_KEY`:
+   ```bash
+   openssl rand -hex 32
+   ```
+   Edite el archivo `.env` recién creado con su editor y pegue el valor generado en `SECRET_KEY`, además de su `GOOGLE_API_KEY` para el LLM.
 
-```bash
+4. **Ejecutar el servidor en desarrollo:**
+   ```bash
+   python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
 
-# Instalar Python 3.12
-brew install python@3.12
-
-# Verificar instalación
-/opt/homebrew/bin/python3.12 --version
-```
-
-#### **🪟 Windows**
-
-1. Descargar Python 3.12.11 desde [python.org](https://www.python.org/downloads/)
-2. Ejecutar el instalador
-3. ✅ **IMPORTANTE:** Marcar "Add Python to PATH"
-4. Verificar en CMD:
-```cmd
-py -3.12 --version
-```
-
----
-
-### **2️⃣ Crear entorno virtual con Python 3.12.11**
-
-```bash
-cd backend
-
-# macOS/Linux (buscar automáticamente python3.12)
-python3.12 -m venv venv
-
-# macOS con Homebrew (ruta específica si el anterior no funciona)
-/opt/homebrew/bin/python3.12 -m venv venv
-
-# Windows
-py -3.12 -m venv venv
-
-# Activar entorno virtual
-source venv/bin/activate  # macOS/Linux
-# o
-venv\Scripts\activate     # Windows
-
-# Verificar que estás usando la versión correcta
-python --version  # Debe mostrar: Python 3.12.11
-```
+El servidor web de desarrollo iniciará en `http://localhost:8000`.
 
 ---
 
-### **3️⃣ Instalar dependencias**
+## Documentación y Endpoints
 
-```bash
-pip install -r requirements.txt
-```
+### Swagger UI interactivo
+- Dirección: `http://localhost:8000/docs`
+- Permite probar los endpoints en vivo, adjuntar archivos PDF y simular autorizaciones con JWT.
 
----
-
-### **4️⃣ Configurar variables de entorno**
-
-**Genera tu SECRET_KEY:**
-```bash
-openssl rand -hex 32
-```
-
-**Crea el archivo `.env`:**
-```bash
-# backend/.env
-SECRET_KEY=tu_secret_key_generada_aqui
-DEBUG=True
-```
-
-**Variables disponibles:**
-```env
-# Obligatorias
-SECRET_KEY=...                          # Clave secreta para JWT (OBLIGATORIA)
-
-# Opcionales (tienen defaults en config.py)
-DEBUG=True                              # Modo debug (default: True)
-PORT=8000                               # Puerto del servidor (default: 8000)
-MONGODB_URL=mongodb://localhost:27017   # URL de MongoDB
-DATABASE_NAME=deeplit                   # Nombre de la BD (default: deeplit)
-ALLOWED_ORIGINS=http://localhost:3000   # CORS (default: localhost:3000)
-ACCESS_TOKEN_EXPIRE_MINUTES=480         # Expiración del token en minutos (default: 8 horas)
-
-# Neo4j (opcional, habilita el grafo de artículos del dashboard)
-NEO4J_URL=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=tu_password
-```
-
-> Si las variables de Neo4j no se definen, el grafo del dashboard se renderiza
-> vacío con un mensaje informativo y la ingesta queda desactivada de forma
-> automática (no se rompe el flujo principal de subida de artículos).
+### Endpoints principales
+- **`GET /`**: Health check.
+- **`POST /auth/register`** y **`POST /auth/login`**: Gestión de accesos.
+- **`GET /user/profile`**: Datos del usuario logueado.
+- **`POST /pdfs/upload`**: Subida e ingesta individual o múltiple de archivos PDF.
+- **`POST /excels/upload`**: Ingesta masiva de literatura mediante plantillas Excel.
+- **`GET /articles`**: Listado, paginación y búsqueda de literatura guardada.
+- **`POST /collections`**: Creación de colecciones para organizar lecturas.
+- **`POST /screening/classify`**: Cribado inteligente de literatura mediante agentes.
+- **`POST /clustering`**: Agrupamiento temático inteligente.
+- **`POST /collection-synthesis`**: Resúmenes exhaustivos de colecciones.
+- **`POST /article-graph/query`**: Consultas directas al grafo de conocimiento de Neo4j.
 
 ---
 
-### **5️⃣ Iniciar el servidor**
+## Formato de Respuesta del Sistema
 
-```bash
-cd backend
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+Para garantizar que el frontend procese correctamente la información, el backend responde usando la estructura `StandardResponse`:
 
-**El servidor estará en:**
-- API: http://localhost:8000
-- Documentación (Swagger): http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
----
-
-## 📡 Endpoints Disponibles
-
-### **Health Check**
-```http
-GET /
-```
-Verifica que la API está funcionando.
-
-### **Autenticación**
-
-```http
-POST /auth/register
-Content-Type: application/json
-
-{
-  "name": "Juan Pérez",
-  "email": "juan@example.com",
-  "password": "password123"
-}
-```
-
-```http
-POST /auth/login
-Content-Type: application/json
-
-{
-  "email": "juan@example.com",
-  "password": "password123"
-}
-```
-
-```http
-GET /auth/me
-Authorization: Bearer <token>
-```
-
-```http
-POST /auth/logout
-Authorization: Bearer <token>
-```
-
----
-
-## 🔐 Autenticación
-
-### **Flujo:**
-1. Usuario se registra → `/auth/register`
-2. Usuario hace login → `/auth/login` → Recibe `token`
-3. Frontend guarda el `token` en `localStorage`
-4. Todas las peticiones protegidas incluyen: `Authorization: Bearer <token>`
-
-### **Endpoints protegidos:**
-```python
-from app.core import get_current_user
-from fastapi import Depends
-
-@router.get("/protected")
-async def protected_route(current_user: dict = Depends(get_current_user)):
-    # current_user contiene: {"email": "...", "name": "..."}
-    return {"message": f"Hola {current_user['name']}"}
-```
-
----
-
-## 📊 Formato de Respuestas
-
-**Todas las respuestas** (éxito y error) siguen el mismo formato `StandardResponse`:
-
-### **Éxito:**
+### Respuesta Exitosa
 ```json
 {
   "success": true,
-  "message": "Usuario registrado exitosamente",
+  "message": "Operación completada con éxito",
   "data": {
-    "email": "juan@example.com",
-    "name": "Juan Pérez"
+    "items": []
   },
   "error": null,
   "error_code": null
 }
 ```
 
-### **Error:**
+### Respuesta con Error
 ```json
 {
   "success": false,
-  "message": "Email o contraseña incorrectos",
+  "message": "Credenciales inválidas",
   "data": null,
-  "error": "Email o contraseña incorrectos",
+  "error": "El correo o contraseña no coinciden",
   "error_code": "AUTHENTICATION_ERROR"
 }
 ```
 
-**Códigos de error comunes:**
-- `AUTHENTICATION_ERROR` (401) - Credenciales incorrectas / Token inválido
-- `CONFLICT_ERROR` (409) - Email ya registrado
-- `VALIDATION_ERROR` (422) - Datos mal formateados
-- `INTERNAL_SERVER_ERROR` (500) - Error del servidor
+Códigos de error de la API comunes:
+- `AUTHENTICATION_ERROR` (401)
+- `VALIDATION_ERROR` (422)
+- `NOT_FOUND_ERROR` (404)
+- `CONFLICT_ERROR` (409)
+- `INTERNAL_SERVER_ERROR` (500)
 
 ---
 
-## 🛠️ Comandos Útiles
-
-### **Desarrollo:**
+## Pruebas unitarias
+Para verificar que el sistema funciona correctamente:
 ```bash
-# Verificar versión de Python del venv
-python --version
-
-# Iniciar servidor con recarga automática
-python -m uvicorn app.main:app --reload
-
-# Ver logs en consola (los exception handlers imprimen logs)
-```
-
-### **Testing:**
-```bash
-# Probar endpoints manualmente
-curl http://localhost:8000/
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","email":"test@test.com","password":"test123"}'
-```
-
-### **MongoDB:**
-```bash
-# Ver usuarios en la BD
-mongosh
-> use deeplit
-> db.users.find().pretty()
+# Ejecutar pytest
+pytest
 ```
 
 ---
 
-## 🏗️ Añadir Nuevos Endpoints
-
-### **Ejemplo: Crear endpoint de documentos**
-
-**1. Crear modelo** (`app/models/document.py`):
-```python
-from pydantic import BaseModel
-
-class DocumentCreate(BaseModel):
-    title: str
-    content: str
-```
-
-**2. Crear repositorio** (`app/repositories/document_repository.py`):
-```python
-from app.database import get_database
-
-class DocumentRepository:
-    def __init__(self):
-        self.db = get_database()
-        self.collection = self.db["documents"]
-    
-    async def create(self, doc_data: dict):
-        result = await self.collection.insert_one(doc_data)
-        return str(result.inserted_id)
-```
-
-**3. Crear servicio** (`app/services/document_service.py`):
-```python
-from app.repositories.document_repository import DocumentRepository
-
-class DocumentService:
-    def __init__(self):
-        self.repo = DocumentRepository()
-    
-    async def create_document(self, doc_data: dict):
-        doc_id = await self.repo.create(doc_data)
-        return {"id": doc_id, **doc_data}
-```
-
-**4. Crear controller** (`app/controllers/document_controller.py`):
-```python
-from app.services.document_service import DocumentService
-from app.core import StandardResponse
-
-class DocumentController:
-    def __init__(self):
-        self.service = DocumentService()
-    
-    async def create(self, doc_data: dict) -> StandardResponse:
-        result = await self.service.create_document(doc_data)
-        return StandardResponse(
-            success=True,
-            message="Documento creado",
-            data=result
-        )
-```
-
-**5. Crear router** (`app/routers/documents.py`):
-```python
-from fastapi import APIRouter, Depends
-from app.controllers.document_controller import DocumentController
-from app.models.document import DocumentCreate
-from app.core import get_current_user
-
-router = APIRouter(prefix="/documents", tags=["Documentos"])
-
-@router.post("/")
-async def create_document(
-    doc: DocumentCreate,
-    current_user: dict = Depends(get_current_user),
-    controller: DocumentController = Depends()
-):
-    return await controller.create(doc.dict())
-```
-
-**6. Registrar router** (`app/routers/__init__.py`):
-```python
-from app.routers import auth, health, documents
-
-def include_routers(app):
-    app.include_router(health.router)
-    app.include_router(auth.router)
-    app.include_router(documents.router)  # ← Añadir
-```
-
----
-
-## 🐛 Debugging
-
-### **Logs en consola:**
-Los exception handlers imprimen logs automáticamente:
-```
-⚠️  AUTHENTICATION_ERROR en POST /auth/login: Email o contraseña incorrectos
-⚠️  VALIDATION_ERROR en POST /auth/register: email: value is not a valid email address
-🔥 INTERNAL_SERVER_ERROR en GET /stats: TypeError: ...
-```
-
-### **Swagger UI:**
-- Ve a http://localhost:8000/docs
-- Prueba endpoints directamente desde el navegador
-- Ve los esquemas de request/response
-
-### **Modo Debug:**
-En `.env`, pon `DEBUG=True` para ver detalles completos de errores (stacktrace).
-
----
-
-## 📚 Recursos
-
-- [FastAPI Docs](https://fastapi.tiangolo.com/)
-- [Pydantic Docs](https://docs.pydantic.dev/)
-- [Motor (MongoDB Async)](https://motor.readthedocs.io/)
-- [JWT Docs](https://jwt.io/)
-
----
-
-## 🤝 Contribuir
-
-1. Mantén la arquitectura en capas
-2. Lanza excepciones desde `services` (no desde `controllers` o `routers`)
-3. Usa `StandardResponse` para todas las respuestas de éxito
-4. Documenta endpoints con docstrings
-5. Sigue los nombres de las excepciones existentes en `core/exceptions.py`
-
----
-
-## 📝 Notas
-
-- **NO subir `.env` a git** → Ya está en `.gitignore`
-- **MongoDB debe estar corriendo** antes de iniciar el servidor
-- **Los tokens expiran** después de 8 horas (configurable en `ACCESS_TOKEN_EXPIRE_MINUTES`)
-- **Todas las operaciones de BD son async** (usa `await`)
+## Notas de Desarrollo y Buenas Prácticas
+- **Asincronía:** Todas las operaciones de base de datos (`MongoDB` con Motor) y subida de archivos deben definirse con `async def` y usar `await`.
+- **Estructura limpia:** Evite la inyección de lógica de negocio o queries en los controladores o routers. Coloque toda la lógica en los `services` correspondientes y las llamadas a base de datos en los `repositories`.
+- **Variables de Entorno:** Nunca suba el archivo `.env` a git. Mantenga la plantilla de referencia en `.env.example` actualizada si agrega nuevos parámetros.

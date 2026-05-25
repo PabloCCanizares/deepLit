@@ -1,473 +1,163 @@
-# 🚀 deepLit Frontend
+# deepLit Frontend - Interfaz de Usuario (React + Vite)
+
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF.svg?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
+[![CSS3](https://img.shields.io/badge/CSS-Vanilla-1572B6.svg?style=flat-square&logo=css3&logoColor=white)](https://w3.org/Style/CSS/)
+[![Chart.js](https://img.shields.io/badge/Chart.js-4-FF6384.svg?style=flat-square&logo=chartdotjs&logoColor=white)](https://www.chartjs.org)
+
+La interfaz web de deepLit es una Single Page Application (SPA) moderna, rápida e interactiva construida con React y Vite. Está diseñada específicamente para optimizar la experiencia de lectura, clasificación, síntesis y redacción científica a través de un diseño responsivo y sofisticados flujos de trabajo guiados por inteligencia artificial.
 
 ---
 
-## ✨ Características
+## Características de la Interfaz
 
-- 🔐 **Autenticación JWT** - Login y registro con gestión de sesiones
-- 📊 **Dashboard interactivo** - Visualización de estadísticas
-- 🎨 **Diseño moderno** - Tema personalizado morado/violeta (aun por definir paleta de colores, de momento prototipo)
-- 📱 **Responsive** - Adaptado a móviles y tablets
-- 🛡️ **Rutas protegidas** - Sistema de autenticación con `AuthContext`
-- ⚡ **Vite** - Build ultrarrápido
-- 🧹 **Código limpio** - Sin código innecesario, solo lo esencial
-
----
-
-## 🏗️ Estado del Proyecto
-
-**Versión inicial funcional** con arquitectura base para escalar:
-
-### **Implementado:**
-- ✅ Sistema de autenticación completo (Login/Register)
-- ✅ Dashboard con estadísticas (conectado a `/stats` del backend pero sin implementar en el backend)
-- ✅ Layout responsive con Navbar y Sidebar
-- ✅ Manejo de errores estandarizado
-- ✅ Context API para autenticación global
-
-### **Por implementar:**
-- 📝 Gestión de documentos
-- 📤 Subida de archivos
-- 🔍 Búsqueda y filtrado
-- ⚙️ Configuración de usuario
+- **Dashboard Analítico:** Dashboard con tarjetas estadísticas de artículos agregados, gráficos de distribución temporal y clasificaciones temáticas automáticas.
+- **Grafo de Conocimiento Interactivo:** Visualización tridimensional e interactiva del grafo de relaciones (autores, artículos, palabras clave) conectado directamente con Neo4j.
+- **Espacio de Trabajo de Revisión Sistemática (Review Workflow):**
+  - **Screening (Cribado):** Interfaz para clasificar artículos como incluidos, excluidos o dudosos, con apoyo de sugerencias de IA.
+  - **Clustering:** Agrupamiento de documentos en clústeres temáticos.
+  - **Evidence Extraction:** Configuración y visualización de tablas de extracción de evidencias.
+  - **Collection Synthesis:** Generador interactivo de reportes de síntesis de colecciones por IA.
+  - **Scientific Writing:** Copiloto inteligente para redactar párrafos y secciones académicas basadas en las evidencias del repositorio.
+- **Búsqueda e Importación con OpenAlex:** Consulta directa del catálogo mundial OpenAlex con importación en un clic a la biblioteca local de deepLit.
+- **Gestión de Colecciones y Biblioteca:** Vistas en lista y rejilla de artículos locales, descarga de PDFs, edición de metadatos y categorización en carpetas personalizadas.
+- **Gestión de Sesiones:** Autenticación JWT persistente en `localStorage`, con control global en `AuthContext` y protección de rutas privadas.
+- **Diseño Rápido:** Compilado optimizado con Vite, carga modular y estilos fluidos usando Vanilla CSS.
 
 ---
 
-## 📋 Requisitos
+## Estructura del Proyecto
 
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0 (o yarn >= 1.22.0)
-- **Backend FastAPI** corriendo en `http://localhost:8000`
+El código está estructurado para facilitar la escalabilidad y reutilización de componentes:
 
----
-
-## 🚀 Instalación
-
-### **1. Instalar dependencias**
-
-```bash
-cd frontend
-npm install
+```
+frontend/
+├── index.html              # Archivo de entrada HTML de Vite
+├── public/                 # Recursos estáticos públicos (favicons, imágenes)
+├── src/
+│   ├── Main.jsx            # Punto de entrada de React / DOM
+│   ├── App.jsx             # Enrutador principal (React Router DOM) y providers
+│   │
+│   ├── api/
+│   │   └── api.js          # Centralización e interceptación de llamadas HTTP (fetch/axios)
+│   │
+│   ├── context/            # Proveedores de estado global (Context API)
+│   │   ├── AuthContext.jsx       # Sesiones y credenciales de usuario
+│   │   ├── ThemeContext.jsx      # Control del tema (Claro / Oscuro)
+│   │   └── CollectionContext.jsx # Colección activa seleccionada en la app
+│   │
+│   ├── components/         # Componentes modulares y reutilizables
+│   │   ├── auth/           # Rutas protegidas (PrivateRoute)
+│   │   ├── layout/         # Estructura visual (Layout, Sidebar, Navbar)
+│   │   ├── dashboard/      # Tarjetas y gráficos del panel
+│   │   └── documents/      # Controles, vistas en lista y rejillas de artículos
+│   │
+│   ├── pages/              # Páginas completas (Vistas) de la aplicación
+│   │   ├── PublicLanding.jsx     # Página de inicio para usuarios públicos
+│   │   ├── Login.jsx             # Formulario de inicio de sesión
+│   │   ├── Register.jsx          # Formulario de registro de cuenta
+│   │   ├── Dashboard.jsx         # Panel de estadísticas principal
+│   │   ├── KnowledgeGraph.jsx    # Visualización interactiva del grafo Neo4j
+│   │   ├── Articles.jsx          # Biblioteca de artículos (subida y filtros)
+│   │   ├── ArticleView.jsx       # Vista detallada de un paper (PDF y metadatos)
+│   │   ├── ArticleEdit.jsx       # Formulario para editar metadatos de artículos
+│   │   ├── Collections.jsx       # Listado de carpetas/colecciones temáticas
+│   │   ├── CollectionDetail.jsx  # Vista de artículos dentro de una colección
+│   │   ├── CollectionArticles.jsx# Buscador enfocado de artículos
+│   │   ├── ReviewWorkflow.jsx    # Flujo sistemático paso a paso (AI agents workspace)
+│   │   ├── OpenAlex.jsx          # Buscador de OpenAlex
+│   │   ├── OpenAlexView.jsx      # Detalle de metadatos de OpenAlex antes de importar
+│   │   ├── Profile.jsx           # Perfil y preferencias del usuario
+│   │   └── PublicPreview.jsx     # Vista pública compartida de documentos
+│   │
+│   └── styles/             # Hojas de estilo estructuradas por módulos
+│       ├── App.css         # Archivo global de importaciones CSS
+│       ├── Auth.css        # Estilos de Login y Registro
+│       ├── components/     # CSS de componentes visuales compartidos
+│       ├── dashboard/      # CSS de gráficos y widgets
+│       ├── layout/         # CSS de barras de navegación y Sidebar
+│       └── profile/        # CSS del perfil de usuario
+│
+├── vite.config.js          # Configuración de Vite (servidor y proxy de desarrollo)
+├── package.json            # Scripts de ejecución y librerías externas
+└── .eslintrc.cjs           # Configuración de reglas de linter y calidad de código
 ```
 
-### **2. Iniciar servidor de desarrollo**
+---
 
-```bash
-npm run dev
-```
+## Instalación y Desarrollo
 
-El frontend estará disponible en: **http://localhost:3000**
+### Requisitos Previos
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- El backend de FastAPI en ejecución (por defecto en `http://localhost:8000`)
+
+### Pasos para Ejecutar
+
+1. **Instalar dependencias:**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. **Iniciar el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Abrir en el navegador:**
+   La aplicación estará disponible en la dirección: **`http://localhost:3000`**
 
 ---
 
-## 📜 Scripts Disponibles
+## Configuración del Servidor y Proxy de Vite
+
+Durante la fase de desarrollo, Vite incluye un servidor proxy para redirigir las peticiones `/api` al backend sin toparse con problemas de CORS en el navegador:
+
+```javascript
+// vite.config.js
+export default defineConfig({
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  }
+})
+```
+
+Esto significa que cuando el frontend llama a `/api/auth/login`, Vite redirige transparentemente la llamada a `http://localhost:8000/auth/login`.
+
+---
+
+## Scripts Disponibles
+
+En el directorio del frontend puedes ejecutar:
 
 ```bash
-# Desarrollo (con hot reload)
+# Iniciar servidor local en modo desarrollo
 npm run dev
 
-# Build para producción
+# Compilar la aplicación para producción
 npm run build
 
-# Preview del build de producción
+# Previsualizar de manera local el build de producción generado
 npm run preview
 
-# Linter (detectar errores)
+# Ejecutar el linter para detectar advertencias o errores en el código
 npm run lint
 ```
 
 ---
 
-## 🗂️ Estructura del Proyecto
-
-```
-frontend/
-├── index.html              # Punto de entrada HTML (raíz en Vite)
-├── public/
-│   └── favicon.svg         # Favicon personalizado
-├── src/
-│   ├── Main.jsx            # Punto de entrada de React
-│   ├── App.jsx             # Componente principal con rutas
-│   │
-│   ├── api/
-│   │   └── api.js          # Centralización de llamadas API
-│   │
-│   ├── context/
-│   │   └── AuthContext.jsx # Estado global de autenticación
-│   │
-│   ├── Pages/              # Páginas principales
-│   │   ├── Login.jsx       # Página de login
-│   │   ├── Register.jsx    # Página de registro
-│   │   ├── Dashboard.jsx   # Dashboard principal
-│   │   ├── Documents.jsx   # Gestión de documentos
-│   │   ├── UploadDocuments.jsx # Subida de documentos
-│   │   ├── DocumentView.jsx    # Visualización de documentos
-│   │   ├── DocumentEdit.jsx    # Edición de documentos
-│   │   ├── OpenAlex.jsx    # Integración OpenAlex
-│   │   ├── Profile.jsx     # Perfil de usuario
-│   │   ├── Settings.jsx    # Configuración
-│   │   ├── Collections.jsx # Colecciones
-│   │   ├── History.jsx     # Historial
-│   │   ├── Explore.jsx     # Explorar
-│   │   └── Home.jsx        # Página de inicio
-│   │
-│   ├── components/
-│   │   ├── auth/
-│   │   │   └── PrivateRoute.jsx  # Protección de rutas
-│   │   ├── layout/
-│   │   │   ├── Layout.jsx        # Layout con Navbar + Sidebar
-│   │   │   ├── Navbar.jsx        # Barra de navegación superior
-│   │   │   └── Sidebar.jsx       # Menú lateral
-│   │   ├── dashboard/
-│   │   │   ├── StatCard.jsx      # Tarjeta de estadística
-│   │   │   ├── YearChart.jsx     # Gráfico de años
-│   │   │   └── KeywordRanking.jsx # Ranking de keywords
-│   │   └── documents/
-│   │       ├── DocumentCard.jsx   # Tarjeta de documento
-│   │       ├── DocumentControls.jsx # Controles de documento
-│   │       ├── DocumentGrid.jsx   # Vista en cuadrícula
-│   │       ├── DocumentList.jsx   # Vista en lista
-│   │       └── SearchBar.jsx      # Barra de búsqueda
-│   │
-│   └── styles/             # Estilos organizados por módulos
-│       ├── App.css         # Importa todos los estilos
-│       ├── Auth.css        # Estilos de autenticación
-│       ├── components/
-│       │   └── common.css  # Estilos comunes reutilizables
-│       ├── dashboard/
-│       │   ├── Dashboard.css    # Estilos del dashboard
-│       │   └── StatCard.css     # Estilos de tarjetas
-│       ├── documents/
-│       │   ├── DocumentCard.css # Estilos de tarjetas
-│       │   ├── DocumentControls.css
-│       │   ├── DocumentGrid.css
-│       │   ├── DocumentList.css
-│       │   ├── DocumentViewEdit.css
-│       │   ├── SearchBar.css
-│       │   └── UploadDocuments.css
-│       ├── layout/
-│       │   ├── Layout.css
-│       │   ├── Navbar.css
-│       │   └── Sidebar.css
-│       └── profile/
-│           └── Profile.css
-│
-├── vite.config.js          # Configuración de Vite
-├── package.json            # Dependencias y scripts
-└── .eslintrc.cjs           # Configuración de ESLint
-```
-
----
-
-## 🔌 Integración con Backend
-
-### **Proxy de Vite (desarrollo):**
-
-```javascript
-// vite.config.js
-proxy: {
-  '/api': {
-    target: 'http://localhost:8000',
-    changeOrigin: true,
-    rewrite: (path) => path.replace(/^\/api/, '')
-  }
-}
-```
-
-**Funcionamiento:**
-- Frontend llama a: `/api/auth/login`
-- Vite redirige a: `http://localhost:8000/auth/login`
-- ✅ Sin problemas de CORS en desarrollo
-
-### **API Base:**
-
-```javascript
-// src/api/index.js
-const API_BASE = '/api';  // En desarrollo usa el proxy de Vite
-
-// Endpoints
-// Autenticación
-authAPI.login(email, password)      // POST /api/auth/login
-authAPI.register(email, pass, name) // POST /api/auth/register
-authAPI.getMe()                      // GET /api/auth/me
-authAPI.logout()                     // POST /api/auth/logout
-authAPI.updateProfile(data)          // PUT /api/user/profile
-
-// Estadísticas
-statsAPI.getStats()                  // GET /api/stats
-
-// Documentos/Artículos
-articlesAPI.getArticles(params)      // GET /api/articles
-articlesAPI.getArticle(id)          // GET /api/articles/{id}
-articlesAPI.updateArticle(id, data) // PUT /api/articles/{id}
-articlesAPI.deleteArticle(id)       // DELETE /api/articles/{id}
-
-// Subida de archivos
-uploadAPI.uploadPDF(file)           // POST /api/pdfs/upload
-uploadAPI.uploadFolder(files)       // POST /api/pdfs/upload (múltiples)
-uploadAPI.uploadExcel(file)         // POST /api/pdfs/upload_excel
-
-// OpenAlex
-openalexAPI.search(query)           // GET /api/openalex/search
-openalexAPI.getWork(id)            // GET /api/openalex/works/{id}
-```
-
----
-
-## 🔐 Sistema de Autenticación
-
-### **Flujo completo:**
-
-```
-1. Usuario → Register/Login
-2. Backend → Devuelve token JWT
-3. Frontend → Guarda token en localStorage
-4. Frontend → Incluye token en todas las peticiones (Authorization: Bearer <token>)
-5. PrivateRoute → Verifica token antes de mostrar rutas protegidas
-```
-
-### **AuthContext:**
-
-Proporciona estado global de autenticación:
-
-```javascript
-import { useAuth } from './context/AuthContext';
-
-function MyComponent() {
-  const { user, isAuthenticated, login, logout } = useAuth();
-  
-  // user: { email, name }
-  // isAuthenticated: true/false
-}
-```
-
-### **PrivateRoute:**
-
-Protege rutas que requieren autenticación:
-
-```javascript
-<Route path="/" element={
-  <PrivateRoute>
-    <Layout />
-  </PrivateRoute>
-}>
-  <Route path="dashboard" element={<Dashboard />} />
-</Route>
-```
-
----
-
-## 🎨 Estilos
-
-### **Variables CSS:**
-
-```css
-:root {
-  --dark: #4f46e5;
-  --main_color: #6366f1;
-  --white: #f8fafc;
-  --black: #000000;
-}
-```
-
-### **Archivos de estilos:**
-
-- **`App.css`** - Importa todos los estilos de manera organizada
-- **`components/common.css`** - Estilos comunes reutilizables (botones, headers, spinners)
-- **`Auth.css`** - Estilos específicos de login y register
-- **`dashboard/*.css`** - Estilos del dashboard y componentes
-- **`documents/*.css`** - Estilos de gestión de documentos
-- **`layout/*.css`** - Estilos de navegación y layout
-- **`profile/*.css`** - Estilos del perfil de usuario
-
----
-
-## 🌐 Rutas de la Aplicación
-
-| Ruta | Componente | Protegida | Descripción |
-|------|------------|-----------|-------------|
-| `/login` | Login | ❌ No | Inicio de sesión |
-| `/register` | Register | ❌ No | Registro de usuario |
-| `/dashboard` | Dashboard | ✅ Sí | Panel principal |
-| `/` | - | ✅ Sí | Redirige a `/dashboard` |
-| `*` | - | - | Redirige a `/login` |
-
----
-
-## 📦 Dependencias Principales
-
-```json
-{
-  "react": "^18.3.1",           // Framework UI
-  "react-dom": "^18.3.1",       // React para web
-  "react-router-dom": "^6.22.3", // Routing
-  "chart.js": "^4.4.2",         // Gráficos
-  "react-chartjs-2": "^5.2.0",  // React wrapper para Chart.js
-  "vite": "^5.2.0"              // Build tool
-}
-```
-
----
-
-## 🚀 Build para Producción
-
-### **1. Generar build:**
-
-```bash
-npm run build
-```
-
-**Output:**
-```
-dist/
-├── index.html
-├── assets/
-│   ├── index-[hash].js   # Código compilado
-│   └── index-[hash].css  # Estilos compilados
-└── favicon.svg
-```
-
-### **2. Desplegar:**
-
-#### **Opción A: Mismo dominio con backend (Nginx)**
-
-```nginx
-server {
-    listen 80;
-    server_name deeplit.com;
-
-    # Frontend (archivos estáticos)
-    location / {
-        root /var/www/deeplit/frontend/dist;
-        try_files $uri /index.html;
-    }
-
-    # Backend (proxy)
-    location /api/ {
-        proxy_pass http://localhost:8000/;
-        proxy_set_header Host $host;
-    }
-}
-```
-
-**No necesitas `.env`** porque el proxy de Nginx maneja `/api` igual que Vite en desarrollo.
-
----
-
-#### **Opción B: Dominios diferentes**
-
-Si el backend está en `https://api.deeplit.com`:
-
-**1. Crear `.env.production`:**
-```env
-VITE_API_URL=https://api.deeplit.com
-```
-
-**2. Build:**
-```bash
-npm run build  # Lee .env.production automáticamente
-```
-
-**3. Desplegar `dist/` a tu servidor.**
-
----
-
-## 🐛 Debugging
-
-### **Ver logs en consola:**
-
-Los errores se muestran automáticamente en las DevTools del navegador.
-
-### **Errores comunes:**
-
-#### **Error: "No se puede conectar al servidor"**
-→ Backend no está corriendo en `localhost:8000`
-```bash
-# Inicia el backend:
-cd backend
-python -m uvicorn app.main:app --reload
-```
-
-#### **Error: "Token inválido"**
-→ Token expirado o backend reiniciado
-```bash
-# Solución: Vuelve a hacer login
-```
-
-#### **Error 404 en `/stats`**
-→ Endpoint no existe aún en el backend (normal en desarrollo inicial)
-
----
-
-## 🔧 Configuración Adicional
-
-### **Cambiar puerto de desarrollo:**
-
-```javascript
-// vite.config.js
-server: {
-  port: 3001,  // Cambia de 3000 a 3001
-}
-```
-
-### **Añadir nueva ruta:**
-
-**1. Crear página:**
-```javascript
-// src/pages/Documents.jsx
-function Documents() {
-  return <h1>Documentos</h1>;
-}
-export default Documents;
-```
-
-**2. Añadir a rutas:**
-```javascript
-// src/App.jsx
-import Documents from './pages/Documents';
-
-<Route path="documents" element={<Documents />} />
-```
-
-**3. Añadir a Sidebar:**
-```javascript
-// src/components/layout/Sidebar.jsx
-<Link to="/documents" className="sidebar-link">
-  <i className="fas fa-book"></i>
-  <span>Documentos</span>
-</Link>
-```
-
----
-
-## 🤝 Contribuir
-
-Al agregar nuevas funcionalidades:
-
-1. ✅ Mantén la estructura de carpetas
-2. ✅ Usa `AuthContext` para acceder al usuario
-3. ✅ Todas las llamadas API van en `src/api/` y se reexportan desde `src/api/index.js`
-4. ✅ Los errores del backend siempre tienen formato `StandardResponse`
-5. ✅ Usa componentes reutilizables cuando sea posible
-6. ✅ Mantén los estilos en `App.css` (global) o archivos específicos
-
----
-
-## 📝 Notas
-
-- **Proxy de Vite:** Solo funciona en desarrollo, no en producción
-- **localStorage:** Se usa para persistir el token JWT
-- **React Router:** Usa `<Link>` en vez de `<a>` para navegación interna
-- **Hot Reload:** Los cambios se reflejan automáticamente sin recargar
-- **ESLint:** Detecta errores mientras escribes código
-
----
-
-## ✅ Estado del Código
-
-- ✅ Sin código duplicado
-- ✅ Errores estandarizados con el backend
-- ✅ Solo 2 archivos CSS (App.css + Auth.css)
-- ✅ Componentes simples y reutilizables
-- ✅ Preparado para escalar
-
+## Dependencias Clave
+
+- **react** & **react-dom** (^18.3.1): Biblioteca principal para interfaces.
+- **react-router-dom** (^6.22.3): Gestión de enrutamiento del lado del cliente.
+- **chart.js** & **react-chartjs-2**: Renderizado de gráficos en el Dashboard.
+- **@tanstack/react-query** (^5.90.11): Sincronización y caché de datos del servidor.
+- **vite** (^5.2.0): Servidor de desarrollo y empaquetador ultrarrápido.
