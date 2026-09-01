@@ -27,6 +27,7 @@ MAX_LIST_VALUES = 64
 MAX_CURSOR_LENGTH = 1000
 MAX_TEXT = 4000
 _SAFE_CODE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
+_EMPTY_LEDGER_TIME = "1970-01-01T00:00:00Z"
 
 
 class ResearchIntelligenceCursorError(ValueError):
@@ -40,10 +41,18 @@ class ResearchIntelligenceLedger(Protocol):
     async def latest_event(
         self, user_id: str, object_kind: str, source_object_id: str
     ) -> dict[str, Any] | None: ...
+    async def latest_events(self, user_id: str, object_kind: str) -> list[dict[str, Any]]: ...
     async def append_event(self, event: dict[str, Any]) -> bool: ...
     async def events_after(
         self, user_id: str, after_sequence: int, limit: int
     ) -> list[dict[str, Any]]: ...
+
+
+class ResearchLibraryReader(Protocol):
+    async def get_visible_work(
+        self, user_id: str, source_object_id: str
+    ) -> dict[str, Any] | None: ...
+    async def visible_works(self, user_id: str) -> list[dict[str, Any]]: ...
 
 
 class MongoResearchIntelligenceLedger:
@@ -115,6 +124,18 @@ class MongoResearchIntelligenceLedger:
             sort=[("lineage_depth", DESCENDING)],
         )
 
+    async def latest_events(self, user_id: str, object_kind: str) -> list[dict[str, Any]]:
+        cursor = self.events.aggregate(
+            [
+                {"$match": {"id_user": user_id, "object_kind": object_kind}},
+                {"$sort": {"source_object_id": 1, "lineage_depth": -1}},
+                {"$group": {"_id": "$source_object_id", "event": {"$first": "$$ROOT"}}},
+                {"$sort": {"_id": 1}},
+            ]
+        )
+        rows = await cursor.to_list(length=None)
+        return [dict(row["event"]) for row in rows if isinstance(row.get("event"), dict)]
+
     async def append_event(self, event: dict[str, Any]) -> bool:
         try:
             await self.events.insert_one(event)
@@ -125,17 +146,67 @@ class MongoResearchIntelligenceLedger:
     async def events_after(
         self, user_id: str, after_sequence: int, limit: int
     ) -> list[dict[str, Any]]:
-        cursor = self.events.find(
-            {"id_user": user_id, "sequence": {"$gt": after_sequence}}
-        ).sort([("sequence", ASCENDING), ("_id", ASCENDING)]).limit(limit)
+        cursor = (
+            self.events.find({"id_user": user_id, "sequence": {"$gt": after_sequence}})
+            .sort([("sequence", ASCENDING), ("_id", ASCENDING)])
+            .limit(limit)
+        )
         return await cursor.to_list(length=limit)
+
+
+class LegacyResearchLibraryReader:
+    """Read-only compatibility view over the current user's legacy library."""
+
+    def __init__(self, database: Any | None = None) -> None:
+        self.database = database if database is not None else get_database()
+
+    async def _collection_ids(self, user_id: str) -> list[str]:
+        rows = await self.database.collections.find(
+            {"id_user": user_id}, {"_id": 1}
+        ).to_list(length=None)
+        identifiers = [user_id]
+        for row in rows:
+            raw_id = row.get("_id")
+            if raw_id is None:
+                continue
+            identifier = str(raw_id)
+            if identifier not in identifiers:
+                identifiers.append(identifier)
+        return identifiers
+
+    async def get_visible_work(
+        self, user_id: str, source_object_id: str
+    ) -> dict[str, Any] | None:
+        collection_ids = await self._collection_ids(user_id)
+        return await self.database.articles.find_one(
+            {
+                "_id": source_object_id,
+                "collection_ids": {"$in": collection_ids},
+                "status": {"$nin": ["processing", "error"]},
+            }
+        )
+
+    async def visible_works(self, user_id: str) -> list[dict[str, Any]]:
+        collection_ids = await self._collection_ids(user_id)
+        cursor = self.database.articles.find(
+            {
+                "collection_ids": {"$in": collection_ids},
+                "status": {"$nin": ["processing", "error"]},
+            }
+        ).sort("_id", ASCENDING)
+        return await cursor.to_list(length=None)
 
 
 class ResearchIntelligenceExportService:
     """Producer-owned immutable delta stream for one authenticated tenant."""
 
-    def __init__(self, ledger: ResearchIntelligenceLedger | None = None) -> None:
+    def __init__(
+        self,
+        ledger: ResearchIntelligenceLedger | None = None,
+        library_reader: ResearchLibraryReader | None = None,
+    ) -> None:
         self.ledger = ledger or MongoResearchIntelligenceLedger()
+        self.library_reader = library_reader or LegacyResearchLibraryReader()
 
     async def record_work(
         self,
@@ -170,22 +241,17 @@ class ResearchIntelligenceExportService:
         source_object_id: str,
         observed_at: datetime | None = None,
     ) -> dict[str, Any]:
-        """Snapshot a scientific work after an authenticated user save/update action.
-
-        Legacy article rows may use a global scientific `_id`; ownership of this export
-        event comes exclusively from the authenticated `user_id`, and tenant-specific
-        fields such as collection membership are deliberately not projected.
-        """
-        from app.repositories import ArticleRepository
-
-        article = await ArticleRepository().find_by_id(source_object_id)
+        """Snapshot a work only when it is visible to the authenticated user."""
+        user = _required_token(user_id, "user_id", 300)
+        source_id = _required_token(source_object_id, "source_object_id", 500)
+        article = await self.library_reader.get_visible_work(user, source_id)
         if article is None:
-            raise ValueError("Articulo cientifico no encontrado para exportacion.")
+            raise ValueError("Articulo no visible para el usuario autenticado.")
         return await self.record_work(
-            user_id=user_id,
-            source_object_id=source_object_id,
+            user_id=user,
+            source_object_id=source_id,
             payload=article,
-            source="openalex" if str(source_object_id).startswith("W") else "deeplit",
+            source="openalex" if source_id.startswith("W") else "deeplit",
             observed_at=observed_at,
         )
 
@@ -196,24 +262,85 @@ class ResearchIntelligenceExportService:
         source_object_id: str,
         observed_at: datetime | None = None,
     ) -> dict[str, Any] | None:
-        """Refresh a work after an authenticated removal action or emit a tombstone."""
-        from app.repositories import ArticleRepository
-
-        article = await ArticleRepository().find_by_id(source_object_id)
+        """Refresh a user-visible work or retract only that tenant's provider object."""
+        user = _required_token(user_id, "user_id", 300)
+        source_id = _required_token(source_object_id, "source_object_id", 500)
+        article = await self.library_reader.get_visible_work(user, source_id)
         if article is None:
             return await self.retract_work(
-                user_id=user_id,
-                source_object_id=source_object_id,
+                user_id=user,
+                source_object_id=source_id,
                 reason_code="user_removed",
                 observed_at=observed_at,
             )
         return await self.record_work(
-            user_id=user_id,
-            source_object_id=source_object_id,
+            user_id=user,
+            source_object_id=source_id,
             payload=article,
-            source="openalex" if str(source_object_id).startswith("W") else "deeplit",
+            source="openalex" if source_id.startswith("W") else "deeplit",
             observed_at=observed_at,
         )
+
+    async def reconcile_user_library(
+        self,
+        *,
+        user_id: str,
+        observed_at: datetime | None = None,
+    ) -> dict[str, int]:
+        """Repair publication gaps without trusting mutable rows as event history.
+
+        Current legacy state is used only to determine which new immutable observations
+        or tombstones are missing. Existing provider history is never rewritten.
+        """
+        user = _required_token(user_id, "user_id", 300)
+        await self.ledger.ensure_indexes()
+        works = await self.library_reader.visible_works(user)
+        current_ids: set[str] = set()
+        upserts = 0
+        corrections = 0
+        unchanged = 0
+        retractions = 0
+
+        for work in works:
+            raw_id = work.get("_id")
+            if raw_id is None:
+                continue
+            source_id = _required_token(str(raw_id), "source_object_id", 500)
+            current_ids.add(source_id)
+            before = await self.ledger.latest_event(user, "work", source_id)
+            event = await self.record_work(
+                user_id=user,
+                source_object_id=source_id,
+                payload=work,
+                source="openalex" if source_id.startswith("W") else "deeplit",
+                observed_at=observed_at,
+            )
+            if before is None:
+                upserts += 1
+            elif event.get("object_version") == before.get("object_version"):
+                unchanged += 1
+            else:
+                corrections += 1
+
+        for latest in await self.ledger.latest_events(user, "work"):
+            source_id = str(latest.get("source_object_id") or "")
+            if not source_id or source_id in current_ids or latest.get("operation") == "retraction":
+                continue
+            event = await self.retract_work(
+                user_id=user,
+                source_object_id=source_id,
+                reason_code="reconcile_missing",
+                observed_at=observed_at,
+            )
+            if event is not None and event.get("operation") == "retraction":
+                retractions += 1
+
+        return {
+            "upserts": upserts,
+            "corrections": corrections,
+            "unchanged": unchanged,
+            "retractions": retractions,
+        }
 
     async def retract_work(
         self,
@@ -277,13 +404,18 @@ class ResearchIntelligenceExportService:
             )
         rows = await self.ledger.events_after(user, after, limit)
         next_sequence = int(rows[-1]["sequence"]) if rows else after
-        now = _utc(observed=generated_at)
+        if generated_at is not None:
+            generated_token = _iso(_utc(observed=generated_at))
+        elif rows:
+            generated_token = str(rows[-1]["retrieved_at"])
+        else:
+            generated_token = _EMPTY_LEDGER_TIME
         return {
             "schema_version": SCHEMA_VERSION,
             "provider": PROVIDER_ID,
-            "cursor_before": _encode_cursor(user, after) if after else None,
+            "cursor_before": cursor,
             "cursor_after": _encode_cursor(user, next_sequence),
-            "generated_at": _iso(now),
+            "generated_at": generated_token,
             "events": [_public_event(row) for row in rows],
         }
 
@@ -315,11 +447,7 @@ class ResearchIntelligenceExportService:
 
             depth = int(latest.get("lineage_depth", 0)) + 1 if latest else 1
             supersedes = str(latest["object_version"]) if latest else None
-            operation = (
-                "retraction"
-                if retraction
-                else ("correction" if latest is not None else "upsert")
-            )
+            operation = "retraction" if retraction else ("correction" if latest else "upsert")
             object_version = (
                 f"v{depth}-tombstone-{fingerprint[:16]}"
                 if retraction
@@ -550,6 +678,7 @@ def _iso(value: datetime) -> str:
 __all__ = [
     "SCHEMA_VERSION",
     "PROVIDER_ID",
+    "LegacyResearchLibraryReader",
     "MongoResearchIntelligenceLedger",
     "ResearchIntelligenceCursorError",
     "ResearchIntelligenceExportService",

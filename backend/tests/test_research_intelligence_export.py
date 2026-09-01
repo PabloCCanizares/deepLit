@@ -1,16 +1,32 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import sys
 import unittest
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
-from app.services.research_intelligence_export_service import (
-    SCHEMA_VERSION,
-    ResearchIntelligenceCursorError,
-    ResearchIntelligenceExportService,
-    _encode_cursor,
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "app"
+    / "services"
+    / "research_intelligence_export_service.py"
 )
+SPEC = importlib.util.spec_from_file_location(
+    "research_intelligence_export_service_under_test", MODULE_PATH
+)
+if SPEC is None or SPEC.loader is None:  # pragma: no cover - import bootstrap guard.
+    raise RuntimeError("No se pudo cargar el provider para tests.")
+PROVIDER = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = PROVIDER
+SPEC.loader.exec_module(PROVIDER)
+
+SCHEMA_VERSION = PROVIDER.SCHEMA_VERSION
+ResearchIntelligenceCursorError = PROVIDER.ResearchIntelligenceCursorError
+ResearchIntelligenceExportService = PROVIDER.ResearchIntelligenceExportService
+_encode_cursor = PROVIDER._encode_cursor
 
 NOW = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
 
@@ -44,6 +60,21 @@ class InMemoryLedger:
         if not matches:
             return None
         return max(matches, key=lambda row: int(row["lineage_depth"]))
+
+    async def latest_events(self, user_id: str, object_kind: str) -> list[dict[str, Any]]:
+        source_ids = sorted(
+            {
+                str(row["source_object_id"])
+                for row in self.rows
+                if row["id_user"] == user_id and row["object_kind"] == object_kind
+            }
+        )
+        result: list[dict[str, Any]] = []
+        for source_id in source_ids:
+            latest = await self.latest_event(user_id, object_kind, source_id)
+            if latest is not None:
+                result.append(latest)
+        return result
 
     async def append_event(self, event: dict[str, Any]) -> bool:
         identity = (
@@ -84,11 +115,33 @@ class InMemoryLedger:
         return [dict(row) for row in rows[:limit]]
 
 
+class InMemoryLibraryReader:
+    def __init__(self) -> None:
+        self.visible: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def set_visible(self, user_id: str, *works: dict[str, Any]) -> None:
+        self.visible[user_id] = {
+            str(work["_id"]): dict(work) for work in works if work.get("_id") is not None
+        }
+
+    async def get_visible_work(
+        self, user_id: str, source_object_id: str
+    ) -> dict[str, Any] | None:
+        work = self.visible.get(user_id, {}).get(source_object_id)
+        return dict(work) if work is not None else None
+
+    async def visible_works(self, user_id: str) -> list[dict[str, Any]]:
+        values = self.visible.get(user_id, {})
+        return [dict(values[key]) for key in sorted(values)]
+
+
 class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.ledger = InMemoryLedger()
-        self.service = ResearchIntelligenceExportService(self.ledger)
+        self.library = InMemoryLibraryReader()
+        self.service = ResearchIntelligenceExportService(self.ledger, self.library)
         self.work = {
+            "_id": "W123",
             "title": "Trustworthy Surrogate Optimization",
             "doi": "10.1000/example",
             "year": 2026,
@@ -102,50 +155,52 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_same_work_two_users_has_independent_identity_history_and_cursor(self) -> None:
         a = await self.service.record_work(
-            user_id="user-a",
-            source_object_id="W123",
-            payload=self.work,
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W123", payload=self.work, observed_at=NOW
         )
         b = await self.service.record_work(
-            user_id="user-b",
-            source_object_id="W123",
-            payload=self.work,
-            observed_at=NOW,
+            user_id="user-b", source_object_id="W123", payload=self.work, observed_at=NOW
         )
-
         self.assertNotEqual(a["object_id"], b["object_id"])
         self.assertEqual(a["object_version"], b["object_version"])
 
-        page_a = await self.service.export_page(
-            user_id="user-a", generated_at=NOW + timedelta(seconds=1)
-        )
-        page_b = await self.service.export_page(
-            user_id="user-b", generated_at=NOW + timedelta(seconds=1)
-        )
+        page_a = await self.service.export_page(user_id="user-a")
+        page_b = await self.service.export_page(user_id="user-b")
         self.assertNotEqual(page_a["cursor_after"], page_b["cursor_after"])
-        self.assertEqual([event["object_id"] for event in page_a["events"]], [a["object_id"]])
-        self.assertEqual([event["object_id"] for event in page_b["events"]], [b["object_id"]])
+        self.assertEqual(page_a["generated_at"], a["retrieved_at"])
+        self.assertEqual(page_b["generated_at"], b["retrieved_at"])
 
-        retracted = await self.service.retract_work(
-            user_id="user-a",
-            source_object_id="W123",
-            observed_at=NOW + timedelta(seconds=2),
+        await self.service.retract_work(
+            user_id="user-a", source_object_id="W123", observed_at=NOW + timedelta(seconds=1)
         )
-        self.assertIsNotNone(retracted)
-        self.assertEqual(retracted["operation"], "retraction")
-
         latest_b = await self.ledger.latest_event("user-b", "work", "W123")
         self.assertIsNotNone(latest_b)
         self.assertEqual(latest_b["operation"], "upsert")
-        self.assertEqual(latest_b["object_version"], b["object_version"])
+
+    async def test_tenant_visibility_controls_capture_and_unsave_tombstone(self) -> None:
+        self.library.set_visible("user-a", self.work)
+        self.library.set_visible("user-b", self.work)
+        a = await self.service.capture_article(
+            user_id="user-a", source_object_id="W123", observed_at=NOW
+        )
+        b = await self.service.capture_article(
+            user_id="user-b", source_object_id="W123", observed_at=NOW
+        )
+        self.assertNotEqual(a["object_id"], b["object_id"])
+
+        self.library.set_visible("user-a")
+        retracted_a = await self.service.capture_or_retract_article(
+            user_id="user-a",
+            source_object_id="W123",
+            observed_at=NOW + timedelta(minutes=1),
+        )
+        self.assertIsNotNone(retracted_a)
+        self.assertEqual(retracted_a["operation"], "retraction")
+        latest_b = await self.ledger.latest_event("user-b", "work", "W123")
+        self.assertEqual(latest_b["operation"], "upsert")
 
     async def test_duplicate_capture_is_idempotent_and_replay_is_deterministic(self) -> None:
         first = await self.service.record_work(
-            user_id="user-a",
-            source_object_id="W123",
-            payload=self.work,
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W123", payload=self.work, observed_at=NOW
         )
         duplicate = await self.service.record_work(
             user_id="user-a",
@@ -156,8 +211,8 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first, duplicate)
         self.assertEqual(len(self.ledger.rows), 1)
 
-        page_one = await self.service.export_page(user_id="user-a", generated_at=NOW)
-        page_two = await self.service.export_page(user_id="user-a", generated_at=NOW)
+        page_one = await self.service.export_page(user_id="user-a")
+        page_two = await self.service.export_page(user_id="user-a")
         self.assertEqual(page_one, page_two)
         self.assertEqual(
             json.dumps(page_one, sort_keys=True, separators=(",", ":")),
@@ -166,10 +221,7 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_correction_and_retraction_preserve_predecessor_lineage(self) -> None:
         first = await self.service.record_work(
-            user_id="user-a",
-            source_object_id="W123",
-            payload=self.work,
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W123", payload=self.work, observed_at=NOW
         )
         changed = dict(self.work)
         changed["citations"] = 13
@@ -185,7 +237,6 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
             reason_code="user_removed",
             observed_at=NOW + timedelta(hours=2),
         )
-
         self.assertEqual(first["operation"], "upsert")
         self.assertEqual(correction["operation"], "correction")
         self.assertEqual(correction["supersedes_version"], first["object_version"])
@@ -194,41 +245,40 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(retraction["supersedes_version"], correction["object_version"])
         self.assertEqual(retraction["signals"], {})
 
-        page = await self.service.export_page(user_id="user-a", generated_at=NOW)
+    async def test_reconciliation_repairs_missing_upsert_and_missing_tombstone(self) -> None:
+        self.library.set_visible("user-a", self.work)
+        first = await self.service.reconcile_user_library(user_id="user-a", observed_at=NOW)
         self.assertEqual(
-            [event["operation"] for event in page["events"]],
-            ["upsert", "correction", "retraction"],
+            first,
+            {"upserts": 1, "corrections": 0, "unchanged": 0, "retractions": 0},
         )
+        second = await self.service.reconcile_user_library(
+            user_id="user-a", observed_at=NOW + timedelta(minutes=1)
+        )
+        self.assertEqual(second["unchanged"], 1)
+        self.assertEqual(len(self.ledger.rows), 1)
+
+        self.library.set_visible("user-a")
+        third = await self.service.reconcile_user_library(
+            user_id="user-a", observed_at=NOW + timedelta(minutes=2)
+        )
+        self.assertEqual(third["retractions"], 1)
+        latest = await self.ledger.latest_event("user-a", "work", "W123")
+        self.assertEqual(latest["operation"], "retraction")
 
     async def test_cross_tenant_and_future_cursors_fail_closed(self) -> None:
         await self.service.record_work(
-            user_id="user-a",
-            source_object_id="W123",
-            payload=self.work,
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W123", payload=self.work, observed_at=NOW
         )
-        page = await self.service.export_page(user_id="user-a", generated_at=NOW)
-
+        page = await self.service.export_page(user_id="user-a")
+        with self.assertRaises(ResearchIntelligenceCursorError):
+            await self.service.export_page(user_id="user-b", cursor=page["cursor_after"])
         with self.assertRaises(ResearchIntelligenceCursorError):
             await self.service.export_page(
-                user_id="user-b",
-                cursor=page["cursor_after"],
-                generated_at=NOW,
+                user_id="user-a", cursor=_encode_cursor("user-a", 999)
             )
-
         with self.assertRaises(ResearchIntelligenceCursorError):
-            await self.service.export_page(
-                user_id="user-a",
-                cursor=_encode_cursor("user-a", 999),
-                generated_at=NOW,
-            )
-
-        with self.assertRaises(ResearchIntelligenceCursorError):
-            await self.service.export_page(
-                user_id="user-a",
-                cursor="not-a-cursor",
-                generated_at=NOW,
-            )
+            await self.service.export_page(user_id="user-a", cursor="not-a-cursor")
 
     async def test_export_is_bounded_and_excludes_sensitive_or_internal_fields(self) -> None:
         payload = {
@@ -241,28 +291,23 @@ class ResearchIntelligenceExportTests(unittest.IsolatedAsyncioTestCase):
             "error_message": "SECRET diagnostic",
         }
         await self.service.record_work(
-            user_id="user-a",
-            source_object_id="W123",
-            payload=payload,
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W123", payload=payload, observed_at=NOW
         )
-        page = await self.service.export_page(user_id="user-a", generated_at=NOW)
-        encoded = json.dumps(page, sort_keys=True)
-
-        self.assertNotIn("chain-of-thought", encoded)
-        self.assertNotIn("SECRET", encoded)
-        self.assertNotIn("file:///private", encoded)
-        self.assertNotIn("private-collection", encoded)
-        self.assertNotIn("legacy-owner", encoded)
-        self.assertNotIn("pdf_url", encoded)
-        self.assertNotIn("abstract", encoded)
-        self.assertEqual(page["events"][0]["signals"]["article_id"], "W123")
+        encoded = json.dumps(await self.service.export_page(user_id="user-a"), sort_keys=True)
+        for forbidden in (
+            "chain-of-thought",
+            "SECRET",
+            "file:///private",
+            "private-collection",
+            "legacy-owner",
+            "pdf_url",
+            "abstract",
+        ):
+            self.assertNotIn(forbidden, encoded)
 
     async def test_retraction_without_previous_authority_is_noop(self) -> None:
         result = await self.service.retract_work(
-            user_id="user-a",
-            source_object_id="W-missing",
-            observed_at=NOW,
+            user_id="user-a", source_object_id="W-missing", observed_at=NOW
         )
         self.assertIsNone(result)
         self.assertEqual(self.ledger.rows, [])

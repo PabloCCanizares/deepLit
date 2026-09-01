@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import Depends
 
-from app.core import StandardResponse
+from app.core import AuthorizationError, StandardResponse
 from app.models import QueryBody
 from app.services.collection_service import CollectionService
 from app.services.openalex_service import OpenAlexService
@@ -24,6 +24,13 @@ class OpenAlexController:
         self.service = service
         self.collection_service = collection_service
         self.research_intelligence_export = ResearchIntelligenceExportService()
+
+    @staticmethod
+    def _user_id(current_user: dict) -> str:
+        user_id = current_user.get("_id")
+        if user_id is None:
+            raise AuthorizationError("Usuario autenticado sin identidad estable")
+        return str(user_id)
 
     async def get_openalex_articles(self, query: QueryBody) -> StandardResponse:
         """Obtener artículos del usuario actual con filtros y paginación."""
@@ -50,7 +57,7 @@ class OpenAlexController:
         current_user: dict,
     ) -> StandardResponse:
         """Guardar un artículo y publicar una observación tenant-scoped del work."""
-        user_id = current_user.get("_id")
+        user_id = self._user_id(current_user)
 
         if collection_id:
             exists = await self.collection_service.collection_exists(user_id, collection_id)
@@ -65,7 +72,7 @@ class OpenAlexController:
             openalex_id, collection_id, user_id
         )
         await self.research_intelligence_export.capture_article(
-            user_id=str(user_id),
+            user_id=user_id,
             source_object_id=str(saved_article_id),
         )
 
@@ -82,7 +89,7 @@ class OpenAlexController:
         current_user: dict,
     ) -> StandardResponse:
         """Quitar el guardado y refrescar o retraer el work en el export provider."""
-        user_id = current_user.get("_id")
+        user_id = self._user_id(current_user)
 
         if collection_id:
             exists = await self.collection_service.collection_exists(user_id, collection_id)
@@ -97,7 +104,7 @@ class OpenAlexController:
             openalex_id, collection_id, user_id
         )
         await self.research_intelligence_export.capture_or_retract_article(
-            user_id=str(user_id),
+            user_id=user_id,
             source_object_id=str(openalex_id),
         )
 
