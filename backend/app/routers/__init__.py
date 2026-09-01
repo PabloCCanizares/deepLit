@@ -3,14 +3,33 @@ Routers de la aplicación.
 
 Exporta funcion para incluir todos los routers.
 """
+
 from fastapi import FastAPI
-from app.routers import ai_assistant, auth, health, pdfs, excels, articles, stats, user, openalex, collections, screening, collection_synthesis, evidence_extraction, clustering, papers, article_graph, redaction
+
+from app.routers import (
+    ai_assistant,
+    article_graph,
+    articles,
+    auth,
+    clustering,
+    collection_synthesis,
+    collections,
+    evidence_extraction,
+    excels,
+    health,
+    openalex,
+    papers,
+    pdfs,
+    redaction,
+    research_intelligence,
+    screening,
+    stats,
+    user,
+)
 
 
 def include_routers(app: FastAPI) -> None:
-    """
-    Incluye todos los routers de la aplicación.
-    """
+    """Incluye todos los routers de la aplicación."""
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(user.router)
@@ -28,5 +47,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(article_graph.router)
     app.include_router(papers.router)
     app.include_router(redaction.router)
+    app.include_router(research_intelligence.router)
+
 
 __all__ = ["include_routers"]
