@@ -6,7 +6,7 @@ Status: implementation contract for `deepLit#1` and GoalMind `VirtualAssistant-p
 
 deepLit is the scientific-domain authority. GoalMind consumes a bounded Research Intelligence delta stream and must not duplicate deepLit's OpenAlex, PDF, RAG, evidence-extraction or scientific-graph stack.
 
-The provider contract exists because deepLit's legacy scientific rows are mutable/upserted and some paths hard-delete records. Those rows are **not** a safe incremental-change authority. V1 therefore introduces a provider-owned append-only ledger with explicit versions and tombstones.
+The provider contract exists because deepLit's legacy scientific rows are mutable/upserted and some paths hard-delete records. Those rows are **not** a safe incremental-change authority. V1 therefore introduces a provider-owned append-only ledger with explicit versions, predecessor lineage and tombstones.
 
 ## Non-negotiable invariants
 
@@ -16,10 +16,11 @@ The provider contract exists because deepLit's legacy scientific rows are mutabl
 4. An unchanged projection is idempotent and does not create a new version.
 5. A changed projection emits `correction` with `supersedes_version`.
 6. Removal emits an explicit `retraction` tombstone rather than silently disappearing from history.
-7. Cursor replay is safe. A cursor from another tenant, another schema version, malformed input or a future high-water mark fails closed.
+7. Cursor replay is deterministic for unchanged provider history. A cursor from another tenant, another schema version, malformed input or a future high-water mark fails closed.
 8. Raw PDFs, abstracts/full text, prompts, chain-of-thought, credentials, diagnostics, collection membership, internal paths and storage locators are excluded by construction.
 9. GoalMind receives external scientific evidence. It does not receive authority to mutate deepLit scientific state.
-10. Same-work/two-users behavior is tested adversarially.
+10. A provider-owned reconciliation pass can repair a crash gap between a successful legacy mutation and event publication without rewriting previous provider history.
+11. Same-work/two-users behavior is tested adversarially at both identity and visibility boundaries.
 
 ## Authoritative schema
 
@@ -82,54 +83,79 @@ Required unique indexes:
 
 Concurrent writers may consume an unused sequence when they race on the same object depth; sequence gaps are permitted. Reusing or rewriting a committed event is not.
 
-## Cursor
+## Tenant-scoped legacy visibility
 
-The cursor is opaque to GoalMind. Its serialized payload contains:
+The compatibility reader never treats legacy `article.id_user` as provider authority. User visibility is reconstructed from that user's own collection identifiers plus the legacy per-user library identifier. A work is capturable for a tenant only when the global article row is currently referenced by one of those tenant-owned scopes.
+
+Consequences:
+
+- users A and B may both reference OpenAlex `W123` while receiving distinct provider object IDs, versions and cursors;
+- A removing `W123` from all A-owned scopes creates only A's tombstone even if the same global row remains because B still references it;
+- collection IDs themselves are not exported and cannot affect the work content fingerprint;
+- a legacy global row cannot make B inherit A's provider history.
+
+## Cursor and deterministic replay
+
+The opaque cursor payload contains:
 
 - provider schema version;
 - a digest of the authenticated tenant, never the raw user ID;
 - exclusive `after_sequence` high-water mark.
 
-It is not an authorization token: authentication remains the HTTP/JWT boundary. Its tenant digest is an additional fail-closed replay guard. Consumers may replay older valid cursors; they cannot advance beyond the provider high-water mark.
+It is not an authorization token: JWT authentication remains the HTTP authority. Its tenant digest is an additional fail-closed replay guard. Consumers may replay older valid cursors; they cannot advance beyond the provider high-water mark.
 
-## OpenAlex integration
+`generated_at` is deterministic for a stable page: by default it is the `retrieved_at` of the last event returned, or the fixed empty-ledger epoch for an empty initial history. Response wall-clock time is deliberately not part of page identity.
 
-The authenticated OpenAlex save path publishes or refreshes the corresponding work projection after the legacy save succeeds. The authenticated unsave path either refreshes the work if it remains present or publishes a retraction tombstone after a hard delete.
+## OpenAlex integration and crash-gap recovery
 
-The export hook intentionally does **not** trust legacy article `id_user` as stream authority. This prevents a globally keyed OpenAlex row from forcing multiple users into one export identity. Tenant-specific collection memberships are not exported.
+The authenticated OpenAlex save path publishes or refreshes the corresponding tenant-visible work after the legacy save succeeds. The authenticated unsave path rechecks tenant visibility: it refreshes the work if it is still present in another user-owned collection, otherwise it emits only that user's tombstone.
 
-This provider boundary does not claim to repair every legacy article mutation. Cross-user legacy behavior remains separately hardenable; the Research Intelligence stream itself must remain isolated regardless.
+Mongo legacy state and the provider ledger cannot be made one atomic transaction around external OpenAlex/graph behavior. V1 therefore provides `reconcile_user_library()` and an authenticated provider-maintenance endpoint. Reconciliation:
+
+1. enumerates the authenticated user's currently visible works;
+2. idempotently publishes missing/upgraded observations;
+3. compares them with the latest immutable provider events;
+4. appends `reconcile_missing` tombstones for previously active provider works no longer visible;
+5. never edits or deletes provider history and never mutates scientific library rows.
+
+This is the durable recovery path for a process failure after a scientific save/remove but before provider publication.
 
 ## HTTP boundary
 
-Read-only authenticated endpoints:
+GoalMind consumer endpoints are authenticated and read-only:
 
 - `GET /research-intelligence/contract`
 - `GET /research-intelligence/delta?cursor=...&limit=...&schema_version=...`
 
-No endpoint accepts `user_id`. `get_current_user()` supplies the stable tenant identity.
+Provider maintenance endpoint:
 
-Validation errors are 400. Cursor ownership/history conflicts are 409. Provider transport/auth errors remain visible to GoalMind so its XINT source isolation policy can classify the outage without treating absence as negative scientific evidence.
+- `POST /research-intelligence/reconcile`
+
+No endpoint accepts `user_id`; `get_current_user()` supplies the tenant identity. Reconciliation mutates only the append-only observation ledger and is not scientific-state authority.
+
+Validation errors are 400. Cursor ownership/history conflicts are 409. Provider transport/auth errors remain visible to GoalMind so its XINT source-isolation policy can classify an outage without treating absence as negative scientific evidence.
 
 ## GoalMind reconciliation
 
 GoalMind draft PR #418 currently uses `deeplit-research-intelligence/v1-candidate`. After this provider contract is validated and merged, #418 must:
 
-1. replace the candidate schema with this authoritative v1 schema;
+1. replace the candidate schema with authoritative `deeplit-research-intelligence/v1`;
 2. implement a concrete authenticated transport bound to exactly one GoalMind user/provider credential;
-3. preserve cursor/idempotency/correction/retraction behavior already covered by its preparatory tests;
-4. retain author ambiguity and external-evidence authority boundaries;
-5. prove one provider delta end-to-end before closing XINT-2.
+3. consume only contract/delta, not the provider maintenance endpoint as ordinary read transport;
+4. preserve cursor/idempotency/correction/retraction behavior already covered by its preparatory tests;
+5. retain author ambiguity and external-evidence authority boundaries;
+6. prove one provider delta end-to-end before closing XINT-2.
 
 ## Acceptance tests
 
 The provider suite must prove at minimum:
 
 - same OpenAlex work for users A/B has different provider object IDs and cursors;
-- A retraction does not alter B history;
+- A removal/tombstone does not alter B history even while the global scientific row remains;
 - duplicate capture is idempotent;
-- replay is deterministic for stable source ledger/generation time;
+- replay is deterministic for stable source ledger;
 - correction and retraction preserve predecessor versions;
+- reconciliation repairs a missed upsert and a missed tombstone;
 - cross-tenant, malformed and future cursors fail closed;
 - sensitive/internal fields never enter JSON export;
 - wrong schema/page bounds fail closed;
