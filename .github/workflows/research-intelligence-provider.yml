@@ -1,0 +1,41 @@
+name: Research Intelligence provider
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/services/research_intelligence_export_service.py"
+      - "backend/app/routers/research_intelligence.py"
+      - "backend/app/routers/__init__.py"
+      - "backend/app/controllers/openalex_controller.py"
+      - "backend/tests/test_research_intelligence_export.py"
+      - "docs/goalmind-research-intelligence-provider-v1.md"
+      - ".github/workflows/research-intelligence-provider.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/services/research_intelligence_export_service.py"
+      - "backend/app/routers/research_intelligence.py"
+      - "backend/app/routers/__init__.py"
+      - "backend/app/controllers/openalex_controller.py"
+      - "backend/tests/test_research_intelligence_export.py"
+      - "docs/goalmind-research-intelligence-provider-v1.md"
+
+jobs:
+  provider-contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: ci-research-intelligence-provider
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependencies
+        run: python -m pip install --upgrade pip motor pymongo pydantic-settings python-dotenv
+      - name: Compile provider slice
+        run: python -m compileall -q app tests
+      - name: Run provider contract tests
+        run: python -m unittest discover -s tests -p "test_research_intelligence_export.py" -v
