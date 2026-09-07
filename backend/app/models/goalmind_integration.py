@@ -11,10 +11,12 @@ class GoalMindLiteratureSearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     query: str = Field(min_length=1, max_length=2048)
-    limit: int | None = Field(default=None, ge=1, le=100)
-    offset: int | None = Field(default=None, ge=0)
-    year_from: int | None = Field(default=None, ge=1000)
-    year_to: int | None = Field(default=None, ge=1000)
+    limit: int = Field(default_factory=lambda: 10, ge=1, le=100)
+    offset: int = Field(default_factory=lambda: 0, ge=0)
+    # A missing optional scalar needs a runtime sentinel while explicit JSON null must still
+    # be rejected because the canonical TAC schema permits omission, not null.
+    year_from: int = Field(default_factory=lambda: None, ge=1000)  # type: ignore[arg-type]
+    year_to: int = Field(default_factory=lambda: None, ge=1000)  # type: ignore[arg-type]
 
     @model_validator(mode="after")
     def validate_year_range(self) -> "GoalMindLiteratureSearchRequest":
@@ -35,7 +37,7 @@ class GoalMindLiteratureWork(BaseModel):
     source_ref: str = Field(min_length=1, max_length=512)
     title: str = Field(max_length=1000)
     year: int | None
-    category: str | None
+    category: str | None = None
 
 
 class GoalMindLiteratureSearchResponse(BaseModel):
