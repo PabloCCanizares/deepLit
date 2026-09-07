@@ -7,6 +7,7 @@ collection mutation, cursor management, or GoalMind-side authority decision.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from datetime import date, datetime, timezone
 from typing import Any
@@ -20,8 +21,7 @@ from app.models.goalmind_integration import (
 )
 
 _OPENALEX_PAGE_SIZE = 100
-_DEFAULT_LIMIT = 10
-_DEFAULT_OFFSET = 0
+_OPENALEX_WORK_ID = re.compile(r"^W[0-9]+$")
 
 
 class GoalMindLiteratureSearchProviderError(RuntimeError):
@@ -46,7 +46,7 @@ class GoalMindLiteratureSearchService:
         if not isinstance(raw, str) or not raw.strip():
             raise GoalMindLiteratureSearchProviderError("OpenAlex work has no stable id")
         work_id = raw.rstrip("/").split("/")[-1]
-        if not work_id or len(work_id) > 128:
+        if not _OPENALEX_WORK_ID.fullmatch(work_id):
             raise GoalMindLiteratureSearchProviderError("OpenAlex work id is invalid")
         return work_id
 
@@ -85,8 +85,14 @@ class GoalMindLiteratureSearchService:
         if request.year_from is not None:
             filters["from_publication_date"] = f"{request.year_from:04d}-01-01"
         if request.year_to is not None:
-            requested_end = date(request.year_to, 12, 31)
-            filters["to_publication_date"] = min(requested_end, today).isoformat()
+            # TAC deliberately has no artificial maximum year. Any upper bound at or beyond
+            # the current year therefore maps directly to today's provider-safe cap without
+            # constructing a Python date outside datetime's representable range.
+            if request.year_to >= today.year:
+                requested_end = today
+            else:
+                requested_end = date(request.year_to, 12, 31)
+            filters["to_publication_date"] = requested_end.isoformat()
         return filters
 
     def _page(self, filters: Mapping[str, Any], page: int):
@@ -125,24 +131,21 @@ class GoalMindLiteratureSearchService:
             raise TypeError("canonical GoalMind literature request required")
 
         today = self._now_provider()
-        if not isinstance(today, date):
+        if not isinstance(today, date) or isinstance(today, datetime):
             raise GoalMindLiteratureSearchProviderError("provider clock is invalid")
         if request.year_from is not None and request.year_from > today.year:
             return GoalMindLiteratureSearchResponse(works=[], total=0)
 
-        limit = request.limit if request.limit is not None else _DEFAULT_LIMIT
-        offset = request.offset if request.offset is not None else _DEFAULT_OFFSET
         filters = self._filters(request, today=today)
-
-        first_page = (offset // _OPENALEX_PAGE_SIZE) + 1
-        first_index = offset % _OPENALEX_PAGE_SIZE
+        first_page = (request.offset // _OPENALEX_PAGE_SIZE) + 1
+        first_index = request.offset % _OPENALEX_PAGE_SIZE
         first_results = self._page(filters, first_page)
         total = self._total(first_results)
         first_items = list(first_results)
-        selected = first_items[first_index : first_index + limit]
+        selected = first_items[first_index : first_index + request.limit]
 
-        remaining = limit - len(selected)
-        if remaining > 0 and offset + len(selected) < total:
+        remaining = request.limit - len(selected)
+        if remaining > 0 and request.offset + len(selected) < total:
             second_results = self._page(filters, first_page + 1)
             second_total = self._total(second_results)
             if second_total != total:
