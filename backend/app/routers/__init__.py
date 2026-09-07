@@ -16,6 +16,7 @@ from app.routers import (
     collections,
     evidence_extraction,
     excels,
+    goalmind_integration,
     health,
     openalex,
     papers,
@@ -48,6 +49,7 @@ def include_routers(app: FastAPI) -> None:
     app.include_router(papers.router)
     app.include_router(redaction.router)
     app.include_router(research_intelligence.router)
+    app.include_router(goalmind_integration.router)
 
 
 __all__ = ["include_routers"]
