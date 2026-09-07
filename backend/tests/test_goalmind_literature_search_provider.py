@@ -1,16 +1,34 @@
 from __future__ import annotations
 
+import importlib.util
+import sys
 import unittest
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
 from app.models.goalmind_integration import GoalMindLiteratureSearchRequest
-from app.services.goalmind_literature_search_service import (
-    GoalMindLiteratureSearchProviderError,
-    GoalMindLiteratureSearchService,
+
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "app"
+    / "services"
+    / "goalmind_literature_search_service.py"
 )
+SPEC = importlib.util.spec_from_file_location(
+    "goalmind_literature_search_service_under_test",
+    MODULE_PATH,
+)
+if SPEC is None or SPEC.loader is None:  # pragma: no cover - import bootstrap guard.
+    raise RuntimeError("Unable to load GoalMind literature provider for tests.")
+PROVIDER = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = PROVIDER
+SPEC.loader.exec_module(PROVIDER)
+
+GoalMindLiteratureSearchProviderError = PROVIDER.GoalMindLiteratureSearchProviderError
+GoalMindLiteratureSearchService = PROVIDER.GoalMindLiteratureSearchService
 
 
 class FakeResults(list):
@@ -74,7 +92,12 @@ class FakeWorksFactory:
         )
 
 
-def _work(index: int, *, year: Any = 2026, category: Any = "Computer Science") -> dict[str, Any]:
+def _work(
+    index: int,
+    *,
+    year: Any = 2026,
+    category: Any = "Computer Science",
+) -> dict[str, Any]:
     return {
         "id": f"https://openalex.org/W{index}",
         "display_name": f"Work {index}",
