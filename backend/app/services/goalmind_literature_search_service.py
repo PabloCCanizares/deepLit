@@ -72,11 +72,12 @@ class GoalMindLiteratureSearchService:
             return None
         return value
 
-    def _filters(self, request: GoalMindLiteratureSearchRequest) -> dict[str, Any]:
-        today = self._now_provider()
-        if not isinstance(today, date):
-            raise GoalMindLiteratureSearchProviderError("provider clock is invalid")
-
+    @staticmethod
+    def _filters(
+        request: GoalMindLiteratureSearchRequest,
+        *,
+        today: date,
+    ) -> dict[str, Any]:
         filters: dict[str, Any] = {
             "title.search": request.query,
             "to_publication_date": today.isoformat(),
@@ -131,7 +132,7 @@ class GoalMindLiteratureSearchService:
 
         limit = request.limit if request.limit is not None else _DEFAULT_LIMIT
         offset = request.offset if request.offset is not None else _DEFAULT_OFFSET
-        filters = self._filters(request)
+        filters = self._filters(request, today=today)
 
         first_page = (offset // _OPENALEX_PAGE_SIZE) + 1
         first_index = offset % _OPENALEX_PAGE_SIZE
