@@ -116,6 +116,10 @@ class GoalMindLiteratureSearchProviderTests(unittest.IsolatedAsyncioTestCase):
             GoalMindLiteratureSearchRequest(query="cloud", limit=101)
         with self.assertRaises(ValidationError):
             GoalMindLiteratureSearchRequest(query="cloud", offset=-1)
+        for field in ("limit", "offset", "year_from", "year_to"):
+            with self.subTest(field=field):
+                with self.assertRaises(ValidationError):
+                    GoalMindLiteratureSearchRequest(query="cloud", **{field: None})
 
     async def test_default_query_maps_to_bounded_openalex_and_normalizes_output(self) -> None:
         factory = FakeWorksFactory(
@@ -190,7 +194,7 @@ class GoalMindLiteratureSearchProviderTests(unittest.IsolatedAsyncioTestCase):
             now_provider=lambda: date(2026, 9, 7),
         )
         await future_service.search(
-            GoalMindLiteratureSearchRequest(query="fog", year_to=2030)
+            GoalMindLiteratureSearchRequest(query="fog", year_to=10000)
         )
         self.assertEqual(
             future_factory.calls[0]["filters"]["to_publication_date"],
@@ -253,7 +257,7 @@ class GoalMindLiteratureSearchProviderTests(unittest.IsolatedAsyncioTestCase):
             now_provider=lambda: date(2026, 9, 7),
         )
         response = await service.search(
-            GoalMindLiteratureSearchRequest(query="future", year_from=2030)
+            GoalMindLiteratureSearchRequest(query="future", year_from=10000)
         )
         self.assertEqual(response.model_dump(), {"works": [], "total": 0})
         self.assertEqual(factory.calls, [])
@@ -298,6 +302,17 @@ class GoalMindLiteratureSearchProviderTests(unittest.IsolatedAsyncioTestCase):
         )
         with self.assertRaisesRegex(GoalMindLiteratureSearchProviderError, "stable id"):
             await bad_work_service.search(GoalMindLiteratureSearchRequest(query="graph"))
+
+        malformed_id_factory = FakeWorksFactory(
+            pages={1: [{"id": "https://openalex.org/not-a-work", "display_name": "Bad"}]},
+            total=1,
+        )
+        malformed_id_service = GoalMindLiteratureSearchService(
+            malformed_id_factory,
+            now_provider=lambda: date(2026, 9, 7),
+        )
+        with self.assertRaisesRegex(GoalMindLiteratureSearchProviderError, "id is invalid"):
+            await malformed_id_service.search(GoalMindLiteratureSearchRequest(query="graph"))
 
 
 if __name__ == "__main__":
