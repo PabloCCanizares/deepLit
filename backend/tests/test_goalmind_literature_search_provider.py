@@ -197,6 +197,31 @@ class GoalMindLiteratureSearchProviderTests(unittest.IsolatedAsyncioTestCase):
             "2026-09-07",
         )
 
+    async def test_query_uses_one_date_snapshot_for_checks_and_filters(self) -> None:
+        factory = FakeWorksFactory(pages={1: []}, total=0)
+        calls = 0
+
+        def now_provider() -> date:
+            nonlocal calls
+            calls += 1
+            if calls > 1:
+                raise AssertionError("provider date read more than once")
+            return date(2026, 9, 7)
+
+        service = GoalMindLiteratureSearchService(factory, now_provider=now_provider)
+        await service.search(
+            GoalMindLiteratureSearchRequest(query="fog", year_from=2020, year_to=2030)
+        )
+        self.assertEqual(calls, 1)
+        self.assertEqual(
+            factory.calls[0]["filters"],
+            {
+                "title.search": "fog",
+                "from_publication_date": "2020-01-01",
+                "to_publication_date": "2026-09-07",
+            },
+        )
+
     async def test_arbitrary_offset_crosses_one_internal_page_exactly(self) -> None:
         factory = FakeWorksFactory(
             pages={
